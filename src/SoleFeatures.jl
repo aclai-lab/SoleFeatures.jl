@@ -2,11 +2,13 @@ module SoleFeatures
 
 using DataFrames
 using SoleBase
+using StatsBase
 
 # -----------------------------------------------------------------------------------------
 # exports
 
 export VarianceThreshold
+export VarianceRanking
 
 # -----------------------------------------------------------------------------------------
 # abstract types
@@ -20,14 +22,20 @@ A concrete subtype of AbstractFeaturesSelector should always provide functions
 abstract type AbstractFeaturesSelector end
 
 """
-Abstract supertype for all univariate features selector.
+Abstract supertype filter based selector.
 """
-abstract type AbstractUnivariateSelector <: AbstractFeaturesSelector end
+abstract type AbstarctFilterBased <: AbstractFeaturesSelector end
 
 """
-Abstract supertype for all multivariate features selector.
+Abstract supertype filter based selector.
 """
-abstract type AbstractMultivariateSelector <: AbstractFeaturesSelector end
+abstract type AbstarctWrapperBased <: AbstractFeaturesSelector end
+
+"""
+Abstract supertype filter based selector.
+"""
+abstract type AbstarctEmbeddedBased <: AbstractFeaturesSelector end
+
 
 # -----------------------------------------------------------------------------------------
 # AbstractFeaturesSelector
@@ -37,10 +45,34 @@ abstract type AbstractMultivariateSelector <: AbstractFeaturesSelector end
 
 Return a new MultiFrameDataset from `mfd` without the attributes considered unsitable from `selector`
 ## ARGUMENTS
-- `mfd::AbstractMultiFrameDataset`: AbstracttMultiFrameDataset on which apply the selector
+- `mfd::AbstractMultiFrameDataset`: AbstractMultiFrameDataset on which apply the selector
 - `selector::AbstractFeaturesSelector`: applied selector
 """
-function apply(mfd::SoleBase.AbstractMultiFrameDataset, selector::AbstractFeaturesSelector)
+function apply(
+    mfd::SoleBase.AbstractMultiFrameDataset,
+    selector::AbstractFeaturesSelector;
+    normalize_function=nothing
+)
+    return error("`apply` not implmented for type: "
+        * string(typeof(selector)))
+end
+
+function apply(
+    mfd::SoleBase.AbstractMultiFrameDataset,
+    selector::AbstractFeaturesSelector,
+    frame_index::Integer;
+    normalize_function=nothing
+)
+    return error("`apply` not implmented for type: "
+        * string(typeof(selector)))
+end
+
+function apply(
+    mfd::SoleBase.AbstractMultiFrameDataset,
+    selector::AbstractFeaturesSelector,
+    frame_indices::AbstractVector{<:Integer};
+    normalize_function=nothing
+)
     return error("`apply` not implmented for type: "
         * string(typeof(selector)))
 end
@@ -51,11 +83,35 @@ end
 Remove form `mfd` attributes considered unsitable from `selector`
 
 ## ARGUMENTS
-- `mfd::AbstractMultiFrameDataset`: AbstracttMultiFrameDataset on which apply the selector
+- `mfd::AbstractMultiFrameDataset`: AbstractMultiFrameDataset on which apply the selector
 - `selector::AbstractFeaturesSelector`: applied selector
 """
-function apply!(mfd::SoleBase.AbstractMultiFrameDataset, selector::AbstractFeaturesSelector)
-    return error("`apply` not implmented for type: "
+function apply!(
+    mfd::SoleBase.AbstractMultiFrameDataset,
+    selector::AbstractFeaturesSelector;
+    normalize_function=nothing
+)
+    return error("`apply!` not implmented for type: "
+        * string(typeof(selector)))
+end
+
+function apply!(
+    mfd::SoleBase.AbstractMultiFrameDataset,
+    selector::AbstractFeaturesSelector,
+    frame_index::Integer;
+    normalize_function=nothing
+)
+    return error("`apply!` not implmented for type: "
+        * string(typeof(selector)))
+end
+
+function apply!(
+    mfd::SoleBase.AbstractMultiFrameDataset,
+    selector::AbstractFeaturesSelector,
+    frame_indices::AbstractVector{<:Integer};
+    normalize_function=nothing
+)
+    return error("`apply!` not implmented for type: "
         * string(typeof(selector)))
 end
 
@@ -69,24 +125,69 @@ Return a bit vector representing which attributes in `df` are considered suitabl
 - `df::AbstractDataFrame`: DataFrame to evaluate
 - `selector::AbstractFeaturesSelector`: applied selector
 """
-function build_bit_mask(df::AbstractDataFrame, selector::AbstractFeaturesSelector)::BitVector
+function build_bitmask(df::AbstractDataFrame, selector::AbstractFeaturesSelector)::BitVector
     return error("`build_bit_mask` not implmented for type: "
         * string(typeof(selector)))
 end
 
 # -----------------------------------------------------------------------------------------
-# AbstractUnivariateSelector
+# AbstarctFilterBased - threshold
 
-function selector_threshold(selector::AbstractUnivariateSelector)
+function selector_threshold(selector::AbstarctFilterBased)
     return error("`selector_threshold` not implmented for type: "
         * string(typeof(selector)))
 end
 
-function selector_function(selector::AbstractUnivariateSelector)
+function selector_function(selector::AbstarctFilterBased)
     return error("`selector_function` not implmented for type: "
         * string(typeof(selector)))
 end
 
+# -----------------------------------------------------------------------------------------
+# AbstarctFilterBased - ranking
+
+function selector_k(selector::AbstarctFilterBased)
+    return error("`selector_k` not implmented for type: "
+        * string(typeof(selector)))
+end
+
+function selector_rankfunct(selector::AbstarctFilterBased)
+    return error("`selector_rankfunct` not implmented for type: "
+        * string(typeof(selector)))
+end
+
+# -----------------------------------------------------------------------------------------
+# utils
+
+"""
+Normalize passed DataFrame using min-max normalization.
+Return a new normalized DataFrame
+"""
+function minmax_normalize(df::AbstractDataFrame)::DataFrame
+    norm_df = DataFrame()
+
+    for col_name in names(df)
+        col = df[:, Symbol(col_name)]
+        flatted_col = collect(Iterators.flatten(col))
+        dim = SoleBase.dimension(DataFrame(:curr => col))
+        dt = fit(UnitRangeTransform, Float64.(flatted_col), dims=1)
+        
+        if dim == 0
+            norm_col = StatsBase.transform(dt, Float64.(col))
+        elseif dim == 1
+            norm_col = map(r->StatsBase.transform(dt, Float64.(r)),
+                Iterators.flatten(eachrow(col)))
+        else
+            error("unimplemented for dimension >1")
+        end
+
+        insertcols!(norm_df, Symbol(col_name) => norm_col)
+    end
+
+    return norm_df
+end
+
 include("./VarianceThreshold.jl")
+include("./VarianceRanking.jl")
 
 end # module
