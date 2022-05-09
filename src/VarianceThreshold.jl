@@ -1,6 +1,4 @@
-using StatsBase
-
-struct VarianceThreshold <: AbstractUnivariateSelector
+struct VarianceThreshold <: AbstarctFilterBased
     threshold::Float64
 
     function VarianceThreshold(threshold::Float64)
@@ -49,53 +47,108 @@ julia> SoleFeatures.apply(mfd, vt)
    3 │ [-3.0, 7.0]
 ```
 """
-function apply(mfd::SoleBase.AbstractMultiFrameDataset, selector::VarianceThreshold)
+function apply(
+    mfd::SoleBase.AbstractMultiFrameDataset,
+    selector::VarianceThreshold;
+    normalize_function=nothing
+)
     mfd_clone = deepcopy(mfd)
-    apply!(mfd_clone, selector)
+    apply!(mfd_clone, selector; normalize_function=normalize_function)
     return mfd_clone
 end
 
-function apply!(mfd::SoleBase.AbstractMultiFrameDataset, selector::VarianceThreshold)
+function apply(
+    mfd::SoleBase.AbstractMultiFrameDataset,
+    selector::VarianceThreshold,
+    frame_index::Integer;
+    normalize_function=nothing
+)
+    mfd_clone = deepcopy(mfd)
+    apply!(mfd_clone, selector, frame_index; normalize_function=normalize_function)
+    return mfd_clone
+end
+
+function apply(
+    mfd::SoleBase.AbstractMultiFrameDataset,
+    selector::VarianceThreshold,
+    frame_indices::AbstractVector{<:Integer};
+    normalize_function=nothing
+)
+    mfd_clone = deepcopy(mfd)
+    for i in frame_indices
+        apply!(mfd_clone, selector, i, normalize_function=normalize_function)
+    end
+    return mfd_clone
+end
+
+function apply!(
+    mfd::SoleBase.AbstractMultiFrameDataset,
+    selector::VarianceThreshold;
+    normalize_function=nothing
+)
     df = SoleBase.SoleDataset.data(mfd)
-    @assert all(col->(col isa Array{<:Number}), collect(Iterators.flatten(eachcol(df))))
-        "Attributes are not numerical type"
-    df_norm = _minmax_normalize(df)
-    bm = build_bit_mask(df_norm, selector)
+    @assert all(col->(col isa Union{Array{<:Number},Number}),
+                collect(Iterators.flatten(eachcol(df))))
+                    "Attributes are not numerical type"
+
+    if !isnothing(normalize_function)
+        df_norm = normalize_function(df)
+        bm = build_bitmask(df_norm, selector)
+    else
+        bm = build_bitmask(df, selector)
+    end
+
     indicies = findall(x->!x, bm)
     SoleBase.SoleDataset.dropattributes!(mfd, indicies)
 end
 
-function build_bit_mask(
-    df::DataFrame,
+function apply!(
+    mfd::SoleBase.AbstractMultiFrameDataset,
+    selector::VarianceThreshold,
+    frame_index::Integer;
+    normalize_function=nothing
+)
+    # frame from 'frame_index'
+    fr = SoleBase.frame(mfd, frame_index)
+    @assert all(col->(col isa Union{Array{<:Number},Number}),
+                collect(Iterators.flatten(eachcol(fr))))
+                    "Attributes are not numerical type"
+
+    # frame indicies
+    fr_indicies = SoleBase.SoleDataset.frame_descriptor(mfd)[frame_index]
+
+    # check if the frame needs normalization
+    if !isnothing(normalize_function)
+        fr_norm = normalize_function(fr)
+        fr_bm = build_bitmask(fr_norm, selector)
+    else
+        fr_bm = build_bitmask(fr, selector)
+    end
+
+    # bit mask for entire dataset
+    bm = trues(nattributes(mfd))
+    for i in 1:nattributes(fr)
+        bm[fr_indicies[i]] = fr_bm[i]
+    end
+
+    indicies = findall(x->!x, bm)
+    SoleBase.SoleDataset.dropattributes!(mfd, indicies)
+end
+
+function apply!(
+    mfd::SoleBase.AbstractMultiFrameDataset,
+    selector::VarianceThreshold,
+    frame_indices::AbstractVector{<:Integer};
+    normalize_function=nothing
+)
+    for i in frame_indices
+        apply!(mfd, selector, i, normalize_function=normalize_function)
+    end
+end
+
+function build_bitmask(
+    df::AbstractDataFrame,
     selector::VarianceThreshold
 )::BitVector
     return map(x->(selector_function(selector)(collect(Iterators.flatten(x))) >= selector_threshold(selector)), eachcol(df))
-end
-
-"""
-Normalize passed DataFrame using min-max normalization.
-Return a new normalized DataFrame
-"""
-function _minmax_normalize(df::DataFrame)::DataFrame
-    norm_df = DataFrame()
-
-    for col_name in names(df)
-        col = df[:, Symbol(col_name)]
-        flatted_col = collect(Iterators.flatten(col))
-        dim = SoleBase.dimension(DataFrame(:curr => col))
-        dt = fit(UnitRangeTransform, Float64.(flatted_col), dims=1)
-
-        if dim == 0
-            norm_col = StatsBase.transform(dt, Float64.(col))
-        elseif dim == 1
-            norm_col = map(r->StatsBase.transform(dt, Float64.(r)),
-                Iterators.flatten(eachrow(col)))
-        else
-            error("unimplemented for dimension >1")
-        end
-
-        insertcols!(norm_df, Symbol(col_name) => norm_col)
-    end
-
-    return norm_df
 end
