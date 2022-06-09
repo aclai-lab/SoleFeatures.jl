@@ -1,4 +1,4 @@
-struct VarianceRanking <: AbstarctFilterBased
+struct VarianceRanking <: AbstractFilterBased
     k::Int64
 
     function VarianceRanking(k::Int64)
@@ -23,7 +23,7 @@ end
 function apply(
     mfd::SoleBase.AbstractMultiFrameDataset,
     selector::VarianceRanking,
-    frame_index::Integer;
+    frame_index::Int;
     normalize_function=nothing
 )
     mfd_clone = deepcopy(mfd)
@@ -34,7 +34,7 @@ end
 function apply(
     mfd::SoleBase.AbstractMultiFrameDataset,
     selector::VarianceRanking,
-    frame_indices::AbstractVector{<:Integer};
+    frame_indices::AbstractVector{<:Int};
     normalize_function=nothing
 )
     mfd_clone = deepcopy(mfd)
@@ -61,14 +61,14 @@ function apply!(
         bm = build_bitmask(df, selector)
     end
 
-    indicies = findall(x->!x, bm)
-    SoleBase.SoleDataset.dropattributes!(mfd, indicies)
+    indices = findall(x->!x, bm)
+    SoleBase.SoleDataset.dropattributes!(mfd, indices)
 end
 
 function apply!(
     mfd::SoleBase.AbstractMultiFrameDataset,
     selector::VarianceRanking,
-    frame_index::Integer;
+    frame_index::Int;
     normalize_function=nothing
 )
     # frame from 'frame_index'
@@ -77,8 +77,8 @@ function apply!(
                 collect(Iterators.flatten(eachcol(fr))))
                     "Attributes are not numerical type"
 
-    # frame indicies
-    fr_indicies = SoleBase.SoleDataset.frame_descriptor(mfd)[frame_index]
+    # frame indices
+    fr_indices = SoleBase.SoleDataset.frame_descriptor(mfd)[frame_index]
 
     # check if the frame needs normalization
     if !isnothing(normalize_function)
@@ -91,17 +91,17 @@ function apply!(
     # bit mask for entire dataset
     bm = trues(nattributes(mfd))
     for i in 1:nattributes(fr)
-        bm[fr_indicies[i]] = fr_bm[i]
+        bm[fr_indices[i]] = fr_bm[i]
     end
 
-    indicies = findall(x->!x, bm)
-    SoleBase.SoleDataset.dropattributes!(mfd, indicies)
+    indices = findall(x->!x, bm)
+    SoleBase.SoleDataset.dropattributes!(mfd, indices)
 end
 
 function apply!(
     mfd::SoleBase.AbstractMultiFrameDataset,
     selector::VarianceRanking,
-    frame_indices::AbstractVector{<:Integer};
+    frame_indices::AbstractVector{<:Int};
     normalize_function=nothing
 )
     for i in frame_indices
