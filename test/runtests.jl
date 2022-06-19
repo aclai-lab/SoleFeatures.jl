@@ -7,6 +7,7 @@ include("./test_function.jl")
 @testset "SoleFeatures.jl" begin
 
     df = fake_temporal_series_dataset()
+    nf = SoleFeatures.minmax_normalize_wrapper(0.0, 1.0)
 
     @testset "Testing VarianceThreshold on temporal series in MultiFrameDataset" begin
         # test VarianceThreshold on temporal series in MultiFrameDataset
@@ -18,7 +19,7 @@ include("./test_function.jl")
         mfd_expected = SoleBase.MultiFrameDataset(df_expected)
 
         vt = VarianceThreshold(0.09)
-        mfd_generated = SoleFeatures.apply(mfd, vt, normalize_function = SoleFeatures.minmax_normalize)
+        mfd_generated = SoleFeatures.apply(mfd, vt, normalize_function = nf)
 
         @test SoleBase.isequal(mfd_expected, mfd_generated)
     end
@@ -34,7 +35,7 @@ include("./test_function.jl")
 
         vt = VarianceThreshold(0.09)
         frame_num = 1
-        mfd_generated = SoleFeatures.apply(mfd, vt, frame_num, normalize_function = SoleFeatures.minmax_normalize)
+        mfd_generated = SoleFeatures.apply(mfd, vt, frame_num, normalize_function = nf)
 
         @test SoleBase.isequal(mfd_expected, mfd_generated)
     end
@@ -49,7 +50,7 @@ include("./test_function.jl")
         mfd_expected = SoleBase.MultiFrameDataset(df_expected)
 
         vr = VarianceRanking(2)
-        mfd_generated = SoleFeatures.apply(mfd, vr, normalize_function = SoleFeatures.minmax_normalize)
+        mfd_generated = SoleFeatures.apply(mfd, vr, normalize_function = nf)
 
         @test SoleBase.isequal(mfd_expected, mfd_generated)
     end
@@ -65,7 +66,7 @@ include("./test_function.jl")
 
         vr = VarianceRanking(1)
         frame_num = 1
-        mfd_generated = SoleFeatures.apply(mfd, vr, frame_num, normalize_function = SoleFeatures.minmax_normalize)
+        mfd_generated = SoleFeatures.apply(mfd, vr, frame_num, normalize_function = nf)
 
         @test SoleBase.isequal(mfd_expected, mfd_generated)
     end
