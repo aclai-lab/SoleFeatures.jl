@@ -124,7 +124,7 @@ function apply!(
 end
 
 function build_bitmask(df::AbstractDataFrame, selector::CorrelationRanking)::BitVector
-    ranks = collect(enumerate(dtw_correlation(df, selector_rankfunct(selector))))
+    ranks = collect(enumerate(correlation(df, selector_rankfunct(selector))))
 
     sort!(ranks, by=x->x[2])
 

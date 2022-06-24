@@ -127,6 +127,6 @@ function build_bitmask(
     df::AbstractDataFrame,
     selector::CorrelationThreshold
 )::BitVector
-    avg_vector = dtw_correlation(df, selector_function(selector))
+    avg_vector = correlation(df, selector_function(selector))
     return BitVector(map(x->(x <= selector_threshold(selector)), avg_vector))
 end

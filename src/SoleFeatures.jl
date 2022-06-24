@@ -201,7 +201,7 @@ function _compute_dtw(df::AbstractDataFrame)::Array{Float64,2}
 end
 
 """
-    dtw_correlation(df, corf)
+    correlation(df, corf)
 
 Returns mean absolute correlation vector, based on dtw
 
@@ -209,12 +209,19 @@ Returns mean absolute correlation vector, based on dtw
 - `df::AbstractDataFrame`: DataFrame on which to calculate mean absolute correlation vector
 - `corf::Function`: correlation function, function that generates the correlation matrix
 """
-function dtw_correlation(df::AbstractDataFrame, corf::Function)::Array{Float64}
-    # build distances matrix
-    dist_matrix = _compute_dtw(df)
+function correlation(df::AbstractDataFrame, corf::Function)::Array{Float64}
+    df_dim = SoleBase.dimension(df)
+    if (df_dim) == 0
+        mtrx = Matrix(df)
+    elseif (df_dim) == 1
+        # build distances matrix
+        mtrx = _compute_dtw(df)
+    else
+        error("unimplemented for dimension >1")
+    end
     # correlation matrix built from the correlation function provided (corf)
     # absolute value of each coefficient is calculated
-    cor_matrix = abs.(corf(dist_matrix))
+    cor_matrix = abs.(corf(mtrx))
     # NaN values obtained from equal time series are converted into 1
     replace!(cor_matrix, NaN=>1)
     # calculate avg of correlation matrix per column (mean absolute correlation vector)
