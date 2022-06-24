@@ -186,7 +186,7 @@ function _compute_dtw(df::AbstractDataFrame)::Array{Float64,2}
     # distances matrix
     dist_matrix = Array{Float64, 2}(undef, nrm, nc)
     # computation of the dtw for each timeseries in a column for each attribute in df
-    for cidx in 1:nc
+    Threads.@threads for cidx in 1:nc
         idxm = 1
         for iidx in 1:(nr-1)
             for jidx in (iidx+1):nr
