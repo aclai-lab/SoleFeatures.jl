@@ -65,41 +65,41 @@ function fake_temporal_series_dataset()
             [5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
             [5, 5, 5, 5, 5, 5, 5, 5, 5, 5]
         ],
-        :A => [
-            rand(20),
-            rand(20),
-            rand(20),
-            rand(20),
-            rand(20)
-        ],
-        :B => [
-            rand(20),
-            rand(20),
-            rand(20),
-            rand(20),
-            rand(20)
-        ],
-        :C => [
-            rand(20),
-            rand(20),
-            rand(20),
-            rand(20),
-            rand(20)
-        ],
-        :D => [
-            rand(20),
-            rand(20),
-            rand(20),
-            rand(20),
-            rand(20)
-        ],
-        :E => [
-            rand(20),
-            rand(20),
-            rand(20),
-            rand(20),
-            rand(20)
-        ],
+        # :A => [
+        #     rand(20),
+        #     rand(20),
+        #     rand(20),
+        #     rand(20),
+        #     rand(20)
+        # ],
+        # :B => [
+        #     rand(20),
+        #     rand(20),
+        #     rand(20),
+        #     rand(20),
+        #     rand(20)
+        # ],
+        # :C => [
+        #     rand(20),
+        #     rand(20),
+        #     rand(20),
+        #     rand(20),
+        #     rand(20)
+        # ],
+        # :D => [
+        #     rand(20),
+        #     rand(20),
+        #     rand(20),
+        #     rand(20),
+        #     rand(20)
+        # ],
+        # :E => [
+        #     rand(20),
+        #     rand(20),
+        #     rand(20),
+        #     rand(20),
+        #     rand(20)
+        # ],
         # Variance normalized data: 0.0
         :fifthcol => [
             8,
@@ -115,8 +115,8 @@ function build_fake_bit_mask(n=5)::BitVector
     return rand(Bool, n)
 end
 
-using SoleBase, DataFrames, BenchmarkTools, SoleFeatures
-fd = fake_temporal_series_dataset();
-mfd = MultiFrameDataset([[1,2,3,4,5,6,7,8,9],[10]], fd);
-cr = CorrelationRanking(2, :pearson);
-@btime SoleFeatures.apply(mfd, cr, 1)
+# using SoleBase, DataFrames, BenchmarkTools, SoleFeatures
+# fd = fake_temporal_series_dataset();
+# mfd = MultiFrameDataset([[1,2,3,4,5,6,7,8,9],[10]], fd);
+# cr = CorrelationRanking(2, :pearson);
+# @btime SoleFeatures.apply(mfd, cr, 1)

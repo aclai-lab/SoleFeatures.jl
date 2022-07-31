@@ -45,7 +45,7 @@ end
 
 function minmax_normalize_wrapper(min_quantile::Float64=0.0, max_quantile::Float64=1.0)
     return (df) -> minmax_normalize(
-        df,
+        df;
         min_quantile=min_quantile,
         max_quantile=max_quantile
     )
