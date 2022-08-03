@@ -115,8 +115,11 @@ function build_fake_bit_mask(n=5)::BitVector
     return rand(Bool, n)
 end
 
-# using SoleBase, DataFrames, BenchmarkTools, SoleFeatures
-# fd = fake_temporal_series_dataset();
-# mfd = MultiFrameDataset([[1,2,3,4,5,6,7,8,9],[10]], fd);
-# cr = CorrelationRanking(2, :pearson);
-# @btime SoleFeatures.apply(mfd, cr, 1)
+function random_big_timeseries_mfd(;ninstances=100, nattr=5, ts_len=5)
+    d = Dict()
+    for i in 1:nattr
+        d[Symbol("a"* string(i))] = [rand(ts_len) for x in 1:ninstances]
+    end
+    fd = [collect(1:nattr)]
+    return MultiFrameDataset(fd, DataFrame(d))
+end

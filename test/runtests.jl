@@ -1,4 +1,3 @@
-using SoleBase
 using SoleFeatures
 using Test
 
@@ -71,23 +70,25 @@ include("./test_function.jl")
         @test SoleBase.isequal(mfd_expected, mfd_generated)
     end
 
-    # @testset "Testing VarianceThreshold on temporal series of frame of MultiFrameDataset" begin
-    #     # test VarianceThreshold on temporal series of frame of MultiFrameDataset
-    #     # Variance threshold: 0.09
-    #     # Expected behavior: Attributes "firstcol" and "fourthcol" will be removed
+    @testset "Testing VarianceThreshold on temporal series of frame of MultiFrameDataset" begin
+        # test VarianceThreshold on temporal series of frame of MultiFrameDataset
+        # Variance threshold: 0.09
+        # Expected behavior: Attributes "firstcol" and "fourthcol" will be removed
 
-    #     mfd = SoleBase.MultiFrameDataset([[1,2,3,4],[5]], df)
-    #     df_expected = df[:, [2,3,5]]
-    #     mfd_expected = SoleBase.MultiFrameDataset([[1,2],[3]], df_expected)
+        mfd = SoleBase.MultiFrameDataset([[1,2,3,4],[5]], df)
+        df_expected = df[:, [2,3,5]]
+        mfd_expected = SoleBase.MultiFrameDataset([[1,2],[3]], df_expected)
 
-    #     vt = VarianceThreshold(0.09)
-    #     frame_num = 1
+        vt = VarianceThreshold(0.09)
+        frame_num = 1
 
-    #     bm = SoleFeatures.build_bitmask(mfd, [1,2], vt)
-    #     mfd_generated = SoleFeatures.apply(mfd, bm)
+        nmfd = SoleFeatures.minmax_normalize(mfd, frame_num)
+        bm, fr_bm = SoleFeatures.build_bitmask(nmfd, frame_num, vt)
+        mfd_generated = SoleFeatures.apply(mfd, bm)
 
-    #     @test SoleBase.isequal(mfd_expected, mfd_generated)
-    # end
+        @test SoleBase.isequal(mfd_expected, mfd_generated)
+    end
+
 
 
 end

@@ -30,7 +30,7 @@ function minmax_normalize(
 
         if dim == 0
             norm_col = StatsBase.transform(dt, Float64.(col))
-        elseif dim == 1 || dim == 2
+        elseif dim == 1
             norm_col = map(r->StatsBase.transform(dt, Float64.(r)),
                 Iterators.flatten(eachrow(col)))
         else
@@ -49,4 +49,63 @@ function minmax_normalize_wrapper(min_quantile::Float64=0.0, max_quantile::Float
         min_quantile=min_quantile,
         max_quantile=max_quantile
     )
+end
+
+function minmax_normalize(
+    mfd::SoleBase.MultiFrameDataset,
+    frame_index::Integer;
+    min_quantile::Float64=0.0,
+    max_quantile::Float64=1.0
+)
+    ndf = DataFrame()
+    df = SoleBase.SoleDataset.data(mfd)
+    attr_names = names(df)
+    frames_descriptor = SoleBase.SoleDataset.frame_descriptor(mfd)
+    frame_indices = frames_descriptor[frame_index]
+    frame = SoleBase.frame(mfd, frame_index)
+    norm_frame = minmax_normalize(frame; min_quantile=min_quantile, max_quantile=max_quantile)
+
+    frame_i = 1
+    for (i, name) in enumerate(attr_names)
+        if (i in frame_indices)
+            col = norm_frame[:,frame_i]
+            frame_i += 1
+        else
+            col = df[:,i]
+        end
+        insertcols!(ndf, Symbol(name) => col)
+    end
+
+    return MultiFrameDataset(frames_descriptor, ndf)
+end
+
+"""
+    _fr_bm2mfd_bm(mfd, frame_index, frame_bm)
+
+frame bitmask to MultiFrameDataset bitmask.
+
+return bitmask for entire MultiFrameDataset from a frame of it
+"""
+function _fr_bm2mfd_bm(
+    mfd::SoleBase.MultiFrameDataset,
+    frame_index::Integer,
+    frame_bm::BitVector
+)::BitVector
+    fr_indices = SoleBase.SoleDataset.frame_descriptor(mfd)[frame_index] # frame indices inside mfd
+    bm = trues(nattributes(mfd))
+    bm[fr_indices] = frame_bm
+    return bm
+end
+
+"""
+    _bm2attr
+
+return tuple containing names of suitable attributes and names of not suitable attributes
+"""
+function _bm2attr(mfd::SoleBase.MultiFrameDataset, bm::BitVector)
+    df = SoleBase.SoleData.data(mfd)
+    attr = names(df)
+    good_attr = attr[findall(==(true), bm)]
+    bad_attr = attr[findall(==(false), bm)]
+    return good_attr, bad_attr
 end

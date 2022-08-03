@@ -16,5 +16,6 @@ function build_bitmask(
     df::AbstractDataFrame,
     selector::VarianceThreshold
 )::BitVector
-    return map(x->(selector_function(selector)(collect(Iterators.flatten(x))) >= selector_threshold(selector)), eachcol(df))
+    f = selector_function(selector)
+    return map(x->(f(collect(Iterators.flatten(x))) >= selector_threshold(selector)), eachcol(df))
 end
