@@ -103,7 +103,7 @@ end
 return tuple containing names of suitable attributes and names of not suitable attributes
 """
 function _bm2attr(mfd::SoleBase.MultiFrameDataset, bm::BitVector)
-    df = SoleBase.SoleData.data(mfd)
+    df = SoleBase.SoleData.SoleDataset.data(mfd)
     attr = names(df)
     good_attr = attr[findall(==(true), bm)]
     bad_attr = attr[findall(==(false), bm)]
