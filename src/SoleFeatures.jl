@@ -6,6 +6,7 @@ module SoleFeatures
 using StatsBase
 using DynamicAxisWarping
 using Reexport
+using Random
 
 export AbstractFeaturesSelector
 export VarianceThreshold
