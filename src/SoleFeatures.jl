@@ -7,6 +7,7 @@ using StatsBase
 using DynamicAxisWarping
 using Reexport
 using Random
+using Catch22
 
 export AbstractFeaturesSelector
 export VarianceThreshold
@@ -14,6 +15,7 @@ export VarianceRanking
 export CorrelationRanking
 export CorrelationThreshold
 export RandomRanking
+export MeasuresRanking
 export build_bitmask, apply, apply!
 
 @reexport using DataFrames
@@ -29,5 +31,6 @@ include("./correlation_commons.jl")
 include("./correlation_threshold.jl")
 include("./correlation_ranking.jl")
 include("./random_ranking.jl")
+include("./measures_ranking.jl")
 
 end # module
