@@ -25,19 +25,19 @@ function selector_rankfunct(selector::CorrelationRanking)
 end
 
 function build_bitmask(df::AbstractDataFrame, selector::CorrelationRanking)::BitVector
-    ranks = collect(enumerate(correlation(df, selector_rankfunct(selector))))
-
-    sort!(ranks, by=x->x[2])
-
     n_cols = ncol(df)
     k = selector_k(selector)
-    if  k < n_cols
-        bm = falses(n_cols)
-        for r in ranks[1:k]
-            bm[r[1]] = true
-        end
-    else
-        bm = trues(n_cols)
+
+    k > n_cols && return trues(ncol) # return immediately if 'k' is greater than columns number
+
+    # compute rank (mean absolute correlation vector)
+    ranks = collect(enumerate(correlation(df, selector_rankfunct(selector))))
+    # sort ranking
+    sort!(ranks, by=x->x[2])
+    # prepare bitmask
+    bm = falses(n_cols)
+    for r in ranks[1:k] # less correlation means good attribute
+        bm[r[1]] = true
     end
     return bm
 end
