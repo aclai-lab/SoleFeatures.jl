@@ -4,6 +4,11 @@
 #     return select(df, indices)
 # end
 
+function apply!(df::AbstractDataFrame, bm::BitVector)
+    indices = findall(==(true), bm)
+    return select(df, indices)
+end
+
 function apply!(mfd::SoleBase.AbstractMultiFrameDataset, bm::BitVector)
     indices = findall(==(false), bm)
     return SoleBase.SoleDataset.dropattributes!(mfd, indices)
@@ -63,6 +68,12 @@ function apply!(
     end
 
     return mfd
+end
+
+function apply(df::DataFrame, bm::BitVector)
+    ndf = deepcopy(df)
+    apply!(ndf, bm)
+    return ndf
 end
 
 function apply(mfd::SoleBase.AbstractMultiFrameDataset, bm::BitVector)
