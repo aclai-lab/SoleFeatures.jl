@@ -6,7 +6,7 @@
 
 function apply!(df::AbstractDataFrame, bm::BitVector)
     indices = findall(==(true), bm)
-    return select(df, indices)
+    return select!(df, indices)
 end
 
 function apply!(mfd::SoleBase.AbstractMultiFrameDataset, bm::BitVector)
