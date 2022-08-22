@@ -21,15 +21,28 @@ push!(_MEASURES, :max => maximum)
 selector_k(selector::MeasuresRanking) = selector.k
 selector_rankfunct(selector::MeasuresRanking) = selector.measures_selector
 
+
 function build_bitmask(df::AbstractDataFrame, selector::MeasuresRanking)::BitVector
     # TODO: warning if user provide selector with strange parameters
+    mrlock = ReentrantLock()
     k = selector_k(selector)
     n_cols = ncol(df)
 
-    k > n_cols && return trues(ncol) # return immediately if 'k' is greater than columns number
+    k > n_cols && return trues(n_cols) # return immediately if 'k' is greater than columns number
 
     # build df for each measure (measures_df is Vecotr of df)
-    measures_df = [ _MEASURES[name].(df) for name in _MEASURES_NAMES ]
+    # measures_df = [ _MEASURES[name].(df) for name in _MEASURES_NAMES ] # On inswectWingbeat 697s
+    measures_df = []
+    Threads.@threads for name in _MEASURES_NAMES # On inswectWingbeat 392s
+        mdf = _MEASURES[name].(df)
+        lock(mrlock)
+        try
+            push!(measures_df, mdf)
+        finally
+            unlock(mrlock)
+        end
+    end
+
     # build bitmasks for each of 25 measure dataframe
     measures_sel = selector_rankfunct(selector)
     measures_bm = [ build_bitmask(mdf, measures_sel) for mdf in measures_df ]
