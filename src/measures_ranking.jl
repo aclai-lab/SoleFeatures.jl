@@ -45,9 +45,11 @@ function build_bitmask(df::AbstractDataFrame, selector::MeasuresRanking)::BitVec
 
     # build bitmasks for each of 25 measure dataframe
     measures_sel = selector_rankfunct(selector)
-    measures_bm = [ build_bitmask(mdf, measures_sel) for mdf in measures_df ]
-    # compute ranking for each attribute
-    ranks = sum(measures_bm, dims=1)[1]
+    ranks = fill(0, n_cols)
+    for mdf in measures_df
+        ranks .+= build_bitmask(mdf, measures_sel)
+    end
+
     ranks = collect(enumerate(ranks))
     # sort rankings
     sort!(ranks; by=x->x[2], rev=true)
