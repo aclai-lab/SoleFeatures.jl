@@ -8,6 +8,7 @@ using DynamicAxisWarping
 using Reexport
 using Random
 using Catch22
+using LinearAlgebra
 
 export AbstractFeaturesSelector
 export VarianceThreshold
