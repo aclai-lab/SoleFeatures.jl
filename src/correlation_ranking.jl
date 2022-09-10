@@ -24,14 +24,18 @@ function selector_rankfunct(selector::CorrelationRanking)
     end
 end
 
-function build_bitmask(df::AbstractDataFrame, selector::CorrelationRanking)::BitVector
+function build_bitmask(
+    df::AbstractDataFrame,
+    selector::CorrelationRanking;
+    memorysaving=false
+)::BitVector
     n_cols = ncol(df)
     k = selector_k(selector)
 
     k > n_cols && return trues(ncol) # return immediately if 'k' is greater than columns number
 
     # compute rank (mean absolute correlation vector)
-    ranks = collect(enumerate(correlation(df, selector_rankfunct(selector))))
+    ranks = collect(enumerate(correlation(df, selector_rankfunct(selector); memory_saving=memorysaving)))
     # sort ranking
     sort!(ranks, by=x->x[2])
     # prepare bitmask

@@ -46,16 +46,19 @@ println("Start time test")
 # println()
 
 df = random_timeseries_df(;ninstances=ninstances, nattr=nattr, ts_len=ts_len)
-io = open("/home/painkiller/develop/SoleFeatures.jl/test/output.info", "rw")
+io = open("/home/painkiller/develop/SoleFeatures.jl/test/output.info", "w")
 
 println(io, "Start time experimenti:")
 println(io, "")
 println(io, "Correlation without memory_saving")
-b = @benchmark SoleFeatures.correlation($df, StatsBase.cor; memory_saving=false)
+flush(io)
+b = @benchmark SoleFeatures.correlation($df, StatsBase.cor; memory_saving=false) samples=2
 show(io, MIME"text/plain"(), b)
+flush(io)
 
 println(io, "")
 println(io, "Correlation with memory_saving")
-b = @benchmark SoleFeatures.correlation($df, StatsBase.cor; memory_saving=true)
+flush(io)
+b = @benchmark SoleFeatures.correlation($df, StatsBase.cor; memory_saving=true) samples=2
 show(io, MIME"text/plain"(), b)
 close(io)
