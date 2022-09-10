@@ -1,7 +1,10 @@
 struct CorrelationRanking <: AbstractFilterBased
     k::Int64
     cor_algorithm::Symbol
+    memorysaving::Bool
 
+    CorrelationRanking(k::Int64, cor_algorithm::Symbol, memorysaving::Bool) =
+        new(k, cor_algorithm, memorysaving)
     function CorrelationRanking(k::Int64, cor_algorithm::Symbol)
         if k < 0
             throw(ErrorException("k must be greater or equal 0"))
@@ -9,7 +12,7 @@ struct CorrelationRanking <: AbstractFilterBased
         if !(cor_algorithm in [:pearson, :spearman, :kendall])
             throw(ErrorException("cor_algorithm must be :pearson, :spearman, :kendall"))
         end
-        new(k, cor_algorithm)
+        new(k, cor_algorithm, false)
     end
 end
 
@@ -23,19 +26,21 @@ function selector_rankfunct(selector::CorrelationRanking)
         return StatsBase.corkendall
     end
 end
+selector_memorysaving(selector::CorrelationRanking) = selector.memorysaving
 
 function build_bitmask(
     df::AbstractDataFrame,
-    selector::CorrelationRanking;
-    memorysaving=false
+    selector::CorrelationRanking
 )::BitVector
     n_cols = ncol(df)
     k = selector_k(selector)
+    rf = selector_rankfunct(selector) # rank function
+    ms = selector_memorysaving(selector) # memory saving options
 
     k > n_cols && return trues(ncol) # return immediately if 'k' is greater than columns number
 
     # compute rank (mean absolute correlation vector)
-    ranks = collect(enumerate(correlation(df, selector_rankfunct(selector); memory_saving=memorysaving)))
+    ranks = collect(enumerate(correlation(df, rf; memorysaving=ms)))
     # sort ranking
     sort!(ranks, by=x->x[2])
     # prepare bitmask

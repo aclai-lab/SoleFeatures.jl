@@ -64,7 +64,7 @@ Returns mean absolute correlation vector, based on dtw
 ## ARGUMENTS
 - `df::AbstractDataFrame`: DataFrame on which to calculate mean absolute correlation vector
 - `corf::Function`: correlation function, function that generates the correlation matrix
-- `memory_saving::Bool`: calculate dtw each time for each column, should only be used in a large dataset (does not affect `df` with zero dimension data)
+- `memorysaving::Bool`: calculate dtw each time for each column, should only be used in a large dataset (does not affect `df` with zero dimension data)
 """
 function correlation(
     df::AbstractDataFrame,
