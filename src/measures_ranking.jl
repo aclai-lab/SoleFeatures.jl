@@ -11,16 +11,16 @@ struct MeasuresRanking <: AbstractFilterBased
 end
 
 # switch to constants.jl or utils.jl
-_MEASURES_NAMES = [getnames(catch22)..., :mean, :min, :max]
-_MEASURES = Dict()
-[ push!(_MEASURES, name => catch22[name]) for name in getnames(catch22) ]
-push!(_MEASURES, :mean => StatsBase.mean)
-push!(_MEASURES, :min => minimum)
-push!(_MEASURES, :max => maximum)
+_MEASURES_NAMES = [ getnames(catch22)..., :mean, :min, :max ]
+_MEASURES = Dict{Symbol, Function}(
+    :mean => Statistics.mean,
+    :min => minimum,
+    :max => maximum,
+    (getnames(catch22) .=> catch22)...
+)
 
 selector_k(selector::MeasuresRanking) = selector.k
 selector_rankfunct(selector::MeasuresRanking) = selector.measures_selector
-
 
 function build_bitmask(df::AbstractDataFrame, selector::MeasuresRanking)::BitVector
     # TODO: warning if user provide selector with strange parameters
@@ -28,7 +28,7 @@ function build_bitmask(df::AbstractDataFrame, selector::MeasuresRanking)::BitVec
     k = selector_k(selector)
     n_cols = ncol(df)
 
-    k > n_cols && return trues(n_cols) # return immediately if 'k' is greater than columns number
+    k >= n_cols && return trues(n_cols) # return immediately if 'k' is greater than columns number
 
     # build df for each measure (measures_df is Vecotr of df)
     # measures_df = [ _MEASURES[name].(df) for name in _MEASURES_NAMES ] # On inswectWingbeat 697s
@@ -50,13 +50,9 @@ function build_bitmask(df::AbstractDataFrame, selector::MeasuresRanking)::BitVec
         ranks .+= build_bitmask(mdf, measures_sel)
     end
 
-    ranks = collect(enumerate(ranks))
-    # sort rankings
-    sort!(ranks; by=x->x[2], rev=true)
-    # prepare bitmask
+    bestidxes = sortperm(ranks; rev=true)[1:k]
+
     bm = falses(n_cols)
-    for r in ranks[1:k]
-        bm[r[1]] = true
-    end
+    bm[bestidxes] .= true
     return bm
 end
