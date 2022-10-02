@@ -41,37 +41,5 @@ function build_bitmask(
     df::AbstractDataFrame,
     selector::AbstractFeaturesSelector
 )::BitVector
-    return error("`build_bitmask` not implmented for type: "
-                 *
-                 string(typeof(selector)))
-end
-
-# -----------------------------------------------------------------------------------------
-# AbstractFilterBased - threshold
-
-function selector_threshold(selector::AbstractFilterBased)
-    return error("`selector_threshold` not implmented for type: "
-                 *
-                 string(typeof(selector)))
-end
-
-function selector_function(selector::AbstractFilterBased)
-    return error("`selector_function` not implmented for type: "
-                 *
-                 string(typeof(selector)))
-end
-
-# -----------------------------------------------------------------------------------------
-# AbstractFilterBased - ranking
-
-function selector_k(selector::AbstractFilterBased)
-    return error("`selector_k` not implmented for type: "
-                 *
-                 string(typeof(selector)))
-end
-
-function selector_rankfunct(selector::AbstractFilterBased)
-    return error("`selector_rankfunct` not implmented for type: "
-                 *
-                 string(typeof(selector)))
+    return error("`build_bitmask` not implmented for type: " * string(typeof(selector)))
 end
