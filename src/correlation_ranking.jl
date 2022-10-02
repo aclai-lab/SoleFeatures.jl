@@ -33,6 +33,7 @@ function build_bitmask(df::AbstractDataFrame, selector::CorrelationRanking)::Bit
     k = selector_k(selector)
     rf = selector_rankfunct(selector)
     ms = selector_memorysaving(selector)
+    mtrx = Matrix(df)
     dims = [ maximum(ndims.(c)) for c in eachcol(mtrx) ]
     d = dims[1]
 

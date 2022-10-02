@@ -29,6 +29,7 @@ function build_bitmask(df::AbstractDataFrame, selector::CorrelationThreshold)::B
     thr = threshold(selector)
     cf = corfunction(selector)
     ms = selector_memorysaving(selector)
+    mtrx = Matrix(df)
     dims = [ maximum(ndims.(c)) for c in eachcol(mtrx) ]
     d = dims[1]
 
