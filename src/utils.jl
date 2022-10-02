@@ -43,14 +43,6 @@ function minmax_normalize(
     return norm_df
 end
 
-function minmax_normalize_wrapper(min_quantile::Float64=0.0, max_quantile::Float64=1.0)
-    return (df) -> minmax_normalize(
-        df;
-        min_quantile=min_quantile,
-        max_quantile=max_quantile
-    )
-end
-
 function minmax_normalize(
     mfd::SoleBase.MultiFrameDataset,
     frame_index::Integer;
@@ -98,14 +90,21 @@ function _fr_bm2mfd_bm(
 end
 
 """
-    _bm2attr
+    bm2attr
 
 return tuple containing names of suitable attributes and names of not suitable attributes
 """
-function _bm2attr(mfd::SoleBase.MultiFrameDataset, bm::BitVector)
-    df = SoleBase.SoleData.SoleDataset.data(mfd)
+function bm2attr(mfd::SoleBase.MultiFrameDataset, bm::BitVector)
+    return bm2attr(SoleBase.SoleData.SoleDataset.data(mfd), bm)
+end
+
+function bm2attr(mfd::SoleBase.MultiFrameDataset, fridx::Integer, bm::BitVector)
+    return bm2attr(SoleBase.frame(mfd, fridx), bm)
+end
+
+function bm2attr(df::AbstractDataFrame, bm::BitVector)
     attr = names(df)
-    good_attr = attr[findall(==(true), bm)]
-    bad_attr = attr[findall(==(false), bm)]
+    good_attr = attr[findall(bm)]
+    bad_attr = attr[findall(!, bm)]
     return good_attr, bad_attr
 end
