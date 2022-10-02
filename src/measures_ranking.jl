@@ -13,7 +13,7 @@ end
 # switch to constants.jl or utils.jl
 _MEASURES_NAMES = [ getnames(catch22)..., :mean, :min, :max ]
 _MEASURES = Dict{Symbol, Function}(
-    :mean => Statistics.mean,
+    :mean => StatsBase.mean,
     :min => minimum,
     :max => maximum,
     (getnames(catch22) .=> catch22)...
