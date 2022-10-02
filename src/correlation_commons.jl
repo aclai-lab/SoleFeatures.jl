@@ -8,19 +8,20 @@ Returns a matrix of nr*(nr-1)/2 rows (with nr number of rows in `df`) and nc col
 ## ARGUMENTS
 - `df::AbstractDataFrame`: DataFrame on which to calculate DTW
 """
-_compute_dtw(mtrx::AbstractMatrix; dim=1) = __compute_dtw(mtrx, dim)
-_compute_dtw(df::AbstractDataFrame; kwargs...) = _compute_dtw(Matrix(df); kwargs...)
+# _compute_dtw(mtrx::AbstractMatrix; dim=1) = __compute_dtw(mtrx, dim)
+_compute_dtw(df::AbstractDataFrame) = _compute_dtw(Matrix(df))
 
-function __compute_dtw(mtrx::AbstractMatrix, dim::Val{<:Integer})::Array{Float64,2}
+function _compute_dtw(mtrx::AbstractMatrix)::Array{Float64,2}
+    dim = 1 # transofrm in parameter
     ns = collect(size(mtrx))
     ns[dim] = Int((ns[dim] * (ns[dim] - 1)) / 2)
     # distances matrix
     dtwmtrx = Array{Float64,2}(undef, ns...)
 
     # computation of the dtw for each timeseries in a column for each attribute in df
-    d = size(mtrx, dim)
+    d = size(mtrx, 2)
     Threads.@threads for idx in 1:d
-        index = dim == 1 ? (:, idx) : (idx, :)
+        index = (:, idx)
         dtwvector = _compute_dtw(mtrx[index...])
         dtwmtrx[index...] = dtwvector
     end
