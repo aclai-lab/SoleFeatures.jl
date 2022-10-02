@@ -8,18 +8,23 @@ Returns a matrix of nr*(nr-1)/2 rows (with nr number of rows in `df`) and nc col
 ## ARGUMENTS
 - `df::AbstractDataFrame`: DataFrame on which to calculate DTW
 """
-function _compute_dtw(df::AbstractDataFrame)::Array{Float64,2}
-    nr, nc = size(df)
-    # number of rows in the result matrix
-    nrm = Int((nr * (nr - 1)) / 2)
+_compute_dtw(mtrx::AbstractMatrix; dim=1) = __compute_dtw(mtrx, dim)
+_compute_dtw(df::AbstractDataFrame; kwargs...) = _compute_dtw(Matrix(df); kwargs...)
+
+function __compute_dtw(mtrx::AbstractMatrix, dim::Val{<:Integer})::Array{Float64,2}
+    ns = collect(size(mtrx))
+    ns[dim] = Int((ns[dim] * (ns[dim] - 1)) / 2)
     # distances matrix
-    dtwmtrx = Array{Float64,2}(undef, nrm, nc)
+    dtwmtrx = Array{Float64,2}(undef, ns...)
 
     # computation of the dtw for each timeseries in a column for each attribute in df
-    Threads.@threads for cidx in 1:nc
-        dtwvector = _compute_dtw(df[!, cidx])
-        dtwmtrx[!, cidx] = dtwvector
+    d = size(mtrx, dim)
+    Threads.@threads for idx in 1:d
+        index = dim == 1 ? (:, idx) : (idx, :)
+        dtwvector = _compute_dtw(mtrx[index...])
+        dtwmtrx[index...] = dtwvector
     end
+
     return dtwmtrx
 end
 
@@ -30,9 +35,10 @@ function _compute_dtw(v::AbstractVector)::Vector{Float64}
     Threads.@threads for i in 1:(len-1)
         Threads.@threads for j in (i+1):len
             # calculate index in distances vector
-            blk = len - i
-            nump = Int(blk * (blk + 1) / 2)
-            startidx = newlen - nump
+            # blk = len - i
+            # nump = Int(blk * (blk + 1) / 2)
+            # startidx = newlen - nump
+            startidx = Int((2*len - i) * (i - 1) / 2)
             idx = startidx + (j - i)
             # dtw returns cost and a set of indices (i1,i2) that align the two serie, so only cost (dtw(...)[1])
             # have to be extracted
@@ -43,49 +49,80 @@ function _compute_dtw(v::AbstractVector)::Vector{Float64}
     return distances
 end
 
-function _correlation_memory_saving(df::AbstractDataFrame, corf::Function)
-    nc = ncol(df)
+function _correlation_dtw_memory_saving(mtrx::AbstractMatrix, corf::Function)
+    nc = size(mtrx, 2)
     cormtrx = Matrix{Float64}(I, nc, nc)
     for i in 1:(nc-1)
-        col = _compute_dtw(df[:, i])
+        col = _compute_dtw(mtrx[:, i])
         for j in (i+1):nc
-            compcol = _compute_dtw(df[:, j])
+            compcol = _compute_dtw(mtrx[:, j])
             cormtrx[i,j] = cormtrx[j,i] = corf(col, compcol)
         end
     end
     return cormtrx
 end
 
-"""
-    correlation(df, corf)
+function _old_findcorrelation(
+    cormtrx::AbstractMatrix;
+    nbest::Union{Nothing, Integer}=nothing,
+    exact::Bool=false,
+    returncorvect::Bool=false
+)
+    nr, nc = size(cormtrx)
 
-Returns mean absolute correlation vector, based on dtw
+    (nr != nc) && throw(DimensionMismatch("provided not valid correlation matrix"))
+    !isnothing(nbest) && (0 <= nbest > nr) &&
+        throw("nbest must be <= of cormatrx dim and > 0")
 
-## ARGUMENTS
-- `df::AbstractDataFrame`: DataFrame on which to calculate mean absolute correlation vector
-- `corf::Function`: correlation function, function that generates the correlation matrix
-- `memorysaving::Bool`: calculate dtw each time for each column, should only be used in a large dataset (does not affect `df` with zero dimension data)
-"""
-function correlation(
-    df::AbstractDataFrame,
-    corf::Function;
-    memorysaving::Bool=false
-)::Array{Float64}
-    dim = SoleBase.dimension(df)
-    if (dim == 0)
-        cormtrx = corf(Matrix(df))
-    elseif (dim == 1)
-        cormtrx = memorysaving ?
-            _correlation_memory_saving(df, corf) : corf(_compute_dtw(df))
-    else
-        throw("Unimplemented for dimension >1")
-    end
+    isnothing(nbest) && (nbest = nr)
 
     # absolute value of each correlation coefficient
     cormtrx = abs.(cormtrx)
-    # NaN values obtained from equal time series are converted into 1 (max correlation)
-    replace!(cormtrx, NaN => 1)
-    # calculate avg of correlation matrix per column (mean absolute correlation vector)
-    avg_vector = vec(mean(cormtrx, dims=1))
-    return avg_vector
+
+    if (exact)
+        macv = []
+        macvidx = []
+        oidxes = collect(1:nr)
+        for i in 1:nbest
+            m = vec(mean(view(cormtrx, Not(macvidx), Not(macvidx)), dims=1))
+            cbidx = sortperm(m)[1]
+            bidx = view(oidxes, Not(macvidx))[cbidx]
+            push!(macv, m[cbidx])
+            push!(macvidx, bidx)
+        end
+    else
+        macv = vec(mean(cormtrx, dims=1))
+        macvidx = sortperm(macv)[1:nbest]
+    end
+
+    return ( returncorvect ? (macvidx, macv) : macvidx )
+end
+
+"""
+    findcorrelation(cormtrx; threshold)
+"""
+function findcorrelation(cormtrx::AbstractMatrix; threshold::AbstractFloat=0.0)
+    nr, nc = size(cormtrx)
+
+    (nr != nc) && throw(DimensionMismatch("provided not valid correlation matrix"))
+    (0.0 < threshold > 1.0) && throw(ArgumentError("threshold must be between 0.0 and 1.0"))
+
+    cormtrx = abs.(cormtrx)
+    macv = vec(mean(cormtrx, dims=1)) # mean absolute correlation vector
+    # preparing correlation matrix
+    cormtrx[diagind(cormtrx)] .= -Inf
+    cormtrx = UpperTriangular(cormtrx)
+    oidxes = collect(1:nr) # original indices
+    cvidx = [] # correlation vector indices
+
+    for _ in 1:nr
+        vcormtrx = view(cormtrx, Not(cvidx), Not(cvidx))
+        mc1, mc2 = Tuple(findmax(vcormtrx)[2]) # indices of most correlated attributes
+        vcormtrx[mc1, mc2] < threshold && break
+        mcidx = macv[mc1] >= macv[mc2] ? mc1 : mc2
+        bidx = view(oidxes, Not(cvidx))[mcidx]
+        push!(cvidx, bidx)
+    end
+
+    return iszero(threshold) ? reverse(cvidx) : setdiff(oidxes, cvidx)
 end

@@ -13,8 +13,8 @@ struct CorrelationThreshold <: AbstractFilterBased
     end
 end
 
-selector_threshold(selector::CorrelationThreshold) = selector.threshold
-function selector_function(selector::CorrelationThreshold)
+threshold(selector::CorrelationThreshold) = selector.threshold
+function corfunction(selector::CorrelationThreshold)
     if selector.cor_algorithm == :pearson
         return StatsBase.cor
     elseif selector.cor_algorithm == :spearman
@@ -24,10 +24,30 @@ function selector_function(selector::CorrelationThreshold)
     end
 end
 
-function build_bitmask(
-    df::AbstractDataFrame,
-    selector::CorrelationThreshold
-)::BitVector
-    avg_vector = correlation(df, selector_function(selector))
-    return BitVector(map(x->(x <= selector_threshold(selector)), avg_vector))
+function build_bitmask(df::AbstractDataFrame, selector::CorrelationThreshold)::BitVector
+    n_cols = ncol(df)
+    thr = threshold(selector)
+    cf = corfunction(selector)
+    ms = selector_memorysaving(selector)
+    dims = [ maximum(ndims.(c)) for c in eachcol(mtrx) ]
+    d = dims[1]
+
+    !all(==(d), dims) && throw(DimensionMismatch("different dimensions not allowed"))
+
+    # return immediately if 'k' is greater than columns number
+    k > n_cols && return trues(ncol)
+
+    if (d == 0)
+        cormtrx = cf(mtrx)
+    elseif (d == 1)
+        cormtrx = ms ? _correlation_memory_saving(mtrx, cf) : cf(_compute_dtw(df))
+    else
+        throw("Unimplemented for dimension >1")
+    end
+
+    idxes = findcorrelation(cormtrx, threshold=thr)
+
+    bm = falses(n_cols)
+    bm[idxes] .= true
+    return bm
 end
