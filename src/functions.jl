@@ -1,106 +1,59 @@
-# function apply(df::AbstractDataFrame, bm::BitVector)
-#     TODO: maybe a day it will implmented
-#     indices = findall(==(true), bm)
-#     return select(df, indices)
-# end
-
 function apply!(df::AbstractDataFrame, bm::BitVector)
-    indices = findall(==(true), bm)
-    return select!(df, indices)
+    ncol(df) != length(bm) && throw(DimensionMismatch(""))
+    return select!(df, findall(bm))
 end
 
 function apply!(mfd::SoleBase.AbstractMultiFrameDataset, bm::BitVector)
-    indices = findall(==(false), bm)
-    return SoleBase.SoleDataset.dropattributes!(mfd, indices)
+    nattributes(mfd) != length(bm) && throw(DimensionMismatch(""))
+    return SoleBase.SoleDataset.dropattributes!(mfd, findall(!, bm))
 end
 
 function apply!(mfd::SoleBase.AbstractMultiFrameDataset, bms::AbstractVector{BitVector})
     nframe(mfd) != length(bms) && throw(DimensionMismatch(""))
-    bm = reduce(vcat, bms) # concat bitmask vectors in one vector
-    return apply!(mfd, bm)
+    return apply!(mfd, reduce(vcat, bms))
 end
 
 function apply!(
     mfd::SoleBase.AbstractMultiFrameDataset,
-    selector::AbstractFeaturesSelector;
-    normalize_function=nothing
+    selector::AbstractFeaturesSelector
 )
     df = SoleBase.SoleDataset.data(mfd)
-    @assert all(col -> (col isa Union{Array{<:Number},Number}),
-        collect(Iterators.flatten(eachcol(df))))
-    "Attributes are not numerical type"
-
-    if !isnothing(normalize_function)
-        df_norm = normalize_function(df)
-        bm = build_bitmask(df_norm, selector)
-    else
-        bm = build_bitmask(df, selector)
-    end
-
+    bm = build_bitmask(df, selector)
     return apply!(mfd, bm)
 end
 
 function apply!(
     mfd::SoleBase.AbstractMultiFrameDataset,
     selector::AbstractFeaturesSelector,
-    frame_indices::Union{Integer, Array{Integer}};
-    normalize_function=nothing
+    fr_indices::Union{Integer, Array{Integer}}
 )
-    frame_indices = !isa(frame_indices, Array) ? [frame_indices] : frame_indices
-    for idx in frame_indices
-        # frame from 'frame_index'
+    fr_indices = [fr_indices...]
+    for idx in fr_indices
         fr = SoleBase.frame(mfd, idx)
-        @assert all(col->(col isa Union{Array{<:Number},Number}),
-                    collect(Iterators.flatten(eachcol(fr))))
-                        "Attributes are not numerical type"
-
-        # check if the frame needs normalization
-        if !isnothing(normalize_function)
-            fr_norm = normalize_function(fr)
-            fr_bm = build_bitmask(fr_norm, selector)
-        else
-            fr_bm = build_bitmask(fr, selector)
-        end
-
-        bm = _fr_bm2mfd_bm(mfd, idx, fr_bm)
-
+        frbm = build_bitmask(fr, selector)
+        bm = _fr_bm2mfd_bm(mfd, idx, frbm)
         apply!(mfd, bm)
     end
-
     return mfd
 end
 
-function apply(df::DataFrame, bm::BitVector)
-    ndf = deepcopy(df)
-    apply!(ndf, bm)
-    return ndf
-end
+apply(df::AbstractDataFrame, bm::BitVector) = apply!(deepcopy(df), bm)
 
-function apply(mfd::SoleBase.AbstractMultiFrameDataset, bm::BitVector)
-    nmfd = deepcopy(mfd)
-    apply!(nmfd, bm)
-    return nmfd
-end
+apply(mfd::SoleBase.AbstractMultiFrameDataset, bm::BitVector) = apply!(deepcopy(mfd), bm)
 
 function apply(
     mfd::SoleBase.AbstractMultiFrameDataset,
-    selector::AbstractFeaturesSelector;
-    normalize_function=nothing
+    selector::AbstractFeaturesSelector
 )
-    mfd_clone = deepcopy(mfd)
-    apply!(mfd_clone, selector; normalize_function=normalize_function)
-    return mfd_clone
+    return apply!(deepcopy(mfd), selector)
 end
 
 function apply(
     mfd::SoleBase.AbstractMultiFrameDataset,
     selector::AbstractFeaturesSelector,
     frame_indices::Union{Integer, Array{Integer}};
-    normalize_function=nothing
 )
-    mfd_clone = deepcopy(mfd)
-    apply!(mfd_clone, selector, frame_indices; normalize_function=normalize_function)
-    return mfd_clone
+    return apply!(deepcopy(mfd), selector, frame_indices)
 end
 
 function build_bitmask(
