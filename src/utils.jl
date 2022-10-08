@@ -80,12 +80,21 @@ return bitmask for entire MultiFrameDataset from a frame of it
 """
 function _fr_bm2mfd_bm(
     mfd::SoleBase.MultiFrameDataset,
-    frame_index::Integer,
-    frame_bm::BitVector
+    frameidxes::Union{Integer, AbstractVector{<:Integer}},
+    framebms::Union{BitVector, AbstractVector{<:BitVector}}
 )::BitVector
-    fr_indices = SoleBase.SoleDataset.frame_descriptor(mfd)[frame_index] # frame indices inside mfd
+    frameidxes = [ frameidxes... ]
+    isa(framebms, BitVector) && (framebms = [ framebms ])
+
+    length(frameidxes) != length(framebms) && throw(DimensionMismatch(""))
+
     bm = trues(nattributes(mfd))
-    bm[fr_indices] = frame_bm
+    for i in 1:length(frameidxes)
+        fridx = frameidxes[i]
+        frbm = framebms[i]
+        framedescr = SoleBase.SoleDataset.frame_descriptor(mfd)[fridx] # frame indices inside mfd
+        bm[framedescr] = frbm
+    end
     return bm
 end
 
@@ -107,4 +116,19 @@ function bm2attr(df::AbstractDataFrame, bm::BitVector)
     good_attr = attr[findall(bm)]
     bad_attr = attr[findall(!, bm)]
     return good_attr, bad_attr
+end
+
+function _dropattr_fromframe!(
+    mfd::AbstractMultiFrameDataset,
+    frmidx::Integer,
+    frmattridx::Union{Integer, AbstractVector{<:Integer}}
+)
+    frmattridx = [ frmattridx... ]
+    nattrfrm = nattributes(mfd, frmidx)
+
+    !(1 <= frmidx <= nframes(mfd)) && throw(DimensionMismatch("frmidx"))
+
+    attridx = SoleBase.SoleDataset.frame_descriptor(mfd)[frmidx][frmattridx]
+
+    return SoleBase.dropattributes!(mfd, attridx)
 end

@@ -1,68 +1,74 @@
-function apply!(df::AbstractDataFrame, bm::BitVector)
+"""
+    transform!(df, args..; kwargs...)
+    transform!(mfd, args..; kwargs...)
+
+Removes from provided DataFrame attributes indicated by bitmask or selector
+
+# Arguments
+
+- `df::AbstractDataFrame`: Dataset
+- `mfd::MultiFrameDataset`: Dataset
+- `bm::BitVector`: Vector of bit containing which attributes are suitable(1) or not(0)
+- `selector::AbstractFeaturesSelector`: Selector
+
+# Keywords
+- `frmidx::Integer`: Frame index inside `mfd`
+"""
+function transform!(df::AbstractDataFrame, bm::BitVector)
     ncol(df) != length(bm) && throw(DimensionMismatch(""))
     return select!(df, findall(bm))
 end
 
-function apply!(mfd::SoleBase.AbstractMultiFrameDataset, bm::BitVector)
-    nattributes(mfd) != length(bm) && throw(DimensionMismatch(""))
-    return SoleBase.SoleDataset.dropattributes!(mfd, findall(!, bm))
+function transform!(df::AbstractDataFrame, selector::AbstractFeaturesSelector)
+    return transform!(df, buildbitmask(df, selector))
 end
 
-function apply!(mfd::SoleBase.AbstractMultiFrameDataset, bms::AbstractVector{BitVector})
-    nframe(mfd) != length(bms) && throw(DimensionMismatch(""))
-    return apply!(mfd, reduce(vcat, bms))
-end
-
-function apply!(
+function transform!(
     mfd::SoleBase.AbstractMultiFrameDataset,
-    selector::AbstractFeaturesSelector
+    bm::BitVector;
+    frmidx::Union{Integer, Nothing} = nothing
 )
-    df = SoleBase.SoleDataset.data(mfd)
-    bm = build_bitmask(df, selector)
-    return apply!(mfd, bm)
-end
-
-function apply!(
-    mfd::SoleBase.AbstractMultiFrameDataset,
-    selector::AbstractFeaturesSelector,
-    fr_indices::Union{Integer, Array{Integer}}
-)
-    fr_indices = [fr_indices...]
-    for idx in fr_indices
-        fr = SoleBase.frame(mfd, idx)
-        frbm = build_bitmask(fr, selector)
-        bm = _fr_bm2mfd_bm(mfd, idx, frbm)
-        apply!(mfd, bm)
+    if (isnothing(frmidx))
+        nattributes(mfd) != length(bm) && throw(DimensionMismatch(""))
+        return SoleBase.SoleDataset.dropattributes!(mfd, findall(!, bm))
+    else
+        nattributes(mfd, frmidx) != length(bm) && thow(DimensionMismatch(""))
+        return _dropattr_fromframe!(mfd, frmidx, findall(!, bm))
     end
-    return mfd
 end
 
-apply(df::AbstractDataFrame, bm::BitVector) = apply!(deepcopy(df), bm)
-
-apply(mfd::SoleBase.AbstractMultiFrameDataset, bm::BitVector) = apply!(deepcopy(mfd), bm)
-
-function apply(
+function transform!(
     mfd::SoleBase.AbstractMultiFrameDataset,
-    selector::AbstractFeaturesSelector
+    selector::AbstractFeaturesSelector;
+    frmidx::Union{Integer, Nothing} = nothing
 )
-    return apply!(deepcopy(mfd), selector)
+    if (isnothing(frmidx))
+        bm = buildbitmask(SoleBase.SoleDataset.data(mfd), selector)
+    else
+        bm = buildbitmask(SoleBase.frame(mfd, frmidx), selector)
+    end
+    return transform!(mfd, bm; frmidx=frmidx)
 end
 
-function apply(
-    mfd::SoleBase.AbstractMultiFrameDataset,
-    selector::AbstractFeaturesSelector,
-    frame_indices::Union{Integer, Array{Integer}};
-)
-    return apply!(deepcopy(mfd), selector, frame_indices)
-end
+transform(df::AbstractDataFrame, args...; kwargs...) = transform!(deepcopy(df), args...; kwargs...)
+transform(mfd::SoleBase.AbstractMultiFrameDataset, args...; kwargs...) = transform!(deepcopy(mfd), args...; kwargs...)
 
-function build_bitmask(
+function buildbitmask(
     mfd::SoleBase.MultiFrameDataset,
-    frame_index::Integer,
+    frmidx::Integer,
     selector::AbstractFeaturesSelector
 )::Tuple{BitVector, BitVector}
-    fr = SoleBase.frame(mfd, frame_index)
-    fr_bm = build_bitmask(fr, selector) # frame bitmask
-    bm = _fr_bm2mfd_bm(mfd, frame_index, fr_bm)
-    return bm, fr_bm
+    frbm = buildbitmask(SoleBase.frame(mfd, frmidx), selector) # frame bitmasks
+    bm = _fr_bm2mfd_bm(mfd, frmidx, frbm)
+    return bm, frbm
+end
+
+function buildbitmask(
+    df::AbstractDataFrame,
+    selector::AbstractFeaturesSelector
+)::BitVector
+    idxes = apply(df, selector)
+    bm = falses(size(df, 2))
+    bm[idxes] .= true
+    return bm
 end

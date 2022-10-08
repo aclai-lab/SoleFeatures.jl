@@ -10,14 +10,19 @@ using Random
 using Catch22
 using LinearAlgebra
 
+# abstracts
 export AbstractFeaturesSelector
+# structs
 export VarianceThreshold
 export VarianceRanking
 export CorrelationRanking
 export CorrelationThreshold
 export RandomRanking
 export MeasuresRanking
-export build_bitmask, apply, apply!
+# main functions
+export apply, buildbitmask, transform, transform!
+# utils
+export bm2attr
 
 @reexport using DataFrames
 @reexport using SoleBase
@@ -26,12 +31,16 @@ export build_bitmask, apply, apply!
 include("./utils.jl")
 include("./interfaces.jl")
 include("./functions.jl")
-include("./variance_threshold.jl")
-include("./variance_ranking.jl")
-include("./correlation_commons.jl")
-include("./correlation_threshold.jl")
-include("./correlation_ranking.jl")
+# variance
+include("./variance/variance_threshold.jl")
+include("./variance/variance_ranking.jl")
+# correlation
+include("./correlation/utils.jl")
+include("./correlation/correlation_threshold.jl")
+include("./correlation/correlation_ranking.jl")
+# random
 include("./random_ranking.jl")
+# measures
 include("./measures_ranking.jl")
 
 end # module

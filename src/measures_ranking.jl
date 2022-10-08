@@ -22,8 +22,7 @@ _MEASURES = Dict{Symbol, Function}(
 selector_k(selector::MeasuresRanking) = selector.k
 selector_rankfunct(selector::MeasuresRanking) = selector.measures_selector
 
-function build_bitmask(df::AbstractDataFrame, selector::MeasuresRanking)::BitVector
-    # TODO: warning if user provide selector with strange parameters
+function apply(df::AbstractDataFrame, selector::MeasuresRanking)::Vector{Integer}
     mrlock = ReentrantLock()
     k = selector_k(selector)
     n_cols = ncol(df)
@@ -47,12 +46,9 @@ function build_bitmask(df::AbstractDataFrame, selector::MeasuresRanking)::BitVec
     measures_sel = selector_rankfunct(selector)
     ranks = fill(0, n_cols)
     for mdf in measures_df
-        ranks .+= build_bitmask(mdf, measures_sel)
+        ranks .+= buildbitmask(mdf, measures_sel)
     end
 
     bestidxes = sortperm(ranks; rev=true)[1:k]
-
-    bm = falses(n_cols)
-    bm[bestidxes] .= true
-    return bm
+    return bestidxes
 end
