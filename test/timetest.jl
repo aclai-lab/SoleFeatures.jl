@@ -20,10 +20,10 @@ println("Start time test")
 # vt = VarianceThreshold(0.09)
 
 # println("VarianceThreshold build bitmask...")
-# bm, fr_bm = @benchmarkable  SoleFeatures.build_bitmask(nmfd, frame_num, vt) setup=(mfd = random_timeseries_mfd(;ninstances=10000, nattr=300, ts_len=100);)
+# bm, fr_bm = @benchmarkable  SoleFeatures.buildbitmask(nmfd, frame_num, vt) setup=(mfd = random_timeseries_mfd(;ninstances=10000, nattr=300, ts_len=100);)
 
 # println("VarianceThreshold apply bitmask...")
-# @benchmarkable  mfd_generated = SoleFeatures.apply(mfd, bm)
+# @benchmarkable  mfd_generated = SoleFeatures.transform(mfd, bm)
 
 # nattr = SoleBase.SoleDataset.nattributes(mfd, 1)
 
@@ -36,12 +36,12 @@ println("Start time test")
 # bm = build_fake_bit_mask(nattr)
 
 # println("CorrelationRanking build bitmask...")
-# b = @benchmark SoleFeatures.build_bitmask(mfd, frame_num, cr) setup=(mfd=$mfd)
+# b = @benchmark SoleFeatures.buildbitmask(mfd, frame_num, cr) setup=(mfd=$mfd)
 # show(stdout, MIME"text/plain"(), b)
 # println()
 
 # println("CorrelationRanking apply bitmask...")
-# b = @benchmark SoleFeatures.apply(mfd, bm) setup=(mfd=$mfd, bm=$bm)
+# b = @benchmark SoleFeatures.transform(mfd, bm) setup=(mfd=$mfd, bm=$bm)
 # show(stdout, MIME"text/plain"(), b)
 # println()
 
