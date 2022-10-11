@@ -7,6 +7,11 @@ struct VarianceRanking <: AbstractFilterBased
     end
 end
 
+# traits
+is_multivariate(::VarianceRanking) = true
+is_unsupervised(::VarianceRanking) = true
+
+# getter
 nbest(selector::VarianceRanking) = selector.nbest
 
 function apply(df::AbstractDataFrame, selector::VarianceRanking)::Vector{Integer}

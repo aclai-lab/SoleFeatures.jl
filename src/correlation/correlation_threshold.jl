@@ -16,6 +16,11 @@ struct CorrelationThreshold <: AbstractCorrelationFilter
     end
 end
 
+# traits
+is_multivariate(::CorrelationThreshold) = true
+is_unsupervised(::CorrelationThreshold) = true
+
+# getter
 threshold(selector::CorrelationThreshold) = selector.threshold
 
 function apply(df::AbstractDataFrame, selector::CorrelationThreshold)::Vector{Integer}

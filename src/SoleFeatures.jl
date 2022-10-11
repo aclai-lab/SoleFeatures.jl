@@ -4,6 +4,7 @@
 module SoleFeatures
 
 using StatsBase
+using SoleTraits
 using DynamicAxisWarping
 using Reexport
 using Random
@@ -26,7 +27,7 @@ export bm2attr
 
 @reexport using DataFrames
 @reexport using SoleBase
-@reexport using Revise
+@reexport using SoleTraits
 
 include("./utils.jl")
 include("./interfaces.jl")

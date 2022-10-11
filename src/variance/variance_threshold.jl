@@ -8,6 +8,11 @@ struct VarianceThreshold <: AbstractFilterBased
     end
 end
 
+# traits
+is_univariate(::VarianceThreshold) = true
+is_unsupervised(::VarianceThreshold) = true
+
+# getter
 threshold(selector::VarianceThreshold) = selector.threshold
 
 function apply(df::AbstractDataFrame, selector::VarianceThreshold)::Vector{Integer}

@@ -19,6 +19,11 @@ _MEASURES = Dict{Symbol, Function}(
     (getnames(catch22) .=> catch22)...
 )
 
+# traits
+is_multivariate(::CorrelationRanking) = true
+is_unsupervised(::CorrelationRanking) = true
+
+# getter
 selector_k(selector::MeasuresRanking) = selector.k
 selector_rankfunct(selector::MeasuresRanking) = selector.measures_selector
 

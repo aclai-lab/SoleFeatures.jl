@@ -6,6 +6,11 @@ struct RandomRanking <: AbstractFilterBased
     RandomRanking(nbest::Integer, rnd_seed::Integer) = new(nbest, rnd_seed)
 end
 
+# traits
+is_univariate(::RandomRanking) = true
+is_unsupervised(::RandonRanking) = true
+
+# getter
 nbest(selector::RandomRanking) = selector.nbest
 seed(selector::RandomRanking) = selector.rnd_seed
 

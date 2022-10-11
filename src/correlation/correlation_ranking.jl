@@ -14,6 +14,11 @@ struct CorrelationRanking <: AbstractCorrelationFilter
     CorrelationRanking(k::Int64, cor_algorithm::Symbol) = new(k, cor_algorithm, false)
 end
 
+# traits
+is_multivariate(::CorrelationRanking) = true
+is_unsupervised(::CorrelationRanking) = true
+
+# getter
 nbest(selector::CorrelationRanking) = selector.nbest
 
 function apply(df::AbstractDataFrame, selector::CorrelationRanking)::Vector{Integer}
