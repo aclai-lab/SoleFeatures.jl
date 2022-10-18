@@ -7,27 +7,31 @@ Abstract supertype for all features selector.
 A concrete subtype of AbstractFeaturesSelector should always provide functions
 [`transform`](@ref) and [`build_bit_mask`](@ref)
 """
-abstract type AbstractFeaturesSelector end
+abstract type AbstractFeaturesSelector{T<:AbstractLimiter} end
 
 """
 Abstract supertype filter based selector.
 """
-abstract type AbstractFilterBased <: AbstractFeaturesSelector end
+abstract type AbstractFilterBased{T<:AbstractFilterLimiter} <: AbstractFeaturesSelector{T} end
 
 """
 Abstract supertype filter based selector.
 """
-abstract type AbstractWrapperBased <: AbstractFeaturesSelector end
+abstract type AbstractWrapperBased{T<:AbstractWrapperLimiter} <: AbstractFeaturesSelector{T} end
 
 """
 Abstract supertype filter based selector.
 """
-abstract type AbstractEmbeddedBased <: AbstractFeaturesSelector end
+abstract type AbstractEmbeddedBased{T<:AbstractEmbeddedLimiter} <: AbstractFeaturesSelector{T} end
 
 # -----------------------------------------------------------------------------------------
-# Correlation
+# Abstract filter
 
-abstract type AbstractCorrelationFilter <: AbstractFilterBased end
+abstract type AbstractCorrelationFilter{T<:AbstractFilterLimiter} <: AbstractFilterBased{T} end
+abstract type AbstractVarianceFilter{T<:AbstractFilterLimiter} <: AbstractFilterBased{T} end
+abstract type AbstractRandomFilter{T<:AbstractFilterLimiter} <: AbstractFilterBased{T} end
+abstract type AbstractMeasuresFilter{T<:AbstractFilterLimiter} <: AbstractFilterBased{T} end
+abstract type AbstractWindowsFilter{T<:AbstractFilterLimiter} <: AbstractFilterBased{T} end
 
 # -----------------------------------------------------------------------------------------
 # AbstractFeaturesSelector
@@ -43,7 +47,9 @@ Return vector containing indicies of suitable attributes
 """
 function apply(
     df::AbstractDataFrame,
-    selector::AbstractFeaturesSelector
-)::Vector{Integer}
-    return error("`apply` not implmented for type: " * string(typeof(selector)))
+    selector::AbstractFeaturesSelector{T}
+)::Vector{Integer} where {T<:AbstractLimiter}
+    return error("`apply` not implemented for type: " * string(typeof(selector)))
 end
+
+limiter(l::AbstractLimiter) = error("Not implemented for $(typeof(l))")

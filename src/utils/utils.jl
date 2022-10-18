@@ -118,17 +118,34 @@ function bm2attr(df::AbstractDataFrame, bm::BitVector)
     return good_attr, bad_attr
 end
 
-function _dropattr_fromframe!(
+# function _dropattr_fromframe!(
+"""
+    dropattributes!(mfd, frmidx, frmattridx)
+
+Drop `frmattridx` indices attributes in frame inside mfd, indices are relative to the frame
+"""
+function dropattributes!(
     mfd::AbstractMultiFrameDataset,
-    frmidx::Integer,
-    frmattridx::Union{Integer, AbstractVector{<:Integer}}
+    frame_index::Integer,
+    indices::Union{Integer, AbstractVector{<:Integer}}
 )
-    frmattridx = [ frmattridx... ]
-    nattrfrm = nattributes(mfd, frmidx)
+    attr_idxes = [ indices... ]
+    !(1 <= frame_index <= nframes(mfd)) &&
+        throw(DimensionMismatch("Index $(frame_index) does not correspond to a frame"))
+    attridx = SoleBase.SoleDataset.frame_descriptor(mfd)[frame_index][attr_idxes]
+    return SoleBase.dropattributes!(mfd, attridx)
+end
 
-    !(1 <= frmidx <= nframes(mfd)) && throw(DimensionMismatch("frmidx"))
-
-    attridx = SoleBase.SoleDataset.frame_descriptor(mfd)[frmidx][frmattridx]
-
+function dropattributes!(
+    mfd::AbstractMultiFrameDataset,
+    frame_index::Integer,
+    attribute_names::Union{Symbol, AbstractVector{<:Symbol}}
+)
+    attribute_names = [ attribute_names... ]
+    !(1 <= frame_index <= nframes(mfd)) &&
+        throw(DimensionMismatch("Index $(frame_index) does not correspond to a frame"))
+    !issubset(attribute_names, attributes(mfd, frame_index)) &&
+        throw(DomainError(attribute_names, "One or more attributes in `attr_names` are not in attributes frame"))
+    attridx = SoleBase.SoleDataset._name2index(mfd, attribute_names)
     return SoleBase.dropattributes!(mfd, attridx)
 end
