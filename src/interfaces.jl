@@ -4,8 +4,6 @@
 """
 Abstract supertype for all features selector.
 
-A concrete subtype of AbstractFeaturesSelector should always provide functions
-[`transform`](@ref) and [`build_bit_mask`](@ref)
 """
 abstract type AbstractFeaturesSelector{T<:AbstractLimiter} end
 
@@ -52,4 +50,4 @@ function apply(
     return error("`apply` not implemented for type: " * string(typeof(selector)))
 end
 
-limiter(l::AbstractLimiter) = error("Not implemented for $(typeof(l))")
+limiter(selector::AbstractFeaturesSelector) = error("Not implemented for $(typeof(selector))")

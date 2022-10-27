@@ -12,13 +12,19 @@ function apply_limiter(scores::AbstractVector{<:Real}, rl::RankingLimiter)
     return sortperm(scores; rev=rev(rl))[1:nbest(rl)]
 end
 
-suiteness(fl::FittestLimiter) = fl.suiteness
+suiteness(gfl::GroupFittestLimiter) = gfl.suiteness
 
 function apply_limiter(
-    winboard::AbstractVector{AbstractVector{<:Bool}},
-    fl::FittestLimiter
+    winboard::AbstractVector{BitVector},
+    gfl::GroupFittestLimiter
 )
-    nwin = ceil(length(winboard) * suiteness(fl))
+    return findall([sum(bm) >= ceil(Int, length(bm) * suiteness(gfl)) for bm in winboard])
+end
+
+function apply_limiter(
+    winboard::AbstractVector{BitVector},
+    goil::GroupOneInLimiter
+)
     wins = sum(winboard; dims=1)[1]
-    return findall(>=(nwin), wins)
+    return findall(>=(1), wins)
 end

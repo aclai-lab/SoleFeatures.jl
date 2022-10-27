@@ -16,10 +16,8 @@ struct ThresholdLimiter <: AbstractFilterLimiter
     end
 end
 
-# ---------- testing
-
 struct RankingLimiter <: AbstractFilterLimiter
-    nbest::Int64
+    nbest::Int
     rev::Bool
 
     function RankingLimiter(nbest::Integer, rev::Bool)
@@ -29,14 +27,15 @@ struct RankingLimiter <: AbstractFilterLimiter
     RankingLimiter(nbest::Integer) = RankingLimiter(nbest, false)
 end
 
-struct FittestLimiter <: AbstractFilterLimiter
+# group limiters
+struct GroupFittestLimiter <: AbstractFilterLimiter
     suiteness::Float64
 
-    function FittestLimiter(suiteness::AbstractFloat)
+    function GroupFittestLimiter(suiteness::AbstractFloat)
         !(0.0 < suiteness < 1.0) &&
             throw(DomainError(suiteness, "Must be within 0.0 and 1.0"))
         new(suiteness)
     end
 end
 
-struct OneInLimiter <: AbstractFilterLimiter end
+struct GroupOneInLimiter <: AbstractFilterLimiter end

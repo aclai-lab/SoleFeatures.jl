@@ -1,7 +1,10 @@
-struct MeasuresFilter{T <: AbstractFilterLimiter} <: AbstractMeasuresFilter{T}
+struct MeasuresFilter{
+    T <: AbstractFilterLimiter,
+    R <: AbstractLimiter
+} <: AbstractMeasuresFilter{T}
     limiter::T
     # parameters
-    usedselector::AbstractFeaturesSelector{AbstractLimiter}
+    usedselector::AbstractFeaturesSelector{R}
 end
 
 # switch to constants.jl or utils.jl
@@ -25,8 +28,8 @@ is_unsupervised(::AbstractMeasuresFilter{AbstractFilterLimiter}) = true
 
 function MeasuresRanking(
     nbest::Integer,
-    selector::AbstractFeaturesSelector{AbstractLimiter}
-)
+    selector::AbstractFeaturesSelector{T}
+) where {T <: AbstractLimiter}
     return MeasuresFilter(RankingLimiter(nbest, true), selector)
 end
 

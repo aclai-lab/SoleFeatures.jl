@@ -33,7 +33,8 @@ function transform!(
         return SoleBase.SoleDataset.dropattributes!(mfd, findall(!, bm))
     else
         nattributes(mfd, frmidx) != length(bm) && thow(DimensionMismatch(""))
-        return dropattributes!(mfd, frmidx, findall(!, bm))
+        # return dropattributes!(mfd, frmidx, findall(!, bm))
+        return SoleBase.SoleDataset.dropattributes!(mfd, frmidx, findall(!, bm))
     end
 end
 
@@ -71,7 +72,7 @@ function buildbitmask(
     return _idxes2bm(size(df, 2), idxes)
 end
 
-function _idxes2bm(bmlen::Integer, idxes::AbstractVector{Integer})
+function _idxes2bm(bmlen::Integer, idxes::AbstractVector{<:Integer})
     bm = falses(bmlen)
     bm[idxes] .= true
     return bm

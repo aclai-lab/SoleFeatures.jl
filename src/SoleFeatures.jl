@@ -1,6 +1,3 @@
-# TODO: make comments in minmax_normalize
-# TODO: better implmentation of selector_function on correlation_ranking and correlation_threshold
-
 module SoleFeatures
 
 using StatsBase
@@ -10,6 +7,7 @@ using Reexport
 using Random
 using Catch22
 using LinearAlgebra
+using OrderedCollections
 
 # abstracts
 export AbstractFeaturesSelector
@@ -27,6 +25,7 @@ export CorrelationRanking
 export CorrelationThreshold
 export RandomRanking
 export MeasuresRanking
+export WindowsFilter
 # main functions
 export apply, buildbitmask, transform, transform!
 # utils
@@ -36,9 +35,11 @@ export bm2attr
 @reexport using SoleBase
 @reexport using SoleTraits
 
-# utils
+# windows: should be moved
+include("./windows/data-filters.jl")
+include("./windows/windows.jl")
+# general utils
 include("./utils/utils.jl")
-include("./utils/data-filters.jl")
 # limiters
 include("./limiter/interfaces.jl")
 include("./limiter/functions.jl")
@@ -48,11 +49,14 @@ include("./functions.jl")
 # variance
 include("./variancefilter.jl")
 # correlation
-include("./correlation/utils.jl")
-include("./correlation/correlationfilter.jl")
+include("./correlationfilter/utils.jl")
+include("./correlationfilter/correlationfilter.jl")
 # random
 include("./randomfilter.jl")
 # measures
 include("./measuresfilter.jl")
+# windowsf
+include("./windowsfilter/utils.jl")
+include("./windowsfilter/windowsfilter.jl")
 
 end # module

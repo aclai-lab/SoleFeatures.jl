@@ -89,7 +89,7 @@ function _fr_bm2mfd_bm(
     length(frameidxes) != length(framebms) && throw(DimensionMismatch(""))
 
     bm = trues(nattributes(mfd))
-    for i in 1:length(frameidxes)
+    for i in 1:lastindex(frameidxes)
         fridx = frameidxes[i]
         frbm = framebms[i]
         framedescr = SoleBase.SoleDataset.frame_descriptor(mfd)[fridx] # frame indices inside mfd
