@@ -20,8 +20,8 @@ corf(selector::CorrelationFilter) = selector.corf
 memorysaving(selector::CorrelationFilter) = selector.memorysaving
 
 # traits
-is_unsupervised(::AbstractCorrelationFilter{AbstractFilterLimiter}) = true
-is_multivariate(::AbstractCorrelationFilter{AbstractFilterLimiter}) = true
+is_unsupervised(::AbstractCorrelationFilter{<:AbstractFilterLimiter}) = true
+is_multivariate(::AbstractCorrelationFilter{<:AbstractFilterLimiter}) = true
 
 # Ranking constructor
 
@@ -34,11 +34,11 @@ function CorrelationRanking(
 end
 
 function apply(
-    df::AbstractDataFrame,
+    X::AbstractDataFrame,
     selector::CorrelationFilter{RankingLimiter}
 )::Vector{Integer}
     k = nbest(limiter(selector))
-    cormtrx = _buildcormtrx(df, selector)
+    cormtrx = _buildcormtrx(X, selector)
     bestidxes = findcorrelation(cormtrx)
     return bestidxes[1:k]
 end
@@ -54,11 +54,11 @@ function CorrelationThreshold(
 end
 
 function apply(
-    df::AbstractDataFrame,
+    X::AbstractDataFrame,
     selector::CorrelationFilter{ThresholdLimiter}
 )::Vector{Integer}
     thr = threshold(limiter(selector))
-    cormtrx = _buildcormtrx(df, selector)
+    cormtrx = _buildcormtrx(X, selector)
     bestidxes = findcorrelation(cormtrx; threshold=thr)
     return bestidxes
 end

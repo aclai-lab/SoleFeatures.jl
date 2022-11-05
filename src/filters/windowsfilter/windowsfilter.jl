@@ -114,25 +114,12 @@ function _expand_all_attributes(
 end
 
 function evaluate(df::AbstractDataFrame, wf::WindowsFilter)::Vector{<:AWMDescriptor}
-    edf = expand(df, wf)
-    exps = expansions(wf)
-    sel = usedselector(wf)
-    for grby in groupby(wf)
-        groups = retrive_groups(exps, grby) # groups made of Vector{<:AWMDescriptor}
-        bms = Vector{BitVector}(undef, length(groups)) # bitmasks container
-        for (i, grp) in enumerate(groups)
-            colsname = _awm2str.(grp)
-            bms[i] = buildbitmask(edf[:, colsname], sel)
-        end
-
-        selectedgroup_idxes = apply_limiter(bms, limiter(wf))
-
-        if (iszero(length(selectedgroup_idxes)))
-            @warn "No groups respects limiter constraints"
-            return Vector{AWMDescriptor}()
-        end
-
-        exps = reduce(vcat, groups[selectedgroup_idxes]) # compact groups
-    end
-    return exps
+    return evaluate(
+        expand(df, wf),
+        expansions(wf),
+        usedselector(wf),
+        groupby(wf),
+        limiter(wf);
+        already_expanded=true
+    )
 end

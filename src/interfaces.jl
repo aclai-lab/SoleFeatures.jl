@@ -29,25 +29,40 @@ abstract type AbstractCorrelationFilter{T<:AbstractFilterLimiter} <: AbstractFil
 abstract type AbstractVarianceFilter{T<:AbstractFilterLimiter} <: AbstractFilterBased{T} end
 abstract type AbstractRandomFilter{T<:AbstractFilterLimiter} <: AbstractFilterBased{T} end
 abstract type AbstractMeasuresFilter{T<:AbstractFilterLimiter} <: AbstractFilterBased{T} end
+abstract type AbstractStatisticalFilter{T<:AbstractFilterLimiter} <: AbstractFilterBased{T} end
 abstract type AbstractWindowsFilter{T<:AbstractFilterLimiter} <: AbstractFilterBased{T} end
 
 # -----------------------------------------------------------------------------------------
 # AbstractFeaturesSelector
 
 """
-    apply(df, selector)
+    apply(X, selector)
+    apply(X, y, selector)
 
-Return vector containing indicies of suitable attributes
+Return vector containing indicies of suitable attributes from selector.
 
 ## ARGUMENTS
-- `df::AbstractDataFrame`: DataFrame to evaluate
+- `X::AbstractDataFrame`: samples to evaluate
+- `y::AbstractVector{<:Union{String, Symbol}}`: target vector
 - `selector::AbstractFeaturesSelector`: applied selector
 """
 function apply(
-    df::AbstractDataFrame,
-    selector::AbstractFeaturesSelector{T}
-)::Vector{Integer} where {T<:AbstractLimiter}
-    return error("`apply` not implemented for type: " * string(typeof(selector)))
+    X::AbstractDataFrame,
+    selector::AbstractFeaturesSelector{<:AbstractLimiter}
+)::Vector{Integer}
+    return error("`apply` for unsupervised selectors not implemented " *
+        "for type: $(typeof(selector))")
 end
 
-limiter(selector::AbstractFeaturesSelector) = error("Not implemented for $(typeof(selector))")
+function apply(
+    X::AbstractDataFrame,
+    y::AbstractVector{<:Union{String, Symbol}},
+    selector::AbstractFeaturesSelector{<:AbstractLimiter}
+)::Vector{Integer}
+    return error("`apply` for supervised selectors not implemented " *
+        "for type: $(typeof(selector))")
+end
+
+function limiter(selector::AbstractFeaturesSelector)
+    return error("Not implemented for $(typeof(selector))")
+end

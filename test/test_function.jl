@@ -129,3 +129,10 @@ function random_timeseries_df(;ninstances=100, nattr=5, ts_len=5)
     return df
 end
 
+function random_df(;ninstances=100, nattr=5)
+    df = DataFrame()
+    for i in 1:nattr
+        insertcols!(df, string("a", i) => rand(ninstances))
+    end
+    return df
+end

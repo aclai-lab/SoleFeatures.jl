@@ -118,34 +118,81 @@ function bm2attr(df::AbstractDataFrame, bm::BitVector)
     return good_attr, bad_attr
 end
 
-# function _dropattr_fromframe!(
-"""
-    dropattributes!(mfd, frmidx, frmattridx)
 
-Drop `frmattridx` indices attributes in frame inside mfd, indices are relative to the frame
 """
-function dropattributes!(
-    mfd::AbstractMultiFrameDataset,
-    frame_index::Integer,
-    indices::Union{Integer, AbstractVector{<:Integer}}
-)
-    attr_idxes = [ indices... ]
-    !(1 <= frame_index <= nframes(mfd)) &&
-        throw(DimensionMismatch("Index $(frame_index) does not correspond to a frame"))
-    attridx = SoleBase.SoleDataset.frame_descriptor(mfd)[frame_index][attr_idxes]
-    return SoleBase.dropattributes!(mfd, attridx)
+    _group_by_class(df, y)
+
+Group a data frame by its classes.
+Target column will be called "class" and it will be the last column of dataframe
+
+# Examples
+
+```julia-repl
+julia> df = DataFrame(:firstcol => [1,2,3,4], :secondcol => [8,9,7,10])
+4×2 DataFrame
+ Row │ firstcol  secondcol
+     │ Int64     Int64
+─────┼─────────────────────
+   1 │        1          8
+   2 │        2          9
+   3 │        3          7
+   4 │        4         10
+
+julia> y = [:H, :H, :S, :H]
+4-element Vector{Symbol}:
+ :H
+ :H
+ :S
+ :H
+
+julia> _group_by_class(df, y)
+2×3 DataFrame
+ Row │ firstcol   secondcol   class
+     │ Array…     Array…      Symbol
+─────┼───────────────────────────────
+   1 │ [1, 2, 4]  [8, 9, 10]  H
+   2 │ [3]        [7]         S
+```
+"""
+function _group_by_class(df::AbstractDataFrame, y::AbstractVector{<:Union{String, Symbol}})
+    ndf = DataFrame()
+    classes = unique(y)
+    attrsname = names(df)
+    for attr in attrsname
+        coltype = eltype(df[:, attr])
+        col = Vector{Vector{coltype}}()
+        for cls in classes
+            idxes = findall(==(cls), y)
+            push!(col, df[idxes, attr])
+        end
+        insertcols!(ndf, attr => col)
+    end
+    insertcols!(ndf, :class => classes) # insert class column
+    return ndf
 end
 
-function dropattributes!(
-    mfd::AbstractMultiFrameDataset,
-    frame_index::Integer,
-    attribute_names::Union{Symbol, AbstractVector{<:Symbol}}
-)
-    attribute_names = [ attribute_names... ]
-    !(1 <= frame_index <= nframes(mfd)) &&
-        throw(DimensionMismatch("Index $(frame_index) does not correspond to a frame"))
-    !issubset(attribute_names, attributes(mfd, frame_index)) &&
-        throw(DomainError(attribute_names, "One or more attributes in `attr_names` are not in attributes frame"))
-    attridx = SoleBase.SoleDataset._name2index(mfd, attribute_names)
-    return SoleBase.dropattributes!(mfd, attridx)
+"""
+# Examples
+```julia-repl
+julia> df = DataFrame(:firstcol => [1,2,3,4], :secondcol => [8,9,7,10], :myclasses => [:H, :H, :S, :H])
+4×3 DataFrame
+ Row │ firstcol  secondcol  myclasses
+     │ Int64     Int64      Symbol
+─────┼─────────────────────────────
+   1 │        1          8  H
+   2 │        2          9  H
+   3 │        3          7  S
+   4 │        4         10  H
+
+julia> gdf = _group_by_class(df, "myclasses")
+2×3 DataFrame
+ Row │ firstcol   secondcol   class
+     │ Array…     Array…      Symbol
+─────┼───────────────────────────────
+   1 │ [1, 2, 4]  [8, 9, 10]  H
+   2 │ [3]        [7]         S
+```
+"""
+function _group_by_class(df::AbstractDataFrame, class_colname::String)
+    return _group_by_class(df[:, Not(class_colname)], df[:, class_colname])
 end

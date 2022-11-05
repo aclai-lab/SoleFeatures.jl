@@ -1,3 +1,5 @@
+include("data-filters.jl")
+
 abstract type AbstractMovingWindows end
 abstract type AbstractMovingWindowsIndex end
 
@@ -83,7 +85,7 @@ nwindows(mw::FixedNumMovingWindows) = mw.nwindows
 reloverlap(mw::FixedNumMovingWindows) = mw.reloverlap
 
 function Base.length(mw::FixedNumMovingWindows)
-    nwindows(mw)
+    return nwindows(mw)
 end
 
 function Base.isequal(mw1::FixedNumMovingWindows, mw2::FixedNumMovingWindows)
