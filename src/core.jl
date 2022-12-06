@@ -1,3 +1,14 @@
+# =========================================================================================
+# getters
+
+function limiter(selector::AbstractFeaturesSelector)
+    !hasproperty(selector, :limiter) && throw(ErrorException("`selector` struct not contain `limiter` field"))
+    return selector.limiter
+end
+
+# =========================================================================================
+# functions
+
 """
     transform!(X, args..; kwargs...)
     transform!(X, y, args..; kwargs...)
@@ -63,6 +74,7 @@ end
 
 transform(X::AbstractDataFrame, args...; kwargs...) = transform!(deepcopy(X), args...; kwargs...)
 transform(X::SoleBase.AbstractMultiFrameDataset, args...; kwargs...) = transform!(deepcopy(X), args...; kwargs...)
+(s::AbstractFeaturesSelector)(X, args; kwargs...) = transform(X, args..., kwargs...)
 
 """
     buildbitmask(X, selector)

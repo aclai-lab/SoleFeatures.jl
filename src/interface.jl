@@ -1,4 +1,4 @@
-# -----------------------------------------------------------------------------------------
+# =========================================================================================
 # abstract types
 
 """
@@ -22,7 +22,7 @@ Abstract supertype filter based selector.
 """
 abstract type AbstractEmbeddedBased{T<:AbstractEmbeddedLimiter} <: AbstractFeaturesSelector{T} end
 
-# -----------------------------------------------------------------------------------------
+# =========================================================================================
 # Abstract filter
 
 abstract type AbstractCorrelationFilter{T<:AbstractFilterLimiter} <: AbstractFilterBased{T} end
@@ -32,7 +32,7 @@ abstract type AbstractMeasuresFilter{T<:AbstractFilterLimiter} <: AbstractFilter
 abstract type AbstractStatisticalFilter{T<:AbstractFilterLimiter} <: AbstractFilterBased{T} end
 abstract type AbstractWindowsFilter{T<:AbstractFilterLimiter} <: AbstractFilterBased{T} end
 
-# -----------------------------------------------------------------------------------------
+# =========================================================================================
 # AbstractFeaturesSelector
 
 """
@@ -63,6 +63,10 @@ function apply(
         "for type: $(typeof(selector))")
 end
 
-function limiter(selector::AbstractFeaturesSelector)
-    return error("Not implemented for $(typeof(selector))")
-end
+# =========================================================================================
+# Traits
+
+is_univariate(::AbstractFeaturesSelector) = false
+is_multivariate(::AbstractFeaturesSelector) = false
+is_supervised(::AbstractFeaturesSelector) = false
+is_unsupervised(::AbstractFeaturesSelector) = false

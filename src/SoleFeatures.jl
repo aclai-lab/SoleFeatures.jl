@@ -42,26 +42,25 @@ export bm2attr
 # windows: should be moved
 include("windows/windows.jl")
 # limiters
-include("limiters/interfaces.jl")
-include("limiters/functions.jl")
+include("limiters/interface.jl")
+include("limiters/core.jl")
 # general utils
 include("utils/utils.jl")
 # selectors
-include("interfaces.jl")
-include("functions.jl")
-## variance
+include("interface.jl")
+include("core.jl")
+## filters
+### variance
 include("filters/variancefilter.jl")
-## correlation
+### correlation
 include("filters/correlationfilter/utils.jl")
 include("filters/correlationfilter/correlationfilter.jl")
-## random
+### random
 include("filters/randomfilter.jl")
-## measures
-include("filters/measuresfilter.jl")
-# windowsf
+### windowsf
 include("filters/windowsfilter/utils.jl")
 include("filters/windowsfilter/windowsfilter.jl")
-# statisticals
+## statisticals
 include("filters/statisticalfilter.jl")
 
 end # module
