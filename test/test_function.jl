@@ -116,18 +116,23 @@ function build_fake_bit_mask(n=5)::BitVector
 end
 
 function random_timeseries_mfd(;ninstances=100, nattr=5, ts_len=5)
-    d = Dict()
-    for i in 1:nattr
-        d[Symbol("a"* string(i))] = [rand(ts_len) for x in 1:ninstances]
-    end
-    fd = [collect(1:nattr)]
-    return MultiFrameDataset(fd, DataFrame(d))
+    df = random_timeseries_df(;ninstances=ninstances, nattr=nattr, ts_len=ts_len)
+    fd = [ collect(1:nattr) ]
+    return MultiFrameDataset(fd, df)
 end
 
 function random_timeseries_df(;ninstances=100, nattr=5, ts_len=5)
-    d = Dict()
+    df = DataFrame()
     for i in 1:nattr
-        d[Symbol("a"* string(i))] = [rand(ts_len) for x in 1:ninstances]
+        setproperty!(df, Symbol("a", i), [ rand(ts_len) for _ in 1:ninstances ])
     end
-    return DataFrame(d)
+    return df
+end
+
+function random_df(;ninstances=100, nattr=5)
+    df = DataFrame()
+    for i in 1:nattr
+        insertcols!(df, string("a", i) => rand(ninstances))
+    end
+    return df
 end

@@ -1,37 +1,66 @@
-# TODO: make comments in minmax_normalize
-# TODO: better implmentation of selector_function on correlation_ranking and correlation_threshold
-
 module SoleFeatures
 
 using StatsBase
+using SoleTraits
 using DynamicAxisWarping
 using Reexport
 using Random
 using Catch22
 using LinearAlgebra
+using OrderedCollections
+using HypothesisTests
+using IterTools
+using PyCall
 
+# abstracts
 export AbstractFeaturesSelector
+export AbstractFilterBased
+export AbstractWrapperBased
+export AbstractEmbeddedBased
+export AbstractLimiter
+export AbstractFilterLimiter
+export AbstractWrapperLimiter
+export AbstractEmbeddedLimiter
+# structs
 export VarianceThreshold
 export VarianceRanking
 export CorrelationRanking
 export CorrelationThreshold
 export RandomRanking
-export MeasuresRanking
-export build_bitmask, apply, apply!
+# export MeasuresRanking
+# export WindowsFilter
+export StatisticalThreshold
+# main functions
+export apply, buildbitmask, transform, transform!
+# utils
+export bm2attr
 
 @reexport using DataFrames
 @reexport using SoleBase
-@reexport using Revise
+@reexport using SoleTraits
 
-include("./utils.jl")
-include("./interfaces.jl")
-include("./functions.jl")
-include("./variance_threshold.jl")
-include("./variance_ranking.jl")
-include("./correlation_commons.jl")
-include("./correlation_threshold.jl")
-include("./correlation_ranking.jl")
-include("./random_ranking.jl")
-include("./measures_ranking.jl")
+# windows: should be moved
+include("windows/windows.jl")
+# limiters
+include("limiters/interface.jl")
+include("limiters/core.jl")
+# general utils
+include("utils/utils.jl")
+# selectors
+include("interface.jl")
+include("core.jl")
+## filters
+### variance
+include("filters/variancefilter.jl")
+### correlation
+include("filters/correlationfilter/utils.jl")
+include("filters/correlationfilter/correlationfilter.jl")
+### random
+include("filters/randomfilter.jl")
+### windowsf
+include("filters/windowsfilter/utils.jl")
+include("filters/windowsfilter/windowsfilter.jl")
+## statisticals
+include("filters/statisticalfilter.jl")
 
 end # module

@@ -66,7 +66,6 @@ end
 function _old_findcorrelation(
     cormtrx::AbstractMatrix;
     nbest::Union{Nothing, Integer}=nothing,
-    exact::Bool=false,
     returncorvect::Bool=false
 )
     nr, nc = size(cormtrx)
@@ -79,22 +78,8 @@ function _old_findcorrelation(
 
     # absolute value of each correlation coefficient
     cormtrx = abs.(cormtrx)
-
-    if (exact)
-        macv = []
-        macvidx = []
-        oidxes = collect(1:nr)
-        for i in 1:nbest
-            m = vec(mean(view(cormtrx, Not(macvidx), Not(macvidx)), dims=1))
-            cbidx = sortperm(m)[1]
-            bidx = view(oidxes, Not(macvidx))[cbidx]
-            push!(macv, m[cbidx])
-            push!(macvidx, bidx)
-        end
-    else
-        macv = vec(mean(cormtrx, dims=1))
-        macvidx = sortperm(macv)[1:nbest]
-    end
+    macv = vec(mean(cormtrx, dims=1))
+    macvidx = sortperm(macv)[1:nbest]
 
     return ( returncorvect ? (macvidx, macv) : macvidx )
 end
@@ -126,4 +111,37 @@ function findcorrelation(cormtrx::AbstractMatrix; threshold::AbstractFloat=0.0)
     end
 
     return iszero(threshold) ? reverse(cvidx) : setdiff(oidxes, cvidx)
+end
+
+function corfunction(selector::AbstractCorrelationFilter)
+    if selector.cor_algorithm == :pearson
+        return StatsBase.cor
+    elseif selector.cor_algorithm == :spearman
+        return StatsBase.corspearman
+    elseif selector.cor_algorithm == :kendall
+        return StatsBase.corkendall
+    end
+end
+memorysaving(selector::AbstractCorrelationFilter) = selector.memorysaving
+
+function _buildcormtrx(df::AbstractDataFrame, selector::AbstractCorrelationFilter)
+    n_cols = ncol(df)
+    cf = corfunction(selector)
+    ms = memorysaving(selector)
+    mtrx = Matrix(df)
+    dims = [ maximum(ndims.(c)) for c in eachcol(mtrx) ]
+    d = dims[1]
+
+    !all(==(d), dims) && throw(DimensionMismatch("different dimensions not allowed"))
+
+    # return immediately if 'k' is greater than columns number
+    k > n_cols && return trues(ncol)
+
+    if (d == 0)
+        cormtrx = cf(mtrx)
+    elseif (d == 1)
+        cormtrx = ms ? _correlation_memory_saving(mtrx, cf) : cf(_compute_dtw(df))
+    else
+        throw("Unimplemented for dimension >1")
+    end
 end
