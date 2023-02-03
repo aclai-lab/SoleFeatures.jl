@@ -44,15 +44,15 @@ function minmax_normalize(
 end
 
 function minmax_normalize(
-    mfd::SoleBase.MultiFrameDataset,
+    mfd::SoleData.MultiFrameDataset,
     frame_index::Integer;
     min_quantile::Float64=0.0,
     max_quantile::Float64=1.0
 )
     ndf = DataFrame()
-    df = SoleBase.SoleDataset.data(mfd)
+    df = SoleData.data(mfd)
     attr_names = names(df)
-    frames_descriptor = SoleBase.SoleDataset.frame_descriptor(mfd)
+    frames_descriptor = SoleData.frame_descriptor(mfd)
     frame_indices = frames_descriptor[frame_index]
     frame = SoleBase.frame(mfd, frame_index)
     norm_frame = minmax_normalize(frame; min_quantile=min_quantile, max_quantile=max_quantile)
@@ -79,7 +79,7 @@ frame bitmask to MultiFrameDataset bitmask.
 return bitmask for entire MultiFrameDataset from a frame of it
 """
 function _fr_bm2mfd_bm(
-    mfd::SoleBase.MultiFrameDataset,
+    mfd::SoleData.MultiFrameDataset,
     frameidxes::Union{Integer, AbstractVector{<:Integer}},
     framebms::Union{BitVector, AbstractVector{<:BitVector}}
 )::BitVector
@@ -92,7 +92,7 @@ function _fr_bm2mfd_bm(
     for i in 1:lastindex(frameidxes)
         fridx = frameidxes[i]
         frbm = framebms[i]
-        framedescr = SoleBase.SoleDataset.frame_descriptor(mfd)[fridx] # frame indices inside mfd
+        framedescr = SoleData.frame_descriptor(mfd)[fridx] # frame indices inside mfd
         bm[framedescr] = frbm
     end
     return bm
@@ -103,11 +103,11 @@ end
 
 return tuple containing names of suitable attributes and names of not suitable attributes
 """
-function bm2attr(mfd::SoleBase.MultiFrameDataset, bm::BitVector)
+function bm2attr(mfd::SoleData.MultiFrameDataset, bm::BitVector)
     return bm2attr(SoleData.data(mfd), bm)
 end
 
-function bm2attr(mfd::SoleBase.MultiFrameDataset, fridx::Integer, bm::BitVector)
+function bm2attr(mfd::SoleData.MultiFrameDataset, fridx::Integer, bm::BitVector)
     return bm2attr(SoleBase.frame(mfd, fridx), bm)
 end
 

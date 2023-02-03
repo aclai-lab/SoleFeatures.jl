@@ -25,7 +25,7 @@ println("Start time test")
 # println("VarianceThreshold apply bitmask...")
 # @benchmarkable  mfd_generated = SoleFeatures.transform(mfd, bm)
 
-# nattr = SoleBase.SoleDataset.nattributes(mfd, 1)
+# nattr = SoleData.nattributes(mfd, 1)
 
 # test on
 

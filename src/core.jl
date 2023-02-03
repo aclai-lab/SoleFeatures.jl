@@ -50,10 +50,10 @@ function transform!(
 )
     if (isnothing(frmidx))
         nattributes(X) != length(bm) && throw(DimensionMismatch(""))
-        return SoleBase.SoleDataset.dropattributes!(X, findall(!, bm))
+        return SoleData.dropattributes!(X, findall(!, bm))
     else
         nattributes(X, frmidx) != length(bm) && thow(DimensionMismatch(""))
-        return SoleBase.SoleDataset.dropattributes!(X, frmidx, findall(!, bm))
+        return SoleData.dropattributes!(X, frmidx, findall(!, bm))
     end
 end
 
@@ -63,7 +63,7 @@ function transform!(
     frmidx::Union{Integer, Nothing} = nothing
 )
     if (isnothing(frmidx))
-        bm = buildbitmask(SoleBase.SoleDataset.data(X), selector)
+        bm = buildbitmask(SoleData.data(X), selector)
     else
         bm = buildbitmask(SoleBase.frame(X, frmidx), selector)
     end
@@ -95,7 +95,7 @@ True values indicate selected attribute index
 - `frmidx::Integer`: Frame index inside `X`
 """
 function buildbitmask(
-    X::SoleBase.MultiFrameDataset,
+    X::SoleData.MultiFrameDataset,
     frmidx::Integer,
     selector::AbstractFeaturesSelector
 )::Tuple{BitVector, BitVector}
