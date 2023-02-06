@@ -44,7 +44,7 @@ function transform!(
 end
 
 function transform!(
-    X::SoleBase.AbstractMultiFrameDataset,
+    X::SoleData.AbstractMultiFrameDataset,
     bm::BitVector;
     frmidx::Union{Integer, Nothing} = nothing
 )
@@ -58,7 +58,7 @@ function transform!(
 end
 
 function transform!(
-    X::SoleBase.AbstractMultiFrameDataset,
+    X::SoleData.AbstractMultiFrameDataset,
     selector::AbstractFeaturesSelector;
     frmidx::Union{Integer, Nothing} = nothing
 )
@@ -73,7 +73,7 @@ end
 # TODO: transform! for MultiFrameDataset with supervised selector
 
 transform(X::AbstractDataFrame, args...; kwargs...) = transform!(deepcopy(X), args...; kwargs...)
-transform(X::SoleBase.AbstractMultiFrameDataset, args...; kwargs...) = transform!(deepcopy(X), args...; kwargs...)
+transform(X::SoleData.AbstractMultiFrameDataset, args...; kwargs...) = transform!(deepcopy(X), args...; kwargs...)
 (s::AbstractFeaturesSelector)(X, args; kwargs...) = transform(X, args..., kwargs...)
 
 """

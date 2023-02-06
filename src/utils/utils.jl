@@ -1,3 +1,5 @@
+using SoleData
+
 """
 Normalize passed DataFrame using min-max normalization.
 Return a new normalized DataFrame
