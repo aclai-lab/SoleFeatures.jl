@@ -17,16 +17,16 @@ struct ThresholdLimiter <: AbstractFilterLimiter
     ordf::Function
 
     function ThresholdLimiter(threshold::Real, ordf::Function)
-        !(ordf in [>, <, >=, <=]) && throw(DomainError("`ford`"))
+        !(ordf in [>, <, >=, <=]) && throw(DomainError("`ordf`"))
         return new(threshold, ordf)
     end
 end
 
 threshold(tl::ThresholdLimiter) = tl.threshold
-ford(tl::ThresholdLimiter) = tl.ordf
+ordf(tl::ThresholdLimiter) = tl.ordf
 
 function apply_limiter(scores::AbstractVector{<:Real}, tl::ThresholdLimiter)
-    return findall(ford(tl)(threshold(tl)), scores)
+    return findall(ordf(tl)(threshold(tl)), scores)
 end
 
 # ========================================================================================

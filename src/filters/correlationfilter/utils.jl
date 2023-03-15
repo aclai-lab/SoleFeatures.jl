@@ -113,20 +113,9 @@ function findcorrelation(cormtrx::AbstractMatrix; threshold::AbstractFloat=0.0)
     return iszero(threshold) ? reverse(cvidx) : setdiff(oidxes, cvidx)
 end
 
-function corfunction(selector::AbstractCorrelationFilter)
-    if selector.cor_algorithm == :pearson
-        return StatsBase.cor
-    elseif selector.cor_algorithm == :spearman
-        return StatsBase.corspearman
-    elseif selector.cor_algorithm == :kendall
-        return StatsBase.corkendall
-    end
-end
-memorysaving(selector::AbstractCorrelationFilter) = selector.memorysaving
-
 function _buildcormtrx(df::AbstractDataFrame, selector::AbstractCorrelationFilter)
     n_cols = ncol(df)
-    cf = corfunction(selector)
+    cf = corf(selector)
     ms = memorysaving(selector)
     mtrx = Matrix(df)
     dims = [ maximum(ndims.(c)) for c in eachcol(mtrx) ]

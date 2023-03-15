@@ -3,7 +3,7 @@ struct VarianceFilter{T <: AbstractFilterLimiter} <: AbstractVarianceFilter{T}
     # parameters
 end
 
-limiter(selector::VarianceFilter) = selector.limiter
+# limiter(selector::VarianceFilter) = selector.limiter
 
 # ========================================================================================
 # Constructors
@@ -27,7 +27,7 @@ VarianceThreshold(threshold) = VarianceFilter(ThresholdLimiter(threshold, >=))
 # Shared apply functions
 
 function apply(X::AbstractDataFrame, selector::VarianceFilter{<:AbstractFilterLimiter})
-    !is_unsupervised(selector) && throw(ErrorException("Only supervised selector allowed"))
+    !is_unsupervised(selector) && throw(ErrorException("Only unsupervised selector allowed"))
     vars = StatsBase.var.(Iterators.flatten.(eachcol(X)))
     replace!(vars, NaN => -Inf) # (clear or not to clear?)
     return apply_limiter(vars, limiter(selector))
@@ -45,10 +45,8 @@ function apply(
     scores = Vector{<:AbstractFloat}(undef, numcol)
     for colidx in 1:numcol
         colvars = StatsBase.var.(eachrow(gdf[:, colidx]))
-        scores[colidx] = StatsBase.mean(abs.(original_vars .- colvars))
-        # scores[colidx] = maximum(original_vars .- colvars)
-        # scores[colidx] = original_vars - StatsBase.mean(colvars)
-        # scores[colidx] = original_vars - minimum(colvars)
+        scores[colidx] = minimum(original_vars .- colvars)
+        # scores[colidx] = StatsBase.mean(original_vars .- colvars) # strict version
     end
     return apply_limiter(scores, limiter(selector))
 end

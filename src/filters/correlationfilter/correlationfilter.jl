@@ -9,13 +9,11 @@ struct CorrelationFilter{T <: AbstractFilterLimiter} <: AbstractCorrelationFilte
         corf::Function,
         memorysaving::Bool = false
     ) where {T <: AbstractFilterLimiter}
-        !(cor_algorithm in [:pearson, :spearman, :kendall]) &&
-            throw(ErrorException("cor_algorithm must be :pearson, :spearman, :kendall"))
         return new{T}(limiter, corf, memorysaving)
     end
 end
 
-limiter(selector::CorrelationFilter) = selector.limiter
+# limiter(selector::CorrelationFilter) = selector.limiter
 corf(selector::CorrelationFilter) = selector.corf
 memorysaving(selector::CorrelationFilter) = selector.memorysaving
 

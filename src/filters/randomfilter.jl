@@ -4,7 +4,7 @@ struct RandomFilter{T <: AbstractFilterLimiter} <: AbstractRandomFilter{T}
     seed::Union{Int, Nothing}
 end
 
-limiter(selector::RandomFilter) = selector.limiter
+# limiter(selector::RandomFilter) = selector.limiter
 seed(selector::RandomFilter) = selector.seed
 
 is_univariate(::AbstractRandomFilter{<:AbstractFilterLimiter}) = true

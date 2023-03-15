@@ -52,7 +52,7 @@ function transform!(
         nattributes(X) != length(bm) && throw(DimensionMismatch(""))
         return SoleBase.SoleDataset.dropattributes!(X, findall(!, bm))
     else
-        nattributes(X, frmidx) != length(bm) && thow(DimensionMismatch(""))
+        nattributes(X, frmidx) != length(bm) && throw(DimensionMismatch(""))
         return SoleBase.SoleDataset.dropattributes!(X, frmidx, findall(!, bm))
     end
 end

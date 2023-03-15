@@ -30,7 +30,7 @@ struct StatisticalFilter{T <: AbstractFilterLimiter} <: AbstractStatisticalFilte
     end
 end
 
-limiter(selector::StatisticalFilter) = selector.limiter
+# limiter(selector::StatisticalFilter) = selector.limiter
 param_tests(selector::StatisticalFilter) = selector.param_tests
 non_param_tests(selector::StatisticalFilter) = selector.non_param_tests
 

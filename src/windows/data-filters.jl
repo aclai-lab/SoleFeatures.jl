@@ -134,7 +134,8 @@ function _moving_window(
     @assert !(fixed_num_mode && fixed_size_mode) && (!fixed_size_mode || !_partial_fixed_num_mode) && (!fixed_num_mode || !_partial_fixed_size_mode) "A moving_window-based filter requires exactly two parameters: either `window_size` & `window_step` or `nwindows` & `relative_overlap`."
 
 	if fixed_num_mode
-        @assert relative_overlap ≥ 0 "`relative_overlap` must be greater or equal to 0 ($relative_overlap)"
+        @assert nwindows > 0 "`nwindows` must be greater than 0 ($(nwindows) was provided)"
+        @assert relative_overlap ≥ 0 "`relative_overlap` must be greater or equal to 0 ($relative_overlap) was provided)"
         if nwindows >= npoints
             @warn "Warning! Performing moving window with nwindows >= npoints: $(nwindows) >= $(npoints)"
         end
@@ -145,6 +146,8 @@ function _moving_window(
         if window_size >= npoints
             @warn "Warning! Performing moving window with window_size >= npoints: $(window_size) >= $(npoints)"
         end
+        @assert window_size > 0 "`window_size` must be greater than 0 ($(window_size) was provided)"
+        @assert window_step > 0 "`window_step` must be greater than 0 ($(window_step) was provided)"
         window_size = min(npoints, window_size)
         _ma_fun = allow_overflow ? __moving_window_with_overflow_fixed_size : __moving_window_without_overflow_fixed_size
         # _ma_fun(npoints; window_size, window_step, kwargs...)
