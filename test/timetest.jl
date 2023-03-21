@@ -1,15 +1,12 @@
-using SoleFeatures
+# using SoleFeatures
 using BenchmarkTools
 using StatsBase
+using SoleBase
 
 include("./test_function.jl")
+include("/home/patrik/develop/aclai/sole/SoleFeatures.jl/src/utils/utils.jl")
 
-frame_num = 1
-ninstances = 10000
-nattr = 300
-ts_len = 100
-
-println("Start time test")
+df = random_timeseries_df(;ts_len=100, nattr=300, ninstances=1000)
 
 # println("Random generation...")
 # @benchmarkable mfd = random_timeseries_mfd(;ninstances=10000, nattr=600, ts_len=100);
@@ -45,20 +42,20 @@ println("Start time test")
 # show(stdout, MIME"text/plain"(), b)
 # println()
 
-df = random_timeseries_df(;ninstances=ninstances, nattr=nattr, ts_len=ts_len)
-io = open("/home/painkiller/develop/SoleFeatures.jl/test/output.info", "w")
+# df = random_timeseries_df(;ninstances=ninstances, nattr=nattr, ts_len=ts_len)
+# io = open("/home/painkiller/develop/SoleFeatures.jl/test/output.info", "w")
 
-println(io, "Start time experimenti:")
-println(io, "")
-println(io, "Correlation without memory_saving")
-flush(io)
-b = @benchmark SoleFeatures.correlation($df, StatsBase.cor; memory_saving=false) samples=2
-show(io, MIME"text/plain"(), b)
-flush(io)
+# println(io, "Start time experimenti:")
+# println(io, "")
+# println(io, "Correlation without memory_saving")
+# flush(io)
+# b = @benchmark SoleFeatures.correlation($df, StatsBase.cor; memory_saving=false) samples=2
+# show(io, MIME"text/plain"(), b)
+# flush(io)
 
-println(io, "")
-println(io, "Correlation with memory_saving")
-flush(io)
-b = @benchmark SoleFeatures.correlation($df, StatsBase.cor; memory_saving=true) samples=2
-show(io, MIME"text/plain"(), b)
-close(io)
+# println(io, "")
+# println(io, "Correlation with memory_saving")
+# flush(io)
+# b = @benchmark SoleFeatures.correlation($df, StatsBase.cor; memory_saving=true) samples=2
+# show(io, MIME"text/plain"(), b)
+# close(io)

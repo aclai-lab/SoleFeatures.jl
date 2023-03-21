@@ -48,7 +48,8 @@ Return vector containing indicies of suitable attributes from selector.
 """
 function apply(
     X::AbstractDataFrame,
-    selector::AbstractFeaturesSelector{<:AbstractLimiter}
+    selector::AbstractFeaturesSelector{<:AbstractLimiter};
+    returnscores=false
 )::Vector{Integer}
     return error("`apply` for unsupervised selectors not implemented " *
         "for type: $(typeof(selector))")
@@ -57,16 +58,9 @@ end
 function apply(
     X::AbstractDataFrame,
     y::AbstractVector{<:Union{String, Symbol}},
-    selector::AbstractFeaturesSelector{<:AbstractLimiter}
+    selector::AbstractFeaturesSelector{<:AbstractLimiter};
+    returnscores=false
 )::Vector{Integer}
     return error("`apply` for supervised selectors not implemented " *
         "for type: $(typeof(selector))")
 end
-
-# =========================================================================================
-# Traits
-
-is_univariate(::AbstractFeaturesSelector) = false
-is_multivariate(::AbstractFeaturesSelector) = false
-is_supervised(::AbstractFeaturesSelector) = false
-is_unsupervised(::AbstractFeaturesSelector) = false
