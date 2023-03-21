@@ -108,7 +108,7 @@ end
 return tuple containing names of suitable attributes and names of not suitable attributes
 """
 function bm2attr(mfd::SoleBase.MultiFrameDataset, bm::BitVector)
-    return bm2attr(SoleBase.SoleData.SoleDataset.data(mfd), bm)
+    return bm2attr(SoleData.data(mfd), bm)
 end
 
 function bm2attr(mfd::SoleBase.MultiFrameDataset, fridx::Integer, bm::BitVector)
