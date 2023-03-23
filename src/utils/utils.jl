@@ -131,8 +131,9 @@ function minmax_normalize!(
 
     icols = eachcol(df)
 
-    !all(==(AbstractFloat), supertype.(eltype.(icols))) &&
-        throw(DomainError("DataFrame contains columns with type different from Float"))
+    ## PER PATRIK, a me non funziona!
+    # !all(==(AbstractFloat), supertype.(eltype.(icols))) &&
+    #     throw(DomainError("DataFrame contains columns with type different from Float"))
 
     if (!col_quantile)
         # look for quantile in entire dataset

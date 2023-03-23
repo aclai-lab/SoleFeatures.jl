@@ -14,7 +14,7 @@ const GROUPBY_ID_DICT = Dict{Symbol, Integer}(
 )
 const SEPARATOR = "@@"
 
-isdefined(Main, :Catch22) && (nameof(f::SuperFeature) = getname(f)) # wrap for Catch22
+isdefined(Main, :Catch22) && (Base.nameof(f::SuperFeature) = getname(f)) # wrap for Catch22
 
 function printgroups(groups::Vector{Vector{AWMDescriptor}})
     for (i, g) in enumerate(groups)
@@ -67,7 +67,7 @@ julia> measures = [minimum, maximum]
  minimum (generic function with 13 methods)
  maximum (generic function with 13 methods)
 
-julia> awmds = build_awds(attrs, [ fnmw... ], measures);
+julia> awmds = build_awmds(attrs, [ fnmw... ], measures);
 
 julia> expand(df, awmds)
 3×12 DataFrame
@@ -109,7 +109,6 @@ function _awm2str(awmd::AWMDescriptor)::String
     return join([attrname, movwin, measuref], SEPARATOR)
 end
 
-
 function retrive_groups(
     attributes::AbstractVector{Symbol},
     groupby::Union{Symbol, Tuple{Symbol, Symbol}}
@@ -130,7 +129,6 @@ function retrive_groups(
 
     return [ values(groups)... ]
 end
-
 
 """
 
@@ -160,7 +158,7 @@ julia> measures = [minimum, maximum]
  minimum (generic function with 13 methods)
  maximum (generic function with 13 methods)
 
-julia> awmds = build_awds(attrs, [ fnmw... ], measures);
+julia> awmds = build_awmds(attrs, [ fnmw... ], measures);
 
 julia> groups = retrive_groups(awmds, :Attributes);
 
@@ -222,7 +220,7 @@ function evaluate(
         !is_unsupervised(selector) && throw(ErrorException("Current selector doesn't contain unsupervised implementation"))
         # _a(X) = apply(X, selector; returnscores=true)
     end
-
+    
     eX = Float64.(expand(X, awmds))
 
     # global normalization
