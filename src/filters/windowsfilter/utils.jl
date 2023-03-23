@@ -24,12 +24,20 @@ function printgroups(groups::Vector{Vector{AWMDescriptor}})
     end
 end
 
-function build_awds(
+function build_awmds(
     attrs::AbstractVector{Symbol},
     mwies::AbstractVector{<:MovingWindowsIndex},
     measures::AbstractVector{<:Function}
 )::Vector{AWMDescriptor}
     return [ Iterators.product(attrs, mwies, measures)... ]
+end
+
+function build_awmds(
+    attrs::AbstractVector{Symbol},
+    mw::AbstractMovingWindows,
+    measures::AbstractVector{<:Function}
+)::Vector{AWMDescriptor}
+    return build_awmds(attrs, [mw...], measures)
 end
 
 """
@@ -194,30 +202,56 @@ function retrive_groups(
 end
 
 function evaluate(
-    df::AbstractDataFrame,
+    X::AbstractDataFrame,
+    y::Union{AbstractVector{<:Union{String, Symbol}}, Nothing},
     awmds::AbstractVector{<:AWMDescriptor},
     selector::AbstractFeaturesSelector,
-    groupby::Vector{Union{Symbol, Tuple{Symbol, Symbol}}},
-    grouplimiter::AbstractLimiter;
-    already_expanded::Bool=false
+    groupby::Vector{<:Union{Symbol, Tuple{Symbol, Symbol}}},
+    aggregatef::Function,
+    limiter::AbstractLimiter;
+    normf::Union{Function, Nothing}=nothing,
+    normgroup=true,
+    supervised=false
 )
-    if (!already_expanded)
-        df = expand(df, awmds)
+    # _a(X) = nothing
+    # checks
+    if (supervised)
+        !is_supervised(selector) && throw(ErrorException("Current selector doesn't contain a supervised implementation"))
+        # _a(X) = apply(X, y, selector; returnscores=true)
     else
-        names(df) != _awm2str.(awmds) &&
-            throw(ErrorException("`df` doesn't match `awmds`\n" *
-                "Use same `awmds` used in `expand` function to create `awmdf`"))
+        !is_unsupervised(selector) && throw(ErrorException("Current selector doesn't contain unsupervised implementation"))
+        # _a(X) = apply(X, selector; returnscores=true)
     end
+
+    eX = Float64.(expand(X, awmds))
+
+    # global normalization
+    if (!isnothing(normf) && !normgroup) eX = normf(eX) end
 
     for grby in groupby
         groups = retrive_groups(awmds, grby) # groups made of Vector{Vector{AWMDescriptor}}
-        bms = Vector{BitVector}(undef, length(groups)) # bitmasks container
+        groupscores = Vector{Real}(undef, length(groups))
+
         for (i, grp) in enumerate(groups)
-            colsname = _awm2str.(grp)
-            bms[i] = buildbitmask(df[:, colsname], selector)
+            colsname = _awm2str.(grp) # cols name of the group
+            selected_df = eX[:, colsname];
+
+            # group normalization
+            if (!isnothing(normf) && normgroup) selected_df = normf(selected_df) end
+
+            # TODO: remove
+            # println(selected_df)
+
+            if (supervised)
+                _, scores = apply(selected_df, y, selector; returnscores=true)
+            else
+                _, scores = apply(selected_df, selector; returnscores=true)
+            end
+
+            groupscores[i] = aggregatef(scores)
         end
 
-        selectedgroup_idxes = apply_limiter(bms, grouplimiter)
+        selectedgroup_idxes = apply_limiter(groupscores, limiter)
 
         if (iszero(length(selectedgroup_idxes)))
             @warn "No groups respects limiter constraints"
