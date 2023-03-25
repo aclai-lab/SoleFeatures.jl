@@ -105,7 +105,7 @@ return name to use in expanded DataFrames from AWMDescriptor
 function _awm2str(awmd::AWMDescriptor)::String
     attrname = string(awmd[1])
     movwin = string(awmd[2])
-    measuref = nameof(awmd[3])
+    measuref = string(awmd[3]) ## PATRIK ###
     return join([attrname, movwin, measuref], SEPARATOR)
 end
 
@@ -211,6 +211,9 @@ function evaluate(
     normgroup=true,
     supervised=false
 )
+
+    @assert length(y)==nrow(X) "Error, non uniform number of instances encountered! $(length(y)) != $(nrow(X))."
+
     # _a(X) = nothing
     # checks
     if (supervised)
