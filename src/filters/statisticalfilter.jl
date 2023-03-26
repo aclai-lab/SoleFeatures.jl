@@ -16,25 +16,26 @@ struct StatisticalFilter{T <: AbstractFilterLimiter} <: AbstractStatisticalFilte
         return StatisticalFilter(
             limiter,
             [
-                HypothesisTests.EqualVarianceZTest,
+                # HypothesisTests.EqualVarianceZTest,
                 HypothesisTests.UnequalVarianceZTest,
-                HypothesisTests.EqualVarianceTTest,
-                HypothesisTests.UnequalVarianceTTest
+                # HypothesisTests.EqualVarianceTTest,
+                # HypothesisTests.UnequalVarianceTTest
             ],
             [
                 HypothesisTests.MannWhitneyUTest,
-                HypothesisTests.ApproximateTwoSampleKSTest,
+                # HypothesisTests.ApproximateTwoSampleKSTest,
                 # HypothesisTests.SignedRankTest
             ]
         )
     end
 end
 
-limiter(selector::StatisticalFilter) = selector.limiter
 param_tests(selector::StatisticalFilter) = selector.param_tests
 non_param_tests(selector::StatisticalFilter) = selector.non_param_tests
 
-is_supervised(::AbstractStatisticalFilter{<:AbstractFilterLimiter}) = true
+is_univariate(::AbstractStatisticalFilter) = true
+is_supervised(::AbstractStatisticalFilter) = true
+is_unsupervised(::AbstractStatisticalFilter) = false
 
 # ========================================================================================
 # Constructors
@@ -51,13 +52,13 @@ end
 function apply(
     X::AbstractDataFrame,
     y::AbstractVector{<:Union{String, Symbol}},
-    selector::StatisticalFilter{<:AbstractFilterLimiter}
+    selector::StatisticalFilter{<:AbstractFilterLimiter};
+    returnscores=false
 )
     !is_supervised(selector) && throw(ErrorException("Only supervised selector allowed"))
     gdf = _group_by_class(X, y)
     classes = gdf[:, :class]
     attrs = names(X)
-
     scores = Vector{Int}() # times whose attribute was significatn for a class
     for attr in attrs
         curr_passed = []
@@ -74,11 +75,12 @@ function apply(
             # apply param tests
             pvals = _statistical_test(s1, s2, stattests)
             # TODO: parameterize passed constraint: at least one passed, half passed, all passed
-            passed = length(findall(<=(0.05), pvals)) >= (length(stattests) * 0.5)
+            passed = length(findall(<=(0.05), pvals)) >= (length(stattests) * 0.5) # majority
             push!(curr_passed, passed)
         end
         push!(scores, sum(curr_passed))
     end
+    if (returnscores) return apply_limiter(scores, limiter(selector)), scores end
     return apply_limiter(scores, limiter(selector))
 end
 
@@ -103,7 +105,7 @@ Perform Shapiro-Wilk normality test on a population.
 """
 function normality_shapiro(population::AbstractVector{<:Real})
     isempty(population) && throw(DimensionMismatch("empty population"))
-    stat, p = pyimport("scipy.stats").shapiro(population)
+    _, p = pyimport("scipy.stats").shapiro(population)
     return p
 end
 
