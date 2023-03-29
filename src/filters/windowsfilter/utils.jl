@@ -105,7 +105,7 @@ return name to use in expanded DataFrames from AWMDescriptor
 function _awm2str(awmd::AWMDescriptor)::String
     attrname = string(awmd[1])
     movwin = string(awmd[2])
-    measuref = string(awmd[3]) ## PATRIK ###
+    measuref = nameof(awmd[3])
     return join([attrname, movwin, measuref], SEPARATOR)
 end
 
