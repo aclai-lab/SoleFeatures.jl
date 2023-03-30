@@ -225,7 +225,7 @@ function evaluate(
     end
     
     eX = Float64.(expand(X, awmds))
-
+    
     # global normalization
     if (!isnothing(normf) && !normgroup) eX = normf(eX) end
 
