@@ -1,3 +1,4 @@
+# TODO: minmax_normalize in SoleBase
 """
 Normalize passed DataFrame using min-max normalization.
 Return a new normalized DataFrame
@@ -7,9 +8,9 @@ minmax_normalize(c, args...; kwars...) = minmax_normalize!(deepcopy(c), args...;
 function minmax_normalize!(
     mfd::SoleBase.MultiFrameDataset,
     frame_index::Integer;
-    min_quantile::AbstractFloat=0.0,
-    max_quantile::AbstractFloat=1.0,
-    col_quantile::Bool=true,
+    min_quantile::Real = 0.0,
+    max_quantile::Real = 1.0,
+    col_quantile::Bool = true,
 )
     return minmax_normalize!(
         SoleBase.frame(mfd, frame_index);
@@ -20,9 +21,9 @@ end
 
 function minmax_normalize!(
     df::AbstractDataFrame;
-    min_quantile::AbstractFloat=0.0,
-    max_quantile::AbstractFloat=1.0,
-    col_quantile::Bool=true,
+    min_quantile::Real = 0.0,
+    max_quantile::Real = 1.0,
+    col_quantile::Bool = true,
 )
     min_quantile < 0.0 &&
         throw(DomainError(min_quantile, "min_quantile must be greater than or equal to 0"))
@@ -32,9 +33,6 @@ function minmax_normalize!(
         throw(DomainError("max_quantile must be greater then min_quantile"))
 
     icols = eachcol(df)
-
-    !all(==(AbstractFloat), supertype.(eltype.(icols))) &&
-        throw(DomainError("DataFrame contains columns with type different from Float"))
 
     if (!col_quantile)
         # look for quantile in entire dataset
@@ -52,18 +50,15 @@ function minmax_normalize!(
 end
 
 function minmax_normalize!(
-    v::AbstractArray{<:AbstractArray{<:AbstractFloat}},
+    v::AbstractArray{<:AbstractArray{<:Real}},
     min::Real,
     max::Real
 )
     return minmax_normalize!.(v, min, max)
-    # @Threads.threads for (i, iv) in collect(enumerate(v))
-    #     v[i] = minmax_normalize(iv, min, max)
-    # end
 end
 
 function minmax_normalize!(
-    v::AbstractArray{<:AbstractFloat},
+    v::AbstractArray{<:Real},
     min::Real,
     max::Real
 )
