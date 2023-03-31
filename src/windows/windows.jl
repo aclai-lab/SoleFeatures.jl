@@ -60,7 +60,7 @@ function Base.lastindex(mw::AbstractMovingWindows)
     getindex(mw, length(mw))
 end
 
-function Base.iterate(mw::AbstractMovingWindows, i::Integer=1)
+function Base.iterate(mw::AbstractMovingWindows, i::Integer = 1)
     i > length(mw) && return nothing
     return (getindex(mw, i), i+1)
 end
