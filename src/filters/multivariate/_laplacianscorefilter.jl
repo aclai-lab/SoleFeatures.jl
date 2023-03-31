@@ -1,4 +1,4 @@
-struct LaplacianScoreFilter{T <: AbstractFilterLimiter} <: AbstractLaplacianScoreFilter{T}
+struct LaplacianScoreFilter{T <: AbstractLimiter} <: AbstractLaplacianScoreFilter{T}
     limiter::T,
     # parameters
     w_metric::String,
@@ -16,11 +16,11 @@ k(selector::LaplacianScoreFilter) = selector.k
 t(selector::LaplacianScoreFilter) = selector.t
 
 # ========================================================================================
-# Constructors
+# CUSTOM CONSTRUCTORS
 
 # ========================================================================================
 # Shared apply functions
 
-function apply(X::AbstractDataFrame, selector::VarianceFilter{<:AbstractFilterLimiter})
+function apply(X::AbstractDataFrame, selector::VarianceFilter{<:AbstractLimiter})
     # X =
 end

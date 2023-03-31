@@ -1,14 +1,3 @@
-# =========================================================================================
-# getters
-
-function limiter(selector::AbstractFeaturesSelector)
-    !hasproperty(selector, :limiter) && throw(ErrorException("`selector` struct not contain `limiter` field"))
-    return selector.limiter
-end
-
-# =========================================================================================
-# functions
-
 """
     transform!(X, args..; kwargs...)
     transform!(X, y, args..; kwargs...)
@@ -26,13 +15,18 @@ Removes from provided samples attributes indicated by bitmask or selector
 
 - `frmidx::Integer`: Frame index inside `X`
 """
+function transform!(X::AbstractDataFrame, idxes::Vector{Int})
+    ncol(X) < length(idxes) && throw(DimensionMismatch(""))
+    return select!(X, idxes)
+end
+
 function transform!(X::AbstractDataFrame, bm::BitVector)
     ncol(X) != length(bm) && throw(DimensionMismatch(""))
-    return select!(X, findall(bm))
+    return transform!(X, findall(bm))
 end
 
 function transform!(X::AbstractDataFrame, selector::AbstractFeaturesSelector)
-    return transform!(X, buildbitmask(X, selector))
+    return transform!(X, apply(X, selector))
 end
 
 function transform!(
@@ -40,11 +34,11 @@ function transform!(
     y::AbstractVector{<:Union{String, Symbol}},
     selector::AbstractFeaturesSelector
 )
-    return transform!(X, buildbitmask(X, y, selector))
+    return transform!(X, apply(X, y, selector))
 end
 
 function transform!(
-    X::SoleBase.AbstractMultiFrameDataset,
+    X::SoleData.AbstractMultiFrameDataset,
     bm::BitVector;
     frmidx::Union{Integer, Nothing} = nothing
 )
@@ -58,7 +52,7 @@ function transform!(
 end
 
 function transform!(
-    X::SoleBase.AbstractMultiFrameDataset,
+    X::SoleData.AbstractMultiFrameDataset,
     selector::AbstractFeaturesSelector;
     frmidx::Union{Integer, Nothing} = nothing
 )

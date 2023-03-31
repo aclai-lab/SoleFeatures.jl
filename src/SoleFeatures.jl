@@ -20,18 +20,15 @@ export AbstractFilterBased
 export AbstractWrapperBased
 export AbstractEmbeddedBased
 export AbstractLimiter
-export AbstractFilterLimiter
-export AbstractWrapperLimiter
-export AbstractEmbeddedLimiter
 # structs
 export VarianceThreshold
 export VarianceRanking
-export CorrelationRanking
-export CorrelationThreshold
 export RandomRanking
-# export MeasuresRanking
-# export WindowsFilter
-export StatisticalThreshold
+export StatisticalAtLeastOnce
+export StatisticalMajority
+export CompoundStatisticalAtLeastOnce
+export CompoundStatisticalMajority
+export CorrelationFilter
 # main functions
 export apply, buildbitmask, transform, transform!
 # utils
@@ -64,28 +61,19 @@ export bm2attr
 @reexport using SoleBase
 @reexport using SoleTraits
 
-# windows: should be moved
-include("windows/windows.jl")
-# limiters
-include("limiters/interface.jl")
-include("limiters/core.jl")
-# general utils
-include("utils/utils.jl")
-# selectors
 include("interface.jl")
 include("core.jl")
-## filters
-### variance
-include("filters/variancefilter.jl")
-### correlation
-include("filters/correlationfilter/utils.jl")
-include("filters/correlationfilter/correlationfilter.jl")
-### random
-include("filters/randomfilter.jl")
-### windowsf
-include("filters/windowsfilter/utils.jl")
-include("filters/windowsfilter/windowsfilter.jl")
-## statisticals
-include("filters/statisticalfilter.jl")
+# Filters
+include("filters/limiter.jl")
+include("filters/interface.jl")
+include("filters/univariate/randomfilter.jl")
+include("filters/univariate/statisticalfilter.jl")
+include("filters/univariate/variancefilter.jl")
+include("filters/univariate/utils.jl")
+include("filters/multivariate/correlationfilter.jl")
+# Utils
+include("windows/windows.jl")
+include("utils/expansion.jl")
+include("utils/utils.jl")
 
 end # module

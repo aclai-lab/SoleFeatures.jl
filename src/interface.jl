@@ -5,32 +5,22 @@
 Abstract supertype for all features selector.
 
 """
-abstract type AbstractFeaturesSelector{T<:AbstractLimiter} end
+abstract type AbstractFeaturesSelector end
 
 """
 Abstract supertype filter based selector.
 """
-abstract type AbstractFilterBased{T<:AbstractFilterLimiter} <: AbstractFeaturesSelector{T} end
+abstract type AbstractFilterBased <: AbstractFeaturesSelector end
 
 """
 Abstract supertype filter based selector.
 """
-abstract type AbstractWrapperBased{T<:AbstractWrapperLimiter} <: AbstractFeaturesSelector{T} end
+abstract type AbstractWrapperBased <: AbstractFeaturesSelector end
 
 """
 Abstract supertype filter based selector.
 """
-abstract type AbstractEmbeddedBased{T<:AbstractEmbeddedLimiter} <: AbstractFeaturesSelector{T} end
-
-# =========================================================================================
-# Abstract filter
-
-abstract type AbstractCorrelationFilter{T<:AbstractFilterLimiter} <: AbstractFilterBased{T} end
-abstract type AbstractVarianceFilter{T<:AbstractFilterLimiter} <: AbstractFilterBased{T} end
-abstract type AbstractRandomFilter{T<:AbstractFilterLimiter} <: AbstractFilterBased{T} end
-abstract type AbstractMeasuresFilter{T<:AbstractFilterLimiter} <: AbstractFilterBased{T} end
-abstract type AbstractStatisticalFilter{T<:AbstractFilterLimiter} <: AbstractFilterBased{T} end
-abstract type AbstractWindowsFilter{T<:AbstractFilterLimiter} <: AbstractFilterBased{T} end
+abstract type AbstractEmbeddedBased <: AbstractFeaturesSelector end
 
 # =========================================================================================
 # AbstractFeaturesSelector
@@ -48,19 +38,15 @@ Return vector containing indicies of suitable attributes from selector.
 """
 function apply(
     X::AbstractDataFrame,
-    selector::AbstractFeaturesSelector{<:AbstractLimiter};
-    returnscores=false
-)::Vector{Integer}
-    return error("`apply` for unsupervised selectors not implemented " *
-        "for type: $(typeof(selector))")
+    selector::AbstractFeaturesSelector
+)
+    return error("Unsupervised `apply` not implemented for: $(typeof(selector))")
 end
 
 function apply(
     X::AbstractDataFrame,
     y::AbstractVector{<:Union{String, Symbol}},
-    selector::AbstractFeaturesSelector{<:AbstractLimiter};
-    returnscores=false
-)::Vector{Integer}
-    return error("`apply` for supervised selectors not implemented " *
-        "for type: $(typeof(selector))")
+    selector::AbstractFeaturesSelector
+)
+    return error("Supervised `apply` not implemented for: $(typeof(selector))")
 end
