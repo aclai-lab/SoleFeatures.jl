@@ -44,10 +44,10 @@ function transform!(
 )
     if (isnothing(frmidx))
         nattributes(X) != length(bm) && throw(DimensionMismatch(""))
-        return SoleBase.SoleDataset.dropattributes!(X, findall(!, bm))
+        return SoleData.dropattributes!(X, findall(!, bm))
     else
         nattributes(X, frmidx) != length(bm) && throw(DimensionMismatch(""))
-        return SoleBase.SoleDataset.dropattributes!(X, frmidx, findall(!, bm))
+        return SoleData.dropattributes!(X, frmidx, findall(!, bm))
     end
 end
 
@@ -57,9 +57,9 @@ function transform!(
     frmidx::Union{Integer, Nothing} = nothing
 )
     if (isnothing(frmidx))
-        bm = buildbitmask(SoleBase.SoleDataset.data(X), selector)
+        bm = buildbitmask(SoleData.data(X), selector)
     else
-        bm = buildbitmask(SoleBase.frame(X, frmidx), selector)
+        bm = buildbitmask(SoleData.frame(X, frmidx), selector)
     end
     return transform!(X, bm; frmidx=frmidx)
 end
@@ -67,7 +67,7 @@ end
 # TODO: transform! for MultiFrameDataset with supervised selector
 
 transform(X::AbstractDataFrame, args...; kwargs...) = transform!(deepcopy(X), args...; kwargs...)
-transform(X::SoleBase.AbstractMultiFrameDataset, args...; kwargs...) = transform!(deepcopy(X), args...; kwargs...)
+transform(X::SoleData.AbstractMultiFrameDataset, args...; kwargs...) = transform!(deepcopy(X), args...; kwargs...)
 (s::AbstractFeaturesSelector)(X, args; kwargs...) = transform(X, args..., kwargs...)
 
 """
@@ -89,11 +89,11 @@ True values indicate selected attribute index
 - `frmidx::Integer`: Frame index inside `X`
 """
 function buildbitmask(
-    X::SoleBase.MultiFrameDataset,
+    X::SoleData.MultiFrameDataset,
     frmidx::Integer,
     selector::AbstractFeaturesSelector
 )::Tuple{BitVector, BitVector}
-    frbm = buildbitmask(SoleBase.frame(X, frmidx), selector) # frame bitmasks
+    frbm = buildbitmask(SoleData.frame(X, frmidx), selector) # frame bitmasks
     bm = _fr_bm2mfd_bm(X, frmidx, frbm)
     return bm, frbm
 end

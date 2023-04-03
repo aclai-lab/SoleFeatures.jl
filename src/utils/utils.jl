@@ -1,4 +1,4 @@
-# TODO: minmax_normalize in SoleBase
+# TODO: minmax_normalize in SoleData
 """
 Normalize passed DataFrame using min-max normalization.
 Return a new normalized DataFrame
@@ -6,14 +6,14 @@ Return a new normalized DataFrame
 minmax_normalize(c, args...; kwars...) = minmax_normalize!(deepcopy(c), args...; kwars...)
 
 function minmax_normalize!(
-    mfd::SoleBase.MultiFrameDataset,
+    mfd::SoleData.MultiFrameDataset,
     frame_index::Integer;
     min_quantile::Real = 0.0,
     max_quantile::Real = 1.0,
     col_quantile::Bool = true,
 )
     return minmax_normalize!(
-        SoleBase.frame(mfd, frame_index);
+        SoleData.frame(mfd, frame_index);
         min_quantile=min_quantile,
         max_quantile=max_quantile, col_quantile
     )
@@ -78,7 +78,7 @@ frame bitmask to MultiFrameDataset bitmask.
 return bitmask for entire MultiFrameDataset from a frame of it
 """
 function _fr_bm2mfd_bm(
-    mfd::SoleBase.MultiFrameDataset,
+    mfd::SoleData.MultiFrameDataset,
     frameidxes::Union{Integer, AbstractVector{<:Integer}},
     framebms::Union{BitVector, AbstractVector{<:BitVector}}
 )::BitVector
@@ -91,7 +91,7 @@ function _fr_bm2mfd_bm(
     for i in 1:lastindex(frameidxes)
         fridx = frameidxes[i]
         frbm = framebms[i]
-        framedescr = SoleBase.SoleDataset.frame_descriptor(mfd)[fridx] # frame indices inside mfd
+        framedescr = SoleData.frame_descriptor(mfd)[fridx] # frame indices inside mfd
         bm[framedescr] = frbm
     end
     return bm
@@ -102,12 +102,12 @@ end
 
 return tuple containing names of suitable attributes and names of not suitable attributes
 """
-function bm2attr(mfd::SoleBase.MultiFrameDataset, bm::BitVector)
+function bm2attr(mfd::SoleData.MultiFrameDataset, bm::BitVector)
     return bm2attr(SoleData.data(mfd), bm)
 end
 
-function bm2attr(mfd::SoleBase.MultiFrameDataset, fridx::Integer, bm::BitVector)
-    return bm2attr(SoleBase.frame(mfd, fridx), bm)
+function bm2attr(mfd::SoleData.MultiFrameDataset, fridx::Integer, bm::BitVector)
+    return bm2attr(SoleData.frame(mfd, fridx), bm)
 end
 
 function bm2attr(df::AbstractDataFrame, bm::BitVector)
