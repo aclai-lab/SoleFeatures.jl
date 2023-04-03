@@ -3,16 +3,16 @@
 module SoleFeatures
 
 using StatsBase
-using SoleTraits
+using SoleData
 using DynamicAxisWarping
 using Reexport
 using Random
 using Catch22
 using LinearAlgebra
-using OrderedCollections
 using HypothesisTests
 using IterTools
 using PyCall
+using OrderedCollections
 
 # abstracts
 export AbstractFeaturesSelector
@@ -58,8 +58,6 @@ export bm2attr
 # end
 
 @reexport using DataFrames
-@reexport using SoleBase
-@reexport using SoleTraits
 
 include("interface.jl")
 include("core.jl")
