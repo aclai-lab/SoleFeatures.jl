@@ -238,13 +238,10 @@ function evaluate(
             # group normalization
             if (!isnothing(normf) && normgroup) selected_df = normf(selected_df) end
 
-            # TODO: remove
-            # println(selected_df)
-
             if (supervised)
-                _, scores = apply(selected_df, y, selector)
+                scores = score(selected_df, y, selector)
             else
-                _, scores = apply(selected_df, selector)
+                scores = score(selected_df, selector)
             end
 
             groupscores[i] = aggregatef(scores)

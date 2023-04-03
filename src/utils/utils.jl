@@ -14,8 +14,9 @@ function minmax_normalize!(
 )
     return minmax_normalize!(
         SoleData.frame(mfd, frame_index);
-        min_quantile=min_quantile,
-        max_quantile=max_quantile, col_quantile
+        min_quantile = min_quantile,
+        max_quantile = max_quantile,
+        col_quantile = col_quantile
     )
 end
 

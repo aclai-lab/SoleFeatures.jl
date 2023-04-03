@@ -87,6 +87,6 @@ struct AtLeastLimiter{T<:AbstractLimiter} <: AbstractLimiter
 end
 
 function limit(scores::AbstractVector{<:AbstractVector}, al::AtLeastLimiter)
-    res = length.([ limit(score, al.limiter) for score in scores ])
-    return findall(res .>= al.atleast)
+    accepted = length.([ limit(score, al.limiter) for score in scores ])
+    return findall(accepted .>= al.atleast)
 end
