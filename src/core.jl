@@ -1,14 +1,3 @@
-# =========================================================================================
-# getters
-
-function limiter(selector::AbstractFeaturesSelector)
-    !hasproperty(selector, :limiter) && throw(ErrorException("`selector` struct not contain `limiter` field"))
-    return selector.limiter
-end
-
-# =========================================================================================
-# functions
-
 """
     transform!(X, args..; kwargs...)
     transform!(X, y, args..; kwargs...)
@@ -26,13 +15,18 @@ Removes from provided samples attributes indicated by bitmask or selector
 
 - `frmidx::Integer`: Frame index inside `X`
 """
+function transform!(X::AbstractDataFrame, idxes::Vector{Int})
+    ncol(X) < length(idxes) && throw(DimensionMismatch(""))
+    return select!(X, idxes)
+end
+
 function transform!(X::AbstractDataFrame, bm::BitVector)
     ncol(X) != length(bm) && throw(DimensionMismatch(""))
-    return select!(X, findall(bm))
+    return transform!(X, findall(bm))
 end
 
 function transform!(X::AbstractDataFrame, selector::AbstractFeaturesSelector)
-    return transform!(X, buildbitmask(X, selector))
+    return transform!(X, apply(X, selector))
 end
 
 function transform!(
@@ -40,7 +34,7 @@ function transform!(
     y::AbstractVector{<:Union{String, Symbol}},
     selector::AbstractFeaturesSelector
 )
-    return transform!(X, buildbitmask(X, y, selector))
+    return transform!(X, apply(X, y, selector))
 end
 
 function transform!(
@@ -52,7 +46,7 @@ function transform!(
         nattributes(X) != length(bm) && throw(DimensionMismatch(""))
         return SoleData.dropattributes!(X, findall(!, bm))
     else
-        nattributes(X, frmidx) != length(bm) && thow(DimensionMismatch(""))
+        nattributes(X, frmidx) != length(bm) && throw(DimensionMismatch(""))
         return SoleData.dropattributes!(X, frmidx, findall(!, bm))
     end
 end
@@ -65,7 +59,7 @@ function transform!(
     if (isnothing(frmidx))
         bm = buildbitmask(SoleData.data(X), selector)
     else
-        bm = buildbitmask(SoleBase.frame(X, frmidx), selector)
+        bm = buildbitmask(SoleData.frame(X, frmidx), selector)
     end
     return transform!(X, bm; frmidx=frmidx)
 end
@@ -99,7 +93,7 @@ function buildbitmask(
     frmidx::Integer,
     selector::AbstractFeaturesSelector
 )::Tuple{BitVector, BitVector}
-    frbm = buildbitmask(SoleBase.frame(X, frmidx), selector) # frame bitmasks
+    frbm = buildbitmask(SoleData.frame(X, frmidx), selector) # frame bitmasks
     bm = _fr_bm2mfd_bm(X, frmidx, frbm)
     return bm, frbm
 end

@@ -1,5 +1,10 @@
+# =========================================================================================
+# DEPRECATED!!
+# =========================================================================================
+
 # alias: Attribute, MovingWindows, Measure
 
+# TODO: change name in AbstractColumnDescriptor
 const AWMDescriptor = Tuple{Symbol, AbstractMovingWindowsIndex, Function}
 
 # constants
@@ -12,7 +17,7 @@ const GROUPBY_ID_DICT = Dict{Symbol, Integer}(
     GROUPBY_WINDOWS => 2,
     GROUPBY_MEASURES => 3
 )
-const SEPARATOR = "@@"
+const SEPARATOR = "@@@"
 
 isdefined(Main, :Catch22) && (Base.nameof(f::SuperFeature) = getname(f)) # wrap for Catch22
 
@@ -211,9 +216,6 @@ function evaluate(
     normgroup=true,
     supervised=false
 )
-
-    @assert length(y)==nrow(X) "Error, non uniform number of instances encountered! $(length(y)) != $(nrow(X))."
-
     # _a(X) = nothing
     # checks
     if (supervised)
@@ -223,9 +225,9 @@ function evaluate(
         !is_unsupervised(selector) && throw(ErrorException("Current selector doesn't contain unsupervised implementation"))
         # _a(X) = apply(X, selector; returnscores=true)
     end
-    
+
     eX = Float64.(expand(X, awmds))
-    
+
     # global normalization
     if (!isnothing(normf) && !normgroup) eX = normf(eX) end
 
@@ -240,19 +242,16 @@ function evaluate(
             # group normalization
             if (!isnothing(normf) && normgroup) selected_df = normf(selected_df) end
 
-            # TODO: remove
-            # println(selected_df)
-
             if (supervised)
-                _, scores = apply(selected_df, y, selector; returnscores=true)
+                scores = score(selected_df, y, selector)
             else
-                _, scores = apply(selected_df, selector; returnscores=true)
+                scores = score(selected_df, selector)
             end
 
             groupscores[i] = aggregatef(scores)
         end
 
-        selectedgroup_idxes = apply_limiter(groupscores, limiter)
+        selectedgroup_idxes = limit(groupscores, limiter)
 
         if (iszero(length(selectedgroup_idxes)))
             @warn "No groups respects limiter constraints"

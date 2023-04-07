@@ -1,126 +1,30 @@
-using SoleData
-
+# TODO: minmax_normalize in SoleData
 """
 Normalize passed DataFrame using min-max normalization.
 Return a new normalized DataFrame
 """
-# function minmax_normalize(
-#     df::AbstractDataFrame;
-#     min_quantile::Float64=0.0,
-#     max_quantile::Float64=1.0
-# )::DataFrame
-#     if min_quantile < 0.0
-#         throw(DomainError(min_quantile, "min_quantile must be greater than or equal to 0"))
-#     end
-#     if max_quantile > 1.0
-#         throw(DomainError(max_quantile, "max_quantile must be less than or equal to 1"))
-#     end
-#     if max_quantile <= min_quantile
-#         throw(ErrorException("max_quantile must be greater then min_quantile"))
-#     end
-
-#     norm_df = DataFrame()
-
-#     for col_name in names(df)
-#         col = df[:, Symbol(col_name)]
-#         flatted_col = collect(Iterators.flatten(col))
-#         dim = SoleBase.dimension(DataFrame(:curr => col))
-#         tmin = StatsBase.quantile(flatted_col, min_quantile)
-#         tmax = StatsBase.quantile(flatted_col, max_quantile)
-#         tmax = 1 / (tmax - tmin)
-#         dt = StatsBase.UnitRangeTransform(1, 1, true, [tmin], [tmax])
-
-#         if dim == 0
-#             norm_col = StatsBase.transform(dt, Float64.(col))
-#         elseif dim == 1
-#             norm_col = map(r->StatsBase.transform(dt, Float64.(r)),
-#                 Iterators.flatten(eachrow(col)))
-#         else
-#             error("unimplemented for dimension >2")
-#         end
-
-#         insertcols!(norm_df, Symbol(col_name) => norm_col)
-#     end
-
-#     return norm_df
-# end
-
-# function minmax_normalize(
-#     mfd::SoleData.MultiFrameDataset,
-#     frame_index::Integer;
-#     min_quantile::Float64=0.0,
-#     max_quantile::Float64=1.0
-# )
-#     ndf = DataFrame()
-#     df = SoleData.data(mfd)
-#     attr_names = names(df)
-#     frames_descriptor = SoleData.frame_descriptor(mfd)
-#     frame_indices = frames_descriptor[frame_index]
-#     frame = SoleBase.frame(mfd, frame_index)
-#     norm_frame = minmax_normalize(frame; min_quantile=min_quantile, max_quantile=max_quantile)
-
-#     frame_i = 1
-#     for (i, name) in enumerate(attr_names)
-#         if (i in frame_indices)
-#             col = norm_frame[:,frame_i]
-#             frame_i += 1
-#         else
-#             col = df[:,i]
-#         end
-#         insertcols!(ndf, Symbol(name) => col)
-#     end
-
-#     return MultiFrameDataset(frames_descriptor, ndf)
-# end
-
-# """
-#     _fr_bm2mfd_bm(mfd, frame_index, frame_bm)
-
-# frame bitmask to MultiFrameDataset bitmask.
-
-# return bitmask for entire MultiFrameDataset from a frame of it
-# """
-# function _fr_bm2mfd_bm(
-#     mfd::SoleData.MultiFrameDataset,
-#     frameidxes::Union{Integer, AbstractVector{<:Integer}},
-#     framebms::Union{BitVector, AbstractVector{<:BitVector}}
-# )::BitVector
-#     frameidxes = [ frameidxes... ]
-#     isa(framebms, BitVector) && (framebms = [ framebms ])
-
-#     length(frameidxes) != length(framebms) && throw(DimensionMismatch(""))
-
-#     bm = trues(nattributes(mfd))
-#     for i in 1:lastindex(frameidxes)
-#         fridx = frameidxes[i]
-#         frbm = framebms[i]
-#         framedescr = SoleData.frame_descriptor(mfd)[fridx] # frame indices inside mfd
-#         bm[framedescr] = frbm
-#     end
-#     return bm
-# end
-
 minmax_normalize(c, args...; kwars...) = minmax_normalize!(deepcopy(c), args...; kwars...)
 
 function minmax_normalize!(
     mfd::SoleData.MultiFrameDataset,
     frame_index::Integer;
-    min_quantile::AbstractFloat=0.0,
-    max_quantile::AbstractFloat=1.0,
-    col_quantile::Bool=true,
+    min_quantile::Real = 0.0,
+    max_quantile::Real = 1.0,
+    col_quantile::Bool = true,
 )
     return minmax_normalize!(
-        SoleBase.frame(mfd, frame_index);
-        min_quantile=min_quantile,
-        max_quantile=max_quantile, col_quantile
+        SoleData.frame(mfd, frame_index);
+        min_quantile = min_quantile,
+        max_quantile = max_quantile,
+        col_quantile = col_quantile
     )
 end
 
 function minmax_normalize!(
     df::AbstractDataFrame;
-    min_quantile::AbstractFloat=0.0,
-    max_quantile::AbstractFloat=1.0,
-    col_quantile::Bool=true,
+    min_quantile::Real = 0.0,
+    max_quantile::Real = 1.0,
+    col_quantile::Bool = true,
 )
     min_quantile < 0.0 &&
         throw(DomainError(min_quantile, "min_quantile must be greater than or equal to 0"))
@@ -130,10 +34,6 @@ function minmax_normalize!(
         throw(DomainError("max_quantile must be greater then min_quantile"))
 
     icols = eachcol(df)
-
-    ## PER PATRIK, a me non funziona!
-    # !all(==(AbstractFloat), supertype.(eltype.(icols))) &&
-    #     throw(DomainError("DataFrame contains columns with type different from Float"))
 
     if (!col_quantile)
         # look for quantile in entire dataset
@@ -151,18 +51,15 @@ function minmax_normalize!(
 end
 
 function minmax_normalize!(
-    v::AbstractArray{<:AbstractArray{<:AbstractFloat}},
+    v::AbstractArray{<:AbstractArray{<:Real}},
     min::Real,
     max::Real
 )
     return minmax_normalize!.(v, min, max)
-    # @Threads.threads for (i, iv) in collect(enumerate(v))
-    #     v[i] = minmax_normalize(iv, min, max)
-    # end
 end
 
 function minmax_normalize!(
-    v::AbstractArray{<:AbstractFloat},
+    v::AbstractArray{<:Real},
     min::Real,
     max::Real
 )
@@ -175,6 +72,33 @@ function minmax_normalize!(
 end
 
 """
+    _fr_bm2mfd_bm(mfd, frame_index, frame_bm)
+
+frame bitmask to MultiFrameDataset bitmask.
+
+return bitmask for entire MultiFrameDataset from a frame of it
+"""
+function _fr_bm2mfd_bm(
+    mfd::SoleData.MultiFrameDataset,
+    frameidxes::Union{Integer, AbstractVector{<:Integer}},
+    framebms::Union{BitVector, AbstractVector{<:BitVector}}
+)::BitVector
+    frameidxes = [ frameidxes... ]
+    isa(framebms, BitVector) && (framebms = [ framebms ])
+
+    length(frameidxes) != length(framebms) && throw(DimensionMismatch(""))
+
+    bm = trues(nattributes(mfd))
+    for i in 1:lastindex(frameidxes)
+        fridx = frameidxes[i]
+        frbm = framebms[i]
+        framedescr = SoleData.frame_descriptor(mfd)[fridx] # frame indices inside mfd
+        bm[framedescr] = frbm
+    end
+    return bm
+end
+
+"""
     bm2attr
 
 return tuple containing names of suitable attributes and names of not suitable attributes
@@ -184,7 +108,7 @@ function bm2attr(mfd::SoleData.MultiFrameDataset, bm::BitVector)
 end
 
 function bm2attr(mfd::SoleData.MultiFrameDataset, fridx::Integer, bm::BitVector)
-    return bm2attr(SoleBase.frame(mfd, fridx), bm)
+    return bm2attr(SoleData.frame(mfd, fridx), bm)
 end
 
 function bm2attr(df::AbstractDataFrame, bm::BitVector)
@@ -193,7 +117,6 @@ function bm2attr(df::AbstractDataFrame, bm::BitVector)
     bad_attr = attr[findall(!, bm)]
     return good_attr, bad_attr
 end
-
 
 """
     _group_by_class(df, y)
@@ -272,3 +195,11 @@ julia> gdf = _group_by_class(df, "myclasses")
 function _group_by_class(df::AbstractDataFrame, class_colname::String)
     return _group_by_class(df[:, Not(class_colname)], df[:, class_colname])
 end
+
+# fastest implementation
+# function _group_by_class2(
+#     df::AbstractDataFrame,
+#     y::AbstractVector{<:Union{String, Symbol}}
+# )
+#     return groupby(insertcols(df, :class=>y), :class)
+# end

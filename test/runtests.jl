@@ -1,5 +1,9 @@
-using SoleFeatures
+using HypothesisTests
+using StatsBase
 using Test
+using Revise
+using SoleData
+using SoleFeatures
 
 include("./test_function.jl")
 
@@ -16,7 +20,7 @@ include("./test_function.jl")
             emfd = deepcopy(mfd)
             SoleData.dropattributes!(emfd, [3,8])
 
-            transform!(mfd, bm_frame; frmidx=idx_frame)
+            SoleFeatures.transform!(mfd, bm_frame; frmidx=idx_frame)
 
             @test isequal(mfd, emfd)
         end
@@ -29,7 +33,7 @@ include("./test_function.jl")
             emfd = deepcopy(mfd)
             SoleData.dropattributes!(emfd, [1,3])
 
-            transform!(mfd, bm_frame)
+            SoleFeatures.transform!(mfd, bm_frame)
 
             @test isequal(mfd, emfd)
         end
@@ -41,7 +45,7 @@ include("./test_function.jl")
             edf = deepcopy(df)
             select!(edf, [2,4,5])
 
-            transform!(df, bm)
+            SoleFeatures.transform!(df, bm)
 
             @test isequal(df, edf)
         end
@@ -55,7 +59,7 @@ include("./test_function.jl")
             emfd = deepcopy(mfd)
             SoleData.dropattributes!(emfd, [3,8])
 
-            mfd = transform(mfd, bm_frame; frmidx=idx_frame)
+            mfd = SoleFeatures.transform(mfd, bm_frame; frmidx=idx_frame)
 
             @test isequal(mfd, emfd)
         end
@@ -68,7 +72,7 @@ include("./test_function.jl")
             emfd = deepcopy(mfd)
             SoleData.dropattributes!(emfd, [1,3])
 
-            mfd = transform(mfd, bm_frame)
+            mfd = SoleFeatures.transform(mfd, bm_frame)
 
             @test isequal(mfd, emfd)
         end
@@ -80,7 +84,7 @@ include("./test_function.jl")
             edf = deepcopy(df)
             select!(edf, [2,4,5])
 
-            df = transform(df, bm)
+            df = SoleFeatures.transform(df, bm)
 
             @test isequal(df, edf)
         end
@@ -119,57 +123,95 @@ include("./test_function.jl")
 
     @testset "selectors" begin
 
-        @testset "RandomRanking" begin
-            seed = 1997
-            rr = RandomRanking(3, seed)
-            df = random_timeseries_df(;nattr=10)
-            # expected values
-            edf = deepcopy(df)
-            select!(edf, [1,5,7])
+        @testset "transform" begin
 
-            transform!(df, rr)
+            @testset "RandomRanking" begin
+                seed = 1997
+                rr = RandomRanking(3, seed)
+                df = random_timeseries_df(;nattr=10)
+                # expected values
+                edf = deepcopy(df)
+                select!(edf, [6,2,5])
 
-            @test isequal(df, edf)
-        end
+                SoleFeatures.transform!(df, rr)
 
-        @testset "VarianceThreshold" begin
-            df = fake_temporal_series_dataset()
-            ndf = SoleFeatures.minmax_normalize(df; min_quantile=0.0, max_quantile=1.0)
-            vt = VarianceThreshold(0.09)
-            # expected values
-            endf = deepcopy(ndf)
-            select!(endf, [2,3])
+                @test isequal(df, edf)
+            end
 
-            transform!(ndf, vt)
+            @testset "VarianceThreshold" begin
+                df = fake_temporal_series_dataset()
+                ndf = SoleFeatures.minmax_normalize(df; min_quantile=0.0, max_quantile=1.0)
+                vt = VarianceThreshold(0.09)
+                # expected values
+                endf = deepcopy(ndf)
+                select!(endf, [2,3])
 
-            @test isequal(ndf, endf)
-        end
+                SoleFeatures.transform!(ndf, vt)
 
-        @testset "VarianceRanking" begin
-            df = fake_temporal_series_dataset()
-            ndf = SoleFeatures.minmax_normalize(df; min_quantile=0.0, max_quantile=1.0)
-            vr = VarianceRanking(3)
-            # expected values
-            endf = deepcopy(ndf)
-            select!(endf, [1,2,3])
+                @test isequal(ndf, endf)
+            end
 
-            transform!(ndf, vr)
+            @testset "VarianceRanking" begin
+                df = fake_temporal_series_dataset()
+                ndf = SoleFeatures.minmax_normalize(df; min_quantile=0.0, max_quantile=1.0)
+                vr = VarianceRanking(3)
+                # expected values
+                endf = deepcopy(ndf)
+                select!(endf, [2,3,1])
 
-            @test isequal(ndf, endf)
-        end
+                SoleFeatures.transform!(ndf, vr)
 
-        @testset "VarianceRanking on MultiFrameDataset" begin
-            df = fake_temporal_series_dataset()
-            df = SoleFeatures.minmax_normalize(df; min_quantile=0.0, max_quantile=1.0)
-            mfd = SoleData.MultiFrameDataset([ [1,2,3,4], [5] ], df)
-            vr = VarianceRanking(3)
-            # expected values
-            emfd = deepcopy(mfd)
-            SoleData.dropattributes!(emfd, [4])
+                @test isequal(ndf, endf)
+            end
 
-            transform!(mfd, vr; frmidx=1)
+            @testset "StatisticalMajority" begin
+                df = random_df()
+                y = rand([:a, :b, :c], 100)
+                sm = StatisticalMajority(UnequalVarianceTTest)
+                @test (SoleFeatures.transform!(df, y, sm) isa DataFrame)
+            end
 
-            @test (isequal(SoleData.data(mfd), SoleData.data(emfd)) && SoleData.frame_descriptor(emfd) == SoleData.frame_descriptor(mfd))
+            @testset "StatisticalAtLeastOnce" begin
+                df = random_df()
+                y = rand([:a, :b, :c], 100)
+                sa = StatisticalAtLeastOnce(UnequalVarianceZTest)
+                @test (SoleFeatures.transform!(df, y, sa) isa DataFrame)
+            end
+
+            @testset "CompoundStatisticalMajority" begin
+                df = random_df()
+                y = rand([:a, :b, :c], 100)
+                cm = CompoundStatisticalMajority(UnequalVarianceTTest, MannWhitneyUTest)
+                @test (SoleFeatures.transform!(df, y, cm) isa DataFrame)
+            end
+
+            @testset "CompoundStatisticalAtLeastOnce" begin
+                df = random_df()
+                y = rand([:a, :b, :c], 100)
+                ca = CompoundStatisticalAtLeastOnce(UnequalVarianceZTest, MannWhitneyUTest)
+                @test (SoleFeatures.transform!(df, y, ca) isa DataFrame)
+            end
+
+            @testset "CorrelationFilter" begin
+                df = random_df()
+                cf = CorrelationFilter(cor, 0)
+                @test (SoleFeatures.transform!(df, cf) isa DataFrame)
+            end
+
+            @testset "VarianceRanking on MultiFrameDataset" begin
+                df = fake_temporal_series_dataset()
+                df = SoleFeatures.minmax_normalize(df; min_quantile=0.0, max_quantile=1.0)
+                mfd = SoleData.MultiFrameDataset([ [1,2,3,4], [5] ], df)
+                vr = VarianceRanking(3)
+                # expected values
+                emfd = deepcopy(mfd)
+                SoleData.dropattributes!(emfd, [4])
+
+                SoleFeatures.transform!(mfd, vr; frmidx=1)
+
+                @test (isequal(SoleData.data(mfd), SoleData.data(emfd)) && SoleData.frame_descriptor(emfd) == SoleData.frame_descriptor(mfd))
+            end
+
         end
 
     end

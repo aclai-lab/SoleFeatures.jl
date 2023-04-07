@@ -15,7 +15,7 @@ isdefined(Main, :Catch22) && (Base.nameof(f::SuperFeature) = getname(f)) # wrap 
 
 # 28 attributes 2 classes
 # X, y = arff_2_mfd_multivariate("/home/patrik/develop/aclai/features_selection/results-sole/datasets/FingerMovements_TRAIN.arff")
-# X = SoleBase.SoleDataset.frame(X, 1)
+# X = SoleData.frame(X, 1)
 
 # ================== PREPARE ATTRIBUTES, WINDOWS, MEASURES ==================
 @info "PREPARE ATTRIBUTES, WINDOWS, MEASURES"

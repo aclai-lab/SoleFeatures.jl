@@ -1,9 +1,4 @@
-include("data-filters.jl")
-
-abstract type AbstractMovingWindows end
-abstract type AbstractMovingWindowsIndex end
-
-# moving windows index
+# ======================== moving windows index
 
 struct MovingWindowsIndex{T <: AbstractMovingWindows} <: AbstractMovingWindowsIndex
     index::Int
@@ -18,6 +13,8 @@ struct MovingWindowsIndex{T <: AbstractMovingWindows} <: AbstractMovingWindowsIn
         return new{T}(index, movingwindows)
     end
 end
+
+(i::MovingWindowsIndex)(v::AbstractVector) = getwindow(v, i)
 
 index(mwi::MovingWindowsIndex) = mwi.index
 movingwindows(mwi::MovingWindowsIndex) = mwi.movingwindows[]
@@ -40,7 +37,7 @@ function getwindow(v::AbstractVector, mwi::AbstractMovingWindowsIndex)
     return getwindow(v, movingwindows(mwi), index(mwi))
 end
 
-# AbstractMovingWindow functions
+# ======================== AbstractMovingWindow functions
 
 function Base.getindex(mw::AbstractMovingWindows, i::Integer)
     return MovingWindowsIndex(i, Ref(mw))
@@ -58,7 +55,7 @@ function Base.lastindex(mw::AbstractMovingWindows)
     getindex(mw, length(mw))
 end
 
-function Base.iterate(mw::AbstractMovingWindows, i::Integer=1)
+function Base.iterate(mw::AbstractMovingWindows, i::Integer = 1)
     i > length(mw) && return nothing
     return (getindex(mw, i), i+1)
 end
