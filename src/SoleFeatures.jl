@@ -12,7 +12,6 @@ using LinearAlgebra
 using HypothesisTests
 using IterTools
 using PyCall
-using OrderedCollections
 
 # abstracts
 export AbstractFeaturesSelector
@@ -70,8 +69,9 @@ include("filters/univariate/variancefilter.jl")
 include("filters/univariate/utils.jl")
 include("filters/multivariate/correlationfilter.jl")
 # Utils
-include("windows/windows.jl")
-include("utils/expansion.jl")
 include("utils/utils.jl")
+# Experimental
+include("experimental/Experimental.jl")
+import .Experimental
 
 end # module

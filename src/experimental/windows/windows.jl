@@ -1,10 +1,3 @@
-# TODO: make interface for windows
-
-include("data-filters.jl")
-
-abstract type AbstractMovingWindows end
-abstract type AbstractMovingWindowsIndex end
-
 # ======================== moving windows index
 
 struct MovingWindowsIndex{T <: AbstractMovingWindows} <: AbstractMovingWindowsIndex
@@ -20,6 +13,8 @@ struct MovingWindowsIndex{T <: AbstractMovingWindows} <: AbstractMovingWindowsIn
         return new{T}(index, movingwindows)
     end
 end
+
+(i::MovingWindowsIndex)(v::AbstractVector) = getwindow(v, i)
 
 index(mwi::MovingWindowsIndex) = mwi.index
 movingwindows(mwi::MovingWindowsIndex) = mwi.movingwindows[]
