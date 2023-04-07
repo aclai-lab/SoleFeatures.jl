@@ -6,7 +6,6 @@ version = "0.1.0"
 [deps]
 Catch22 = "acdeb78f-3d39-4310-8fdf-6d75c17c6d5a"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-DynamicAxisWarping = "aaaaaaaa-4a10-5553-b683-e707b00e83ce"
 HypothesisTests = "09f84164-cd44-5f33-b23f-e6b0d136a0d5"
 IterTools = "c8e1da08-722c-5040-9ed9-7db0dc04731e"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
