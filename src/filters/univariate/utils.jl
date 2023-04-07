@@ -150,7 +150,7 @@ Tecnique comes from: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3693611/
 function is_normal_distribuited(population::AbstractVector{<:Real})
     # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3693611/
     # 1. background for dimension upper 40 (central limit theorem)
-    # 5. conclusion for Shapiro-Wilk test
+    # 5. conclusion for Shapiro-Wilk test (null hypothesis is that "sample distribution is normal")
     return length(population) > 40 || normality_shapiro(population) > 0.05
 end
 

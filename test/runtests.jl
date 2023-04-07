@@ -181,14 +181,14 @@ include("./test_function.jl")
             @testset "CompoundStatisticalMajority" begin
                 df = random_df()
                 y = rand([:a, :b, :c], 100)
-                cm = CompoundStatisticalMajority(UnequalVarianceTTest, MannWhitneyUTest; verbose=true)
+                cm = CompoundStatisticalMajority(UnequalVarianceTTest, MannWhitneyUTest)
                 @test (SoleFeatures.transform!(df, y, cm) isa DataFrame)
             end
 
             @testset "CompoundStatisticalAtLeastOnce" begin
                 df = random_df()
                 y = rand([:a, :b, :c], 100)
-                ca = CompoundStatisticalAtLeastOnce(UnequalVarianceZTest, MannWhitneyUTest; verbose=true)
+                ca = CompoundStatisticalAtLeastOnce(UnequalVarianceZTest, MannWhitneyUTest)
                 @test (SoleFeatures.transform!(df, y, ca) isa DataFrame)
             end
 
