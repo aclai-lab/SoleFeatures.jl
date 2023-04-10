@@ -91,7 +91,7 @@ function score(
             end
             push!(pvals, HypothesisTests.pvalue(stattest(s1, s2)))
         end
-        insertcols!(scores, "$(c1)-vs-$(c2) [$(useparamtest ? "P" : "N")]" => pvals)
+        insertcols!(scores, "$(c1)-vs-$(c2)" => pvals)
     end
     return scores
 end
