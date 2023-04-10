@@ -23,10 +23,10 @@ So, here comes SoleFeatures.jl, which offers a **simple interface for performing
 
 These classical feature selection methods are designed for (un)supervised *structured* datasets, that is, tabular datasets with scalar features; however, an interesting characteristic of this package is the **possibility of using these methods on [*unstructured* data](https://en.wikipedia.org/wiki/Unstructured_data) as well**, for example, with time-series and images. This generalization is possible via a prior *window-based flattening* step, where tailored measures are used to compress the non-scalar components of the data. For example, with time-series data, measures with solid statistical grounds from [Catch22.jl](https://github.com/brendanjohnharris/Catch22.jl/) are used.
 
-All feature selection methods can also be applied to [*multimodal*](https://en.wikipedia.org/wiki/Multimodal_learning) datasets as well. Finally, the package offers an **easily extendible codebase**, with abstraction layers similar to those of *scikit-learn*, and was built as part of [Sole.jl](https://github.com/aclai-lab/Sole.jl), a novel programming suite tailored for *unstructured symbolic learning*.
+All feature selection methods can also be applied to [*multimodal*](https://en.wikipedia.org/wiki/Multimodal_learning) datasets as well. Finally, the package offers an **easily extendible codebase**, with abstraction layers similar to those of *scikit-learn*, and was built as part of [*Sole.jl*](https://github.com/aclai-lab/Sole.jl), a novel programming suite tailored for *unstructured symbolic learning*.
 
-# About
+## About
 
 The package is developed by the [ACLAI Lab](https://aclai.unife.it/en/) @ University of Ferrara.
 
-SoleFeatures.jl was built for [Sole.jl](https://pretalx.com/juliacon2023/talk/review/7LY9ZBBJQYVVLJFFSZMV9JCCMMTQJXPK), an open-source framework for *symbolic machine learning*.
+SoleFeatures.jl was built for [*Sole.jl*](https://github.com/aclai-lab/Sole.jl), an open-source framework for *symbolic machine learning*.
