@@ -1,4 +1,4 @@
-# SoleFeatures – Feature Selection on Unstructured and Multimodal data
+# *SoleFeatures.jl* – Feature Selection on Unstructured and Multimodal data
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://aclai-lab.github.io/SoleFeatures.jl/stable)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://aclai-lab.github.io/SoleFeatures.jl/dev)
