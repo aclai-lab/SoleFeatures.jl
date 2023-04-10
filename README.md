@@ -9,10 +9,13 @@
 
 ## In a nutshell
 
-SoleFeatures.jl provides TODO...
-- 
+SoleFeatures.jl provides tools for filter-based **feature selection** on [*(un)structured* data](https://en.wikipedia.org/wiki/Unstructured_data). At this time, the package provides:
+- 3 native feature selection methods, plus a wrapper around python implementations from *scikit-learn* and *scikit-feature*;
+- Generalized feature selection methods that also apply to dimensional data (e.g., images or time-series), via a step of window-based flattening;
+- Specific methods for time-series feature selection, based on [Catch22.jl](https://github.com/brendanjohnharris/Catch22.jl/);
+- An easily extendible codebase, with abstraction layers similar to those of *scikit-learn*.
 
-## Motivation
+## Outside the nutshell
 
 In machine learning, *feature selection* is the practice of **reducing the size of a dataset** by selecting only a subset of relevant features. This reduces the time that is necessary for learning models, and it generally leads to models that are more performant (in fact, irrelevant data often misleads machine learning algorithms). Despite the increasing importance of this data processing practice, not only there is not a proper package for it in the Julia environment, but there is also a [lack of implemented algorithms](https://discourse.julialang.org/t/univariate-feature-selection/87414/2) for it.
 
@@ -21,6 +24,7 @@ So, here comes SoleFeatures.jl, which offers a **simple interface for performing
 These classical feature selection methods are designed for (un)supervised *structured* datasets, that is, tabular datasets with scalar features; however, an interesting characteristic of this package is the **possibility of using these methods on [*unstructured* data](https://en.wikipedia.org/wiki/Unstructured_data) as well**, for example, with time-series and images. This generalization is possible via a prior *window-based flattening* step, where tailored measures are used to compress the non-scalar components of the data. For example, with time-series data, measures with solid statistical grounds from [Catch22.jl](https://github.com/brendanjohnharris/Catch22.jl/) are used.
 
 All feature selection methods can also be applied to [*multimodal*](https://en.wikipedia.org/wiki/Multimodal_learning) datasets as well. Finally, the package offers an **easily extendible codebase**, with abstraction layers similar to those of *scikit-learn*, and was built as part of [Sole.jl](https://github.com/aclai-lab/Sole.jl), a novel programming suite tailored for *unstructured symbolic learning*.
+
 # About
 
 The package is developed by the [ACLAI Lab](https://aclai.unife.it/en/) @ University of Ferrara.
