@@ -29,7 +29,7 @@ struct ThresholdLimiter <: AbstractLimiter
     ordf::Function
 
     function ThresholdLimiter(threshold::Real, ordf::Function)
-        !(ordf in [>, <, >=, <=]) && throw(DomainError("`ordf`"))
+        !(ordf in [>, <, >=, <=, ==]) && throw(DomainError("`ordf`"))
         return new(threshold, ordf)
     end
 end
@@ -68,11 +68,34 @@ end
 # ========================================================================================
 # Majority limiter
 
+"""
+Meta limiter: a limiter that applies its property limiter for each element in scores.
+An item in scores is accepted only if the property limiter selects at least half or more of its elements.
+"""
 struct MajorityLimiter{T<:AbstractLimiter} <: AbstractLimiter
     limiter::T
 end
 
-function limit(scores::AbstractVector{<:AbstractVector}, ml::MajorityLimiter)
+"""
+# Example
+
+```jldoctest
+julia> ml = MajorityLimiter(ThresholdLimiter(1, ==))
+MajorityLimiter{ThresholdLimiter}(ThresholdLimiter(1, ==))
+
+julia> v = [ [1,0,0,0], [1,1,0,0], [1,1,1,1] ]
+3-element Vector{Vector{Int64}}:
+ [1, 0, 0, 0]
+ [1, 1, 0, 0]
+ [1, 1, 1, 1]
+
+julia> limit(v, ml)
+2-element Vector{Int64}:
+ 2
+ 3
+```
+"""
+function limit(scores::AbstractVector, ml::MajorityLimiter)
     accepted = length.([ limit(score, ml.limiter) for score in scores ])
     bounds = ceil.(length.(scores) * 0.5)
     return findall(accepted .>= bounds)
@@ -81,12 +104,34 @@ end
 # ========================================================================================
 # AtLeast limiter
 
+"""
+Meta limiter: a limiter that applies its property limiter for each element in scores.
+An item in scores is accepted only if the property limiter selects at least `atleast` elements.
+"""
 struct AtLeastLimiter{T<:AbstractLimiter} <: AbstractLimiter
     limiter::T
     atleast::Int
 end
 
-function limit(scores::AbstractVector{<:AbstractVector}, al::AtLeastLimiter)
+"""
+# Example
+
+```jldoctest
+julia> al = AtLeastLimiter(ThresholdLimiter(0.5, <=), 1)
+AtLeastLimiter{ThresholdLimiter}(ThresholdLimiter(0.5, <=), 1)
+
+julia> v = [ [0.2,0,0,0], [5,8,9,7], [1,1,1,1] ]
+3-element Vector{Vector{Float64}}:
+ [0.2, 0.0, 0.0, 0.0]
+ [5.0, 8.0, 9.0, 7.0]
+ [1.0, 1.0, 1.0, 1.0]
+
+julia> limit(v, al)
+1-element Vector{Int64}:
+ 1
+```
+"""
+function limit(scores::AbstractVector, al::AtLeastLimiter)
     accepted = length.([ limit(score, al.limiter) for score in scores ])
     return findall(accepted .>= al.atleast)
 end
