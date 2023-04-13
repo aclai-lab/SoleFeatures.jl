@@ -28,7 +28,7 @@ function extract(df::AbstractDataFrame, es::Array)
     return edf
 end
 
-function extract_groupby(es::Array, group::Union{Int, NTuple{N, Int}}) where {N}
+function groupby(es::Array, group::Union{Int, NTuple{N, Int}}) where {N}
     groups = Dict()
     for e in es
         length(group) > length(e) && throw(DimensionMismatch("`group` have more elements than current `ds` item: $(e)"))
@@ -43,7 +43,7 @@ function extract_groupby(es::Array, group::Union{Int, NTuple{N, Int}}) where {N}
 end
 
 function groupreduce(es::Array, group::Union{Int, NTuple{N, Int}}) where {N}
-    groups = extract_groupby(es, group)
+    groups = groupby(es, group)
     res = []
     for t in getindex.(groups, 1)
         push!(res, t[[group...]])
