@@ -8,6 +8,7 @@ using LinearAlgebra
 using HypothesisTests
 using IterTools
 using PyCall
+using MLBase
 
 # abstracts
 export AbstractFeaturesSelector
@@ -39,6 +40,7 @@ include("filters/interface.jl")
 include("filters/univariate/randomfilter.jl")
 include("filters/univariate/statisticalfilter.jl")
 include("filters/univariate/variancefilter.jl")
+include("filters/univariate/chi2filter.jl")
 include("filters/univariate/utils.jl")
 include("filters/multivariate/correlationfilter.jl")
 # Utils
