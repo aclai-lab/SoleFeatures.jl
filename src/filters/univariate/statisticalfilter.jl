@@ -1,31 +1,19 @@
+"""
+Perform provided hypothesis test `htest` (from: https://github.com/JuliaStats/HypothesisTests.jl)
+on each attributes.
+The attribute is splitted into as many populations as there are pairs of classes (n*(n-1)/2 pairs class_i vs class_j)
+and the hypothesis test is performed between two population of different classes.
+"""
 struct StatisticalFilter{T <: AbstractLimiter} <: AbstractStatisticalFilter{T}
     limiter::T
     # parameters
     htest::Any # HypothesisTests.HypothesisTest
-    versus::Symbol
-
-    function StatisticalFilter(
-        limiter::T,
-        htest::Any, # HypothesisTests.HypothesisTest,
-        versus::Symbol
-    ) where {T <: AbstractLimiter}
-        if (!(versus in VERSUS_SYMBOLS))
-            throw(DomainError("Not valid `versus` symbol.\nAllowed symbols: $(VERSUS_SYMBOLS)"))
-        end
-        return new{T}(limiter, htest, versus)
-    end
 end
-
-# ========================================================================================
-# CONSTS
-
-const VERSUS_SYMBOLS = [:ovo, :ova]
 
 # ========================================================================================
 # ACCESSORS
 
 htest(selector::StatisticalFilter) = selector.htest
-versus(selector::StatisticalFilter) = selector.versus
 
 # ========================================================================================
 # TRAITS
@@ -41,7 +29,6 @@ function score(
     selector::StatisticalFilter
 )::DataFrame
     stattest = htest(selector)
-    vs = versus(selector)
 
     gdf = _group_by_class(X, y)
     classes = gdf[:, :class]
@@ -78,12 +65,14 @@ end
 # ========================================================================================
 # CUSTOM CONSTRUCTORS
 
-function StatisticalMajority(htest::Any; versus=:ovo) # HypothesisTests.HypothesisTest; versus=:ovo)
-    sl = StatisticalLimiter(MajorityLimiter(ThresholdLimiter(0.05, <=)))
-    return StatisticalFilter(sl, htest, versus)
+function StatisticalMajority(htest::Any; significance = 0.05, rejectnullhp = true) # HypothesisTests.HypothesisTest; versus=:ovo)
+    rejectnull = rejectnullhp ? (<=) : (>)
+    sl = StatisticalLimiter(MajorityLimiter(ThresholdLimiter(significance, rejectnull)))
+    return StatisticalFilter(sl, htest)
 end
 
-function StatisticalAtLeastOnce(htest::Any; versus=:ovo) # HypothesisTests.HypothesisTest; versus=:ovo)
-    sl = StatisticalLimiter(AtLeastLimiter(ThresholdLimiter(0.05, <=), 1))
-    return StatisticalFilter(sl, htest, versus)
+function StatisticalAtLeastOnce(htest::Any; significance = 0.05, rejectnullhp = true) # HypothesisTests.HypothesisTest; versus=:ovo)
+    rejectnull = rejectnullhp ? (<=) : (>)
+    sl = StatisticalLimiter(AtLeastLimiter(ThresholdLimiter(significance, rejectnull), 1))
+    return StatisticalFilter(sl, htest)
 end

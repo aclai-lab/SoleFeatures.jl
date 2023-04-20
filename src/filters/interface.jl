@@ -6,6 +6,7 @@ abstract type UnivariateFilterBased{T<:AbstractLimiter} <: AbstractFilterBased e
 abstract type AbstractVarianceFilter{T<:AbstractLimiter} <: UnivariateFilterBased{T} end
 abstract type AbstractRandomFilter{T<:AbstractLimiter} <: UnivariateFilterBased{T} end
 abstract type AbstractStatisticalFilter{T<:AbstractLimiter} <: UnivariateFilterBased{T} end
+abstract type AbstractChi2Filter{T<:AbstractLimiter} <: UnivariateFilterBased{T} end
 
 is_univariate(::UnivariateFilterBased) = true
 

@@ -34,6 +34,8 @@ export bm2attr
 
 include("interface.jl")
 include("core.jl")
+# Utils
+include("utils/utils.jl")
 # Filters
 include("filters/limiter.jl")
 include("filters/interface.jl")
@@ -43,8 +45,6 @@ include("filters/univariate/variancefilter.jl")
 include("filters/univariate/chi2filter.jl")
 include("filters/univariate/utils.jl")
 include("filters/multivariate/correlationfilter.jl")
-# Utils
-include("utils/utils.jl")
 # Experimental
 include("experimental/Experimental.jl")
 import .Experimental
