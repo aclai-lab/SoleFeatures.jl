@@ -1,11 +1,11 @@
 # *SoleFeatures.jl* – Feature Selection on Unstructured and Multimodal data
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://aclai-lab.github.io/SoleFeatures.jl/stable)
-[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://aclai-lab.github.io/SoleFeatures.jl/dev)
 [![Build Status](https://api.cirrus-ci.com/github/aclai-lab/SoleFeatures.jl.svg)](https://cirrus-ci.com/github/aclai-lab/SoleFeatures.jl)
 [![Coverage](https://codecov.io/gh/aclai-lab/SoleFeatures.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/aclai-lab/SoleFeatures.jl)
-[![Coverage](https://coveralls.io/repos/github/aclai-lab/SoleFeatures.jl/badge.svg?branch=master)](https://coveralls.io/github/aclai-lab/SoleFeatures.jl?branch=master)
 [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
+
+<!-- [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://aclai-lab.github.io/SoleFeatures.jl/dev) -->
 
 ## In a nutshell
 
