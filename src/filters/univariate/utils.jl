@@ -1,13 +1,14 @@
 # ========================================================================================
 # COMPOUND STATISTICAL FILTER
 # ========================================================================================
+
+# TODO: implement versus mode
 struct CompoundStatisticalFilter{T <: AbstractLimiter} <: AbstractStatisticalFilter{T}
     limiter::T
     # parameters
     paramtest::Any # HypothesisTests.HypothesisTest
     nonparamtest::Any # HypothesisTests.HypothesisTest
     normalitycheck::Function
-    versus::Symbol
     verbose::Bool
 
     function CompoundStatisticalFilter(
@@ -15,13 +16,9 @@ struct CompoundStatisticalFilter{T <: AbstractLimiter} <: AbstractStatisticalFil
         paramtest::Any, # HypothesisTests.HypothesisTest,
         nonparamtest::Any, # HypothesisTests.HypothesisTest,
         normalitycheck::Function,
-        versus::Symbol,
         verbose::Bool
     ) where {T <: AbstractLimiter}
-        if (!(versus in VERSUS_SYMBOLS))
-            throw(DomainError("Not valid `versus` symbol.\nAllowed symbols: $(VERSUS_SYMBOLS)"))
-        end
-        return new{T}(limiter, paramtest, nonparamtest, normalitycheck, versus, verbose)
+        return new{T}(limiter, paramtest, nonparamtest, normalitycheck, verbose)
     end
 
     function CompoundStatisticalFilter(
@@ -30,10 +27,7 @@ struct CompoundStatisticalFilter{T <: AbstractLimiter} <: AbstractStatisticalFil
         nonparamtest::Any, # HypothesisTests.HypothesisTest,
         verbose::Bool
     ) where {T <: AbstractLimiter}
-        if (!(versus in VERSUS_SYMBOLS))
-            throw(DomainError("Not valid `versus` symbol.\nAllowed symbols: $(VERSUS_SYMBOLS)"))
-        end
-        return new{T}(limiter, paramtest, nonparamtest, is_normal_distribuited, :ovo, verbose)
+        return new{T}(limiter, paramtest, nonparamtest, is_normal_distribuited, verbose)
     end
 
     function CompoundStatisticalFilter(
@@ -41,10 +35,7 @@ struct CompoundStatisticalFilter{T <: AbstractLimiter} <: AbstractStatisticalFil
         paramtest::Any, # HypothesisTests.HypothesisTest,
         nonparamtest::Any # HypothesisTests.HypothesisTest
     ) where {T <: AbstractLimiter}
-        if (!(versus in VERSUS_SYMBOLS))
-            throw(DomainError("Not valid `versus` symbol.\nAllowed symbols: $(VERSUS_SYMBOLS)"))
-        end
-        return new{T}(limiter, paramtest, nonparamtest, is_normal_distribuited, :ovo, true)
+        return new{T}(limiter, paramtest, nonparamtest, is_normal_distribuited, true)
     end
 end
 
@@ -54,7 +45,6 @@ end
 paramtest(selector::CompoundStatisticalFilter) = selector.paramtest
 nonparamtest(selector::CompoundStatisticalFilter) = selector.nonparamtest
 normalitycheck(selector::CompoundStatisticalFilter) = selector.normalitycheck
-versus(selector::CompoundStatisticalFilter) = selector.versus
 verbose(selector::CompoundStatisticalFilter) = selector.verbose
 
 # ========================================================================================
