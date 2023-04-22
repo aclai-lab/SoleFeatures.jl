@@ -113,7 +113,6 @@ function CompoundStatisticalAtLeastOnce(
     paramtest::Any, # HypothesisTests.HypothesisTest,
     nonparamtest::Any; # HypothesisTests.HypothesisTest;
     normalitycheck::Function = is_normal_distribuited,
-    versus::Symbol = :ovo,
     verbose::Bool = false
 )
     sl = StatisticalLimiter(AtLeastLimiter(ThresholdLimiter(0.05, <=), 1))
