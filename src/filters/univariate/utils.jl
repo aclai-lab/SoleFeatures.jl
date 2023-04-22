@@ -97,7 +97,6 @@ function CompoundStatisticalMajority(
     paramtest::Any, # HypothesisTests.HypothesisTest,
     nonparamtest::Any; # HypothesisTests.HypothesisTest;
     normalitycheck::Function = is_normal_distribuited,
-    versus::Symbol = :ovo,
     verbose::Bool = false
 )
     sl = StatisticalLimiter(MajorityLimiter(ThresholdLimiter(0.05, <=)))
@@ -106,7 +105,6 @@ function CompoundStatisticalMajority(
         paramtest,
         nonparamtest,
         normalitycheck,
-        versus,
         verbose
     )
 end
@@ -124,7 +122,6 @@ function CompoundStatisticalAtLeastOnce(
         paramtest,
         nonparamtest,
         normalitycheck,
-        versus,
         verbose
     )
 end
