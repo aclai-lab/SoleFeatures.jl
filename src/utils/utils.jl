@@ -195,11 +195,3 @@ julia> gdf = _group_by_class(df, "myclasses")
 function _group_by_class(df::AbstractDataFrame, class_colname::String)
     return _group_by_class(df[:, Not(class_colname)], df[:, class_colname])
 end
-
-# fastest implementation
-# function _group_by_class2(
-#     df::AbstractDataFrame,
-#     y::AbstractVector{<:Union{String, Symbol}}
-# )
-#     return groupby(insertcols(df, :class=>y), :class)
-# end

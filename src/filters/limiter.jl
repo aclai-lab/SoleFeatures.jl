@@ -3,11 +3,13 @@ abstract type AbstractLimiter end
 """
     limit(scores, l)
 
-return indices of best scores
+return indices of suitable `scores` based on provided `limiter`
 """
 function limit(scores, l::AbstractLimiter)
     return error("`limit` not implemented for type: $(typeof(l))")
 end
+
+(l::AbstractLimiter)(scores::Any) = limit(scores, l)
 
 # ========================================================================================
 # Identity limiter
@@ -97,6 +99,7 @@ julia> limit(v, ml)
 """
 function limit(scores::AbstractVector, ml::MajorityLimiter)
     accepted = length.([ limit(score, ml.limiter) for score in scores ])
+    # change length(scores) with getindex.(size.(scores, 1), 1)
     bounds = ceil.(length.(scores) * 0.5)
     return findall(accepted .>= bounds)
 end
