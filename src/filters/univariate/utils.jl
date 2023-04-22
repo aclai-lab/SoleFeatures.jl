@@ -1,7 +1,6 @@
 # ========================================================================================
 # COMPOUND STATISTICAL FILTER
 # ========================================================================================
-
 struct CompoundStatisticalFilter{T <: AbstractLimiter} <: AbstractStatisticalFilter{T}
     limiter::T
     # parameters
@@ -57,6 +56,11 @@ nonparamtest(selector::CompoundStatisticalFilter) = selector.nonparamtest
 normalitycheck(selector::CompoundStatisticalFilter) = selector.normalitycheck
 versus(selector::CompoundStatisticalFilter) = selector.versus
 verbose(selector::CompoundStatisticalFilter) = selector.verbose
+
+# ========================================================================================
+# TRAITS
+
+is_supervised(::CompoundStatisticalFilter) = true
 
 # ========================================================================================
 # SCORE
@@ -162,3 +166,163 @@ function normality_shapiro(population::AbstractVector{<:Real})
     _, p = pyimport("scipy.stats").shapiro(population)
     return p
 end
+
+# ========================================================================================
+# VARIANCE DISTANCE FILTER
+# ========================================================================================
+
+abstract type AbstractVarianceDistanceFilter{T<:AbstractLimiter} <: UnivariateFilterBased{T} end
+
+struct VarianceDistanceFilter{T <: AbstractLimiter} <: AbstractVarianceDistanceFilter{T}
+    limiter::T
+    # parameters
+    downsampling::Bool
+    downsampling_nitr::Int
+    downsampling_rng::Random.AbstractRNG
+end
+
+# ========================================================================================
+# ACCESSORS
+
+downsampling(s::VarianceDistanceFilter) = s.downsampling
+downsampling_nitr(s::VarianceDistanceFilter) = s.downsampling_nitr
+downsampling_rng(s::VarianceDistanceFilter) = s.downsampling_rng
+
+# ========================================================================================
+# TRAITS
+
+is_supervised(::VarianceDistanceFilter) = true
+
+# ========================================================================================
+# SCORE
+
+function score(
+    X::AbstractDataFrame,
+    y::AbstractVector{<:Union{String, Symbol}},
+    selector::VarianceDistanceFilter
+)
+    numcol = size(X, 2)
+    groupx = _group_by_class(X, y)
+    # extract and remove class from groupx
+    classes = groupx[:, :class]
+    select!(groupx, Not(:class))
+
+    # get the number of instances for each class
+    class_inst_len = length.(groupx[:, 1])
+    classeslen = length(classes)
+    # if binary classes then iterate only over the first
+    classitr = classeslen == 2 ? classeslen - 1 : classeslen
+
+    # orgiginal variance of each columns
+    ovars = StatsBase.var.(eachcol(X))
+
+    dsmake = downsampling(selector)
+    dsitr = downsampling_nitr(selector)
+    dsrng = downsampling_rng(selector)
+
+    scores = Vector{Float64}(undef, ncol(X))
+    for cidx in 1:numcol
+        tmpscore = Vector{Float64}(undef, classitr)
+        for ridx in 1:classitr
+            # groupx columns without instances of current class (ridx)
+            diffx = groupx[Not(ridx), cidx]
+            if (dsmake)
+                # calculate sample size to get from instances of other classes
+                samplesize = Int(ceil(class_inst_len[ridx] / (classeslen - 1)))
+
+                # check if instances of other classes can be sampled
+                notsamplingidxes = findall(<(samplesize), class_inst_len)
+                if (!isempty(notsamplingidxes))
+                    throw(DimensionMismatch(
+                            "The instances of the following classes can't be down sampled: $(classes[notsamplingidxes]).\
+                            Class '$(classes[ridx])' require samples of $(samplesize) items"
+                        ))
+                end
+
+                dangersamplingidxes = findall(==(samplesize), class_inst_len[Not(ridx)])
+                if (!isempty(dangersamplingidxes))
+                    @warn "Classes $(classes[dangersamplingidxes]) have the same size of\
+                            the sample rate: $(samplesize) items.\
+                            Class '$(classes[ridx])' require samples of $(samplesize) items"
+                end
+
+                samplevar = Vector{Float64}()
+                # stratified down sampling
+                for _ in 1:dsitr
+                    sample = vcat(StatsBase.sample.(
+                                dsrng, diffx, samplesize, replace = false
+                             )...)
+                    push!(samplevar, StatsBase.var(sample))
+                end
+                # aggreagte samples variance results
+                svar = StatsBase.mean(samplevar)
+            else
+                svar = StatsBase.var(vcat(diffx...))
+            end
+
+            cvar = StatsBase.var(groupx[ridx, cidx])
+            tmpscore[ridx] = minimum(ovars[cidx] .- [svar, cvar])
+        end
+        scores[cidx] = maximum(tmpscore)
+    end
+    return scores
+end
+
+# ========================================================================================
+# CUSTOM CONSTRUCTORS
+
+function VarianceDistanceRanking(
+    nbest;
+    downsampling = true,
+    downsampling_nitr = 1000,
+    downsampling_rng = MersenneTwister()
+)
+    return VarianceDistanceFilter(
+        RankingLimiter(nbest, true),
+        downsampling,
+        downsampling_nitr,
+        downsampling_rng
+    )
+end
+
+# ========================================================================================
+# SUPERVISED VARIANCE FILTER
+# ========================================================================================
+
+abstract type AbstractSupervisedVarianceFilter{T<:AbstractLimiter} <: UnivariateFilterBased{T} end
+
+struct SupervisedVarianceFilter{T <: AbstractLimiter} <: AbstractSupervisedVarianceFilter{T}
+    limiter::T
+    # parameters
+end
+
+# ========================================================================================
+# TRAITS
+
+is_supervised(::SupervisedVarianceFilter) = true
+
+# ========================================================================================
+# SCORE
+
+function score(
+    X::AbstractDataFrame,
+    y::AbstractVector{<:Union{String, Symbol}},
+    selector::SupervisedVarianceFilter
+)
+    numcol = ncol(X)
+    original_vars = StatsBase.var.(eachcol(X))
+    gdf = _group_by_class(X, y)
+    scores = Vector{AbstractFloat}(undef, numcol)
+    for colidx in 1:numcol
+        splitvars = StatsBase.var.(gdf[:, colidx])
+        scores[colidx] = minimum(original_vars[colidx] .- splitvars)
+        # scores[colidx] = StatsBase.mean(original_vars[colidx] .- splitvars) # strict version
+    end
+    return scores
+end
+
+# ========================================================================================
+# CUSTOM CONSTRUCTORS
+
+# Ranking
+SupervisedVarianceRanking(nbest) = SupervisedVarianceFilter(RankingLimiter(nbest, true))
