@@ -5,8 +5,6 @@ end
 
 const _SEPARATOR = "@@@"
 
-# TODO: remove Any in Vararg, Any is defined only for test purpose using WindowsIndex.
-#       Understand why a callable object is not a function
 """
 First element must be the name of the attribute
 """
