@@ -13,7 +13,7 @@ is_supervised(::AbstractChi2Filter) = true
 
 function score(
     X::AbstractDataFrame,
-    y::AbstractVector{<:Union{String, Symbol}},
+    y::AbstractVector{<:Class},
     selector::Chi2Filter
 )::Vector{Float64}
     numcol = size(X, 2)

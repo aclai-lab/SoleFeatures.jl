@@ -31,7 +31,7 @@ end
 
 function transform!(
     X::AbstractDataFrame,
-    y::AbstractVector{<:Union{String, Symbol}},
+    y::AbstractVector{<:Class},
     selector::AbstractFeaturesSelector
 )
     return transform!(X, apply(X, y, selector))
@@ -80,7 +80,7 @@ True values indicate selected attribute index
 # Arguments
 
 - `X::AbstractDataFrame`: samples to evaluate
-- `y::AbstractVector{<:Union{String, Symbol}}`: target vector
+- `y::AbstractVector{<:Class}`: target vector
 - `selector::AbstractFeaturesSelector`: applied selector
 
 # Keywords
@@ -107,7 +107,7 @@ end
 
 function buildbitmask(
     X::AbstractDataFrame,
-    y::AbstractVector{<:Union{String, Symbol}},
+    y::AbstractVector{<:Class},
     selector::AbstractFeaturesSelector
 )::BitVector
     idxes = apply(X, y, selector)

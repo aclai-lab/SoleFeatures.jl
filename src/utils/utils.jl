@@ -153,7 +153,7 @@ julia> _group_by_class(df, y)
    2 │ [3]        [7]         S
 ```
 """
-function _group_by_class(df::AbstractDataFrame, y::AbstractVector{<:Union{String, Symbol}})
+function _group_by_class(df::AbstractDataFrame, y::AbstractVector{<:Class})
     ndf = DataFrame()
     classes = unique(y)
     attrsname = names(df)

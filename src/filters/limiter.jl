@@ -5,7 +5,7 @@ abstract type AbstractLimiter end
 
 return indices of suitable `scores` based on provided `limiter`
 """
-function limit(scores, l::AbstractLimiter)
+function limit(scores::Any, l::AbstractLimiter)
     return error("`limit` not implemented for type: $(typeof(l))")
 end
 

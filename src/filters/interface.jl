@@ -20,7 +20,7 @@ end
 
 function score(
     X::AbstractDataFrame,
-    y::AbstractVector{<:Union{String, Symbol}},
+    y::AbstractVector{<:Class},
     selector::UnivariateFilterBased{<:AbstractLimiter}
 )
     return error("`score` for supervised selectors not implemented " *
@@ -42,7 +42,7 @@ end
 
 function apply(
     X::AbstractDataFrame,
-    y::AbstractVector{<:Union{String, Symbol}},
+    y::AbstractVector{<:Class},
     selector::UnivariateFilterBased
 )
     return limit(score(X, y, selector), limiter(selector))

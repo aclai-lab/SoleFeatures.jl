@@ -136,3 +136,9 @@ function random_df(;ninstances=100, nattr=5)
     end
     return df
 end
+
+function random_mfd(;ninstances=100, nattr=5)
+    df = random_df(;ninstances = ninstances, nattr = nattr)
+    fd = [ collect(1:nattr) ]
+    return MultiFrameDataset(fd, df)
+end

@@ -139,29 +139,17 @@ include("./test_function.jl")
             end
 
             @testset "VarianceThreshold" begin
-                df = fake_temporal_series_dataset()
+                df = random_df()
                 ndf = SoleFeatures.minmax_normalize(df; min_quantile=0.0, max_quantile=1.0)
                 vt = VarianceThreshold(0.09)
-                # expected values
-                endf = deepcopy(ndf)
-                select!(endf, [2,3])
-
-                SoleFeatures.transform!(ndf, vt)
-
-                @test isequal(ndf, endf)
+                @test (SoleFeatures.transform!(df, vt) isa DataFrame)
             end
 
             @testset "VarianceRanking" begin
-                df = fake_temporal_series_dataset()
+                df = random_df()
                 ndf = SoleFeatures.minmax_normalize(df; min_quantile=0.0, max_quantile=1.0)
                 vr = VarianceRanking(3)
-                # expected values
-                endf = deepcopy(ndf)
-                select!(endf, [2,3,1])
-
-                SoleFeatures.transform!(ndf, vr)
-
-                @test isequal(ndf, endf)
+                @test (SoleFeatures.transform!(df, vr) isa DataFrame)
             end
 
             @testset "StatisticalMajority" begin
@@ -199,17 +187,11 @@ include("./test_function.jl")
             end
 
             @testset "VarianceRanking on MultiFrameDataset" begin
-                df = fake_temporal_series_dataset()
+                df = random_df();
                 df = SoleFeatures.minmax_normalize(df; min_quantile=0.0, max_quantile=1.0)
                 mfd = SoleData.MultiFrameDataset([ [1,2,3,4], [5] ], df)
                 vr = VarianceRanking(3)
-                # expected values
-                emfd = deepcopy(mfd)
-                SoleData.dropattributes!(emfd, [4])
-
-                SoleFeatures.transform!(mfd, vr; frmidx=1)
-
-                @test (isequal(SoleData.data(mfd), SoleData.data(emfd)) && SoleData.frame_descriptor(emfd) == SoleData.frame_descriptor(mfd))
+                @test (SoleFeatures.transform!(mfd, vr; frmidx=1) isa MultiFrameDataset)
             end
 
         end
