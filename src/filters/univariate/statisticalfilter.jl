@@ -8,12 +8,14 @@ struct StatisticalFilter{T <: AbstractLimiter} <: AbstractStatisticalFilter{T}
     limiter::T
     # parameters
     htest::Any # HypothesisTests.HypothesisTest
+    versus::Symbol
 end
 
 # ========================================================================================
 # ACCESSORS
 
 htest(selector::StatisticalFilter) = selector.htest
+versus(selector::StatisticalFilter) = selector.versus
 
 # ========================================================================================
 # TRAITS
@@ -25,28 +27,40 @@ is_supervised(::AbstractStatisticalFilter) = true
 
 function score(
     X::AbstractDataFrame,
-    y::AbstractVector{<:Union{String, Symbol}},
+    y::AbstractVector{<:Class},
     selector::StatisticalFilter
 )::DataFrame
     stattest = htest(selector)
+    vrs = versus(selector)
+    numcol = size(X, 2)
+    groupx = _group_by_class(X, y)
+    # extract and remove classes from groupx
+    classes = groupx[:, :class]
+    select!(groupx, Not(:class))
+    nclass = length(classes)
+    ic = 1:nclass
 
-    gdf = _group_by_class(X, y)
-    classes = gdf[:, :class]
-    attrs = names(X)
-    scores = DataFrame()
+    # Each element is an array with 2 elements.
+    # The first item is the index of the class considered and
+    # the second the index, or indices, of the classes with which the first item is compared
+    itr = Vector(vrs == :ovo ?
+            collect(subsets(ic, 2)) :
+            [ [first(setdiff(ic, x)), x] for x in subsets(ic, nclass - 1) ]
+    )
 
-    for (c1, c2) in IterTools.subsets(classes, 2)
-        # class indices row in gdf
-        c1_idx = findfirst(==(c1), classes)
-        c2_idx = findfirst(==(c2), classes)
+    colnames = join.([ [classes[c], classes[vs]] for (c, vs) in itr ], "-vs-")
+    scores = DataFrame(colnames .=> [Float64[]])
+    for cidx in 1:numcol
         pvals = []
-        for attr in attrs
-            # get and clear samples (clear or not to clear data?)
-            s1 = filter(!isnan, gdf[c1_idx, attr])
-            s2 = filter(!isnan, gdf[c2_idx, attr])
+        for (c, vs) in itr
+            s1 = groupx[c, cidx]
+            s2 = vcat(groupx[vs, cidx]...)
+            # clear samples from nan
+            filter!(!isnan, s1)
+            filter!(!isnan, s2)
             push!(pvals, HypothesisTests.pvalue(stattest(s1, s2)))
         end
-        insertcols!(scores, "$(c1)-vs-$(c2)" => pvals)
+        push!(scores, pvals)
     end
     return scores
 end
@@ -65,14 +79,28 @@ end
 # ========================================================================================
 # CUSTOM CONSTRUCTORS
 
-function StatisticalMajority(htest::Any; significance = 0.05, rejectnullhp = true) # HypothesisTests.HypothesisTest; versus=:ovo)
+function StatisticalMajority(
+    htest::Any;
+    versus::Symbol = :ova,
+    significance::Real = 0.05,
+    rejectnullhp = true
+)
+    (significance < 0 || significance > 1) &&
+        throw(DomainError("significance must be within 0 and 1"))
     rejectnull = rejectnullhp ? (<=) : (>)
     sl = StatisticalLimiter(MajorityLimiter(ThresholdLimiter(significance, rejectnull)))
-    return StatisticalFilter(sl, htest)
+    return StatisticalFilter(sl, htest, versus)
 end
 
-function StatisticalAtLeastOnce(htest::Any; significance = 0.05, rejectnullhp = true) # HypothesisTests.HypothesisTest; versus=:ovo)
+function StatisticalAtLeastOnce(
+    htest::Any;
+    versus = :ova,
+    significance = 0.05,
+    rejectnullhp = true
+)
+    (significance < 0 || significance > 1) &&
+        throw(DomainError("significance must be within 0 and 1"))
     rejectnull = rejectnullhp ? (<=) : (>)
     sl = StatisticalLimiter(AtLeastLimiter(ThresholdLimiter(significance, rejectnull), 1))
-    return StatisticalFilter(sl, htest)
+    return StatisticalFilter(sl, htest, versus)
 end
