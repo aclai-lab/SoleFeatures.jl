@@ -118,7 +118,7 @@ function retrive_groups(
     attributes::AbstractVector{Symbol},
     groupby::Union{Symbol, Tuple{Symbol, Symbol}}
 )::Vector{Vector{Symbol}}
-    groups = Dict{String, Vector{Symbol}}()
+    groups = Dict{String,Vector{Symbol}}()
     # from: https://discourse.julialang.org/t/how-can-i-access-multiple-values-of-a-dictionary-using-a-tuple-of-keys/56868/3
     groupids = collect(getindex.(Ref(GROUPBY_ID_DICT), groupby)) # collect(Tuple) -> Vector
 
@@ -189,7 +189,7 @@ function retrive_groups(
     awmds::AbstractVector{<:AWMDescriptor},
     groupby::Union{Symbol, Tuple{Symbol, Symbol}},
 )::Vector{Vector{AWMDescriptor}}
-    groups = Dict{String, Vector{AWMDescriptor}}()
+    groups = Dict{String,Vector{AWMDescriptor}}()
     # from: https://discourse.julialang.org/t/how-can-i-access-multiple-values-of-a-dictionary-using-a-tuple-of-keys/56868/3
     groupids = [ collect(getindex.(Ref(GROUPBY_ID_DICT), groupby))... ] # collect(Tuple) -> Vector
     for awm in awmds
