@@ -153,7 +153,7 @@ julia> _group_by_class(df, y)
    2 │ [3]        [7]         S
 ```
 """
-function _group_by_class(df::AbstractDataFrame, y::AbstractVector{<:Union{String, Symbol}})
+function _group_by_class(df::AbstractDataFrame, y::AbstractVector{<:Class})
     ndf = DataFrame()
     classes = unique(y)
     attrsname = names(df)
@@ -195,11 +195,3 @@ julia> gdf = _group_by_class(df, "myclasses")
 function _group_by_class(df::AbstractDataFrame, class_colname::String)
     return _group_by_class(df[:, Not(class_colname)], df[:, class_colname])
 end
-
-# fastest implementation
-# function _group_by_class2(
-#     df::AbstractDataFrame,
-#     y::AbstractVector{<:Union{String, Symbol}}
-# )
-#     return groupby(insertcols(df, :class=>y), :class)
-# end

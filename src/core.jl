@@ -22,7 +22,7 @@ end
 
 function transform!(X::AbstractDataFrame, bm::BitVector)
     ncol(X) != length(bm) && throw(DimensionMismatch(""))
-    return transform!(X, findall(bm))
+    return select!(X, bm)
 end
 
 function transform!(X::AbstractDataFrame, selector::AbstractFeaturesSelector)
@@ -31,7 +31,7 @@ end
 
 function transform!(
     X::AbstractDataFrame,
-    y::AbstractVector{<:Union{String, Symbol}},
+    y::AbstractVector{<:Class},
     selector::AbstractFeaturesSelector
 )
     return transform!(X, apply(X, y, selector))
@@ -57,23 +57,22 @@ function transform!(
     frmidx::Union{Integer, Nothing} = nothing
 )
     if (isnothing(frmidx))
-        bm = buildbitmask(SoleData.data(X), selector)
+        return transform!(SoleData.data(X), selector)
     else
-        bm = buildbitmask(SoleData.frame(X, frmidx), selector)
+        return transform!(SoleData.frame(X, frmidx), selector)
     end
-    return transform!(X, bm; frmidx=frmidx)
 end
 
 # TODO: transform! for MultiFrameDataset with supervised selector
 
 transform(X::AbstractDataFrame, args...; kwargs...) = transform!(deepcopy(X), args...; kwargs...)
 transform(X::SoleData.AbstractMultiFrameDataset, args...; kwargs...) = transform!(deepcopy(X), args...; kwargs...)
-(s::AbstractFeaturesSelector)(X, args; kwargs...) = transform(X, args..., kwargs...)
+# (s::AbstractFeaturesSelector)(X, args; kwargs...) = transform(X, args..., kwargs...) # TODO: correct this
 
 """
     buildbitmask(X, selector)
     buildbitmask(X, y, selector)
-    buildbitmask(X, frmidx, selector)
+    buildbitmask(X, selector, frmidx)
 
 return a bitmask containing selected attributes from selector.
 True values indicate selected attribute index
@@ -81,7 +80,7 @@ True values indicate selected attribute index
 # Arguments
 
 - `X::AbstractDataFrame`: samples to evaluate
-- `y::AbstractVector{<:Union{String, Symbol}}`: target vector
+- `y::AbstractVector{<:Class}`: target vector
 - `selector::AbstractFeaturesSelector`: applied selector
 
 # Keywords
@@ -90,12 +89,10 @@ True values indicate selected attribute index
 """
 function buildbitmask(
     X::SoleData.MultiFrameDataset,
-    frmidx::Integer,
-    selector::AbstractFeaturesSelector
+    selector::AbstractFeaturesSelector,
+    frmidx::Integer
 )::Tuple{BitVector, BitVector}
-    frbm = buildbitmask(SoleData.frame(X, frmidx), selector) # frame bitmasks
-    bm = _fr_bm2mfd_bm(X, frmidx, frbm)
-    return bm, frbm
+    return buildbitmask(SoleData.frame(X, frmidx), selector)
 end
 
 # TODO: buildbitmask for MultiFrameDataset with supervised selector
@@ -110,7 +107,7 @@ end
 
 function buildbitmask(
     X::AbstractDataFrame,
-    y::AbstractVector{<:Union{String, Symbol}},
+    y::AbstractVector{<:Class},
     selector::AbstractFeaturesSelector
 )::BitVector
     idxes = apply(X, y, selector)

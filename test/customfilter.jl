@@ -39,7 +39,7 @@ end
 # Remove this function if selector has only UNSUPERVISED implementation
 function getscores(
     X::AbstractDataFrame,
-    y::AbstractVector{<:Union{String, Symbol}},
+    y::AbstractVector{<:Class},
     selector::CustomFilter{<:AbstractLimiter}
 )
     scores = []

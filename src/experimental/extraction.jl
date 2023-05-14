@@ -5,50 +5,42 @@ end
 
 const _SEPARATOR = "@@@"
 
-# TODO: remove Any in Vararg, Any is defined only for test purpose using WindowsIndex.
-#       Understand why a callable object is not a function
-const Extractor = Tuple{Union{String, Symbol}, Vararg{Union{Function, Symbol, String, Any}}}
+"""
+First element must be the name of the attribute
+"""
+const Extractor = Tuple{Union{String, Symbol}, Vararg{Any}}
 
-function extract(v::AbstractVector, e::Extractor)
-    res = []
-    for item in e
+@inline iscallable(::Function) = true
+@inline iscallable(c::Any) = !isempty(methods(c))
+
+function _extract(v::AbstractVector, e::Extractor)
+    res = deepcopy(v)
+    for (i, item) in enumerate(e)
         (isa(item, Symbol) || isa(item, String)) && continue
-        res = item.(v)
+        !iscallable(item) && throw(ErrorException("Extractor contains not callable object at index $(i): $(item)"))
+        res = item.(res)
     end
     return res
 end
 
-function extract(df::AbstractDataFrame, es::Array)
-    edf = DataFrame()
-    for e in es
-        colname = string(e)
-        colvals = extract(df[:, e[1]], e)
-        edf[!, colname] = colvals
-    end
-    return edf
+function extract(df::AbstractDataFrame, es::Array{<:Extractor})
+    return DataFrame(string.(es) .=> _extract.(getindex.([df], :, getindex.(es, 1)), es))
 end
 
-function groupby(es::Array, group::Union{Int, NTuple{N, Int}}) where {N}
-    groups = Dict()
+function groupby(es::Array{<:Extractor}, idxes::Union{Int, NTuple{N, Int}}) where {N}
+    res = Dict{Extractor, Vector{Extractor}}()
     for e in es
-        length(group) > length(e) && throw(DimensionMismatch("`group` have more elements than current `ds` item: $(e)"))
-        sel = e[[group...]]
-        if (haskey(groups, sel))
-            push!(groups[sel], e)
-        else
-            groups[sel] = Vector{Extractor}([ e ])
-        end
+        push!(get!(res, keepat(e, idxes), Vector{Extractor}()), e)
     end
-    return [ values(groups)... ]
+    return [ values(res)... ]
 end
 
-function groupreduce(es::Array, group::Union{Int, NTuple{N, Int}}) where {N}
-    groups = groupby(es, group)
-    res = []
-    for t in getindex.(groups, 1)
-        push!(res, t[[group...]])
-    end
-    return res
+function representatives(es::Array{<:Extractor}, idxes::Union{Int, NTuple{N, Int}}) where {N}
+    return unique(keepat.(es, [ idxes ]))
+end
+
+function keepat(e::Extractor, idxes::Union{Int, NTuple{N, Int}}) where {N}
+    return getindex(e, [idxes...])
 end
 
 function Base.string(d::Extractor)

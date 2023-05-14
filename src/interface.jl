@@ -23,6 +23,11 @@ Abstract supertype filter based selector.
 abstract type AbstractEmbeddedBased <: AbstractFeaturesSelector end
 
 # =========================================================================================
+# Types
+
+const Class = Union{String, Symbol}
+
+# =========================================================================================
 # AbstractFeaturesSelector
 
 """
@@ -33,7 +38,7 @@ Return vector containing indicies of suitable attributes from selector.
 
 ## ARGUMENTS
 - `X::AbstractDataFrame`: samples to evaluate
-- `y::AbstractVector{<:Union{String, Symbol}}`: target vector
+- `y::AbstractVector{<:Class}`: target vector
 - `selector::AbstractFeaturesSelector`: applied selector
 """
 function apply(
@@ -45,7 +50,7 @@ end
 
 function apply(
     X::AbstractDataFrame,
-    y::AbstractVector{<:Union{String, Symbol}},
+    y::AbstractVector{<:Class},
     selector::AbstractFeaturesSelector
 )
     return error("Supervised `apply` not implemented for: $(typeof(selector))")

@@ -1,25 +1,15 @@
+"""
+Perform provided hypothesis test `htest` (from: https://github.com/JuliaStats/HypothesisTests.jl)
+on each attributes.
+The attribute is splitted into as many populations as there are pairs of classes (n*(n-1)/2 pairs class_i vs class_j)
+and the hypothesis test is performed between two population of different classes.
+"""
 struct StatisticalFilter{T <: AbstractLimiter} <: AbstractStatisticalFilter{T}
     limiter::T
     # parameters
     htest::Any # HypothesisTests.HypothesisTest
     versus::Symbol
-
-    function StatisticalFilter(
-        limiter::T,
-        htest::Any, # HypothesisTests.HypothesisTest,
-        versus::Symbol
-    ) where {T <: AbstractLimiter}
-        if (!(versus in VERSUS_SYMBOLS))
-            throw(DomainError("Not valid `versus` symbol.\nAllowed symbols: $(VERSUS_SYMBOLS)"))
-        end
-        return new{T}(limiter, htest, versus)
-    end
 end
-
-# ========================================================================================
-# CONSTS
-
-const VERSUS_SYMBOLS = [:ovo, :ova]
 
 # ========================================================================================
 # ACCESSORS
@@ -37,29 +27,40 @@ is_supervised(::AbstractStatisticalFilter) = true
 
 function score(
     X::AbstractDataFrame,
-    y::AbstractVector{<:Union{String, Symbol}},
+    y::AbstractVector{<:Class},
     selector::StatisticalFilter
 )::DataFrame
     stattest = htest(selector)
-    vs = versus(selector)
+    vrs = versus(selector)
+    numcol = size(X, 2)
+    groupx = _group_by_class(X, y)
+    # extract and remove classes from groupx
+    classes = groupx[:, :class]
+    select!(groupx, Not(:class))
+    nclass = length(classes)
+    ic = 1:nclass
 
-    gdf = _group_by_class(X, y)
-    classes = gdf[:, :class]
-    attrs = names(X)
-    scores = DataFrame()
+    # Each element is an array with 2 elements.
+    # The first item is the index of the class considered and
+    # the second the index, or indices, of the classes with which the first item is compared
+    itr = Vector(vrs == :ovo ?
+            collect(subsets(ic, 2)) :
+            [ [first(setdiff(ic, x)), x] for x in subsets(ic, nclass - 1) ]
+    )
 
-    for (c1, c2) in IterTools.subsets(classes, 2)
-        # class indices row in gdf
-        c1_idx = findfirst(==(c1), classes)
-        c2_idx = findfirst(==(c2), classes)
+    colnames = join.([ [classes[c], classes[vs]] for (c, vs) in itr ], "-vs-")
+    scores = DataFrame(colnames .=> [Float64[]])
+    for cidx in 1:numcol
         pvals = []
-        for attr in attrs
-            # get and clear samples (clear or not to clear data?)
-            s1 = filter(!isnan, gdf[c1_idx, attr])
-            s2 = filter(!isnan, gdf[c2_idx, attr])
+        for (c, vs) in itr
+            s1 = groupx[c, cidx]
+            s2 = vcat(groupx[vs, cidx]...)
+            # clear samples from nan
+            filter!(!isnan, s1)
+            filter!(!isnan, s2)
             push!(pvals, HypothesisTests.pvalue(stattest(s1, s2)))
         end
-        insertcols!(scores, "$(c1)-vs-$(c2)" => pvals)
+        push!(scores, pvals)
     end
     return scores
 end
@@ -78,12 +79,28 @@ end
 # ========================================================================================
 # CUSTOM CONSTRUCTORS
 
-function StatisticalMajority(htest::Any; versus=:ovo) # HypothesisTests.HypothesisTest; versus=:ovo)
-    sl = StatisticalLimiter(MajorityLimiter(ThresholdLimiter(0.05, <=)))
+function StatisticalMajority(
+    htest::Any;
+    versus::Symbol = :ova,
+    significance::Real = 0.05,
+    rejectnullhp = true
+)
+    (significance < 0 || significance > 1) &&
+        throw(DomainError("significance must be within 0 and 1"))
+    rejectnull = rejectnullhp ? (<=) : (>)
+    sl = StatisticalLimiter(MajorityLimiter(ThresholdLimiter(significance, rejectnull)))
     return StatisticalFilter(sl, htest, versus)
 end
 
-function StatisticalAtLeastOnce(htest::Any; versus=:ovo) # HypothesisTests.HypothesisTest; versus=:ovo)
-    sl = StatisticalLimiter(AtLeastLimiter(ThresholdLimiter(0.05, <=), 1))
+function StatisticalAtLeastOnce(
+    htest::Any;
+    versus = :ova,
+    significance = 0.05,
+    rejectnullhp = true
+)
+    (significance < 0 || significance > 1) &&
+        throw(DomainError("significance must be within 0 and 1"))
+    rejectnull = rejectnullhp ? (<=) : (>)
+    sl = StatisticalLimiter(AtLeastLimiter(ThresholdLimiter(significance, rejectnull), 1))
     return StatisticalFilter(sl, htest, versus)
 end
