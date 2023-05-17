@@ -1,7 +1,7 @@
 # *SoleFeatures.jl* – Feature Selection on Unstructured and Multimodal data
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://aclai-lab.github.io/SoleFeatures.jl/stable)
-[![Build Status](https://api.cirrus-ci.com/github/aclai-lab/SoleFeatures.jl.svg)](https://cirrus-ci.com/github/aclai-lab/SoleFeatures.jl)
+[![Build Status](https://api.cirrus-ci.com/github/aclai-lab/SoleFeatures.jl.svg?branch=main)](https://cirrus-ci.com/github/aclai-lab/SoleFeatures.jl)
 [![Coverage](https://codecov.io/gh/aclai-lab/SoleFeatures.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/aclai-lab/SoleFeatures.jl)
 [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
 
