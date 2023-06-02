@@ -6,7 +6,7 @@ end
 const _SEPARATOR = "@@@"
 
 """
-First element must be the name of the attribute
+First element must be the name of the variable
 """
 const Extractor = Tuple{Union{String, Symbol}, Vararg{Any}}
 
