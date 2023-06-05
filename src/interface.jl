@@ -8,12 +8,12 @@ const Dataset = Union{AbstractDataFrame,AbstractMatrix}
 Abstract supertype for all features selector.
 
 """
-abstract type AbstractFeaturesSelector end
+abstract type AbstractFeatureSelector end
 
 """
 Abstract supertype filter based selector.
 """
-abstract type AbstractFilterBasedFS <: AbstractFeaturesSelector end
+abstract type AbstractFilterBasedFS <: AbstractFeatureSelector end
 
 select(::AbstractFilterBasedFS, X::Dataset, args...; kwargs...) = error("")
 transform!(::AbstractFilterBasedFS, X::Dataset, args...; kwargs...) = error("")
@@ -21,9 +21,9 @@ transform!(::AbstractFilterBasedFS, X::Dataset, args...; kwargs...) = error("")
 """
 Abstract supertype filter based selector.
 """
-abstract type AbstractWrapperBasedFS <: AbstractFeaturesSelector end
+abstract type AbstractWrapperBasedFS <: AbstractFeatureSelector end
 
 """
 Abstract supertype filter based selector.
 """
-abstract type AbstractEmbeddedBasedFS <: AbstractFeaturesSelector end
+abstract type AbstractEmbeddedBasedFS <: AbstractFeatureSelector end

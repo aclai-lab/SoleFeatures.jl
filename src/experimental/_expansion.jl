@@ -208,7 +208,7 @@ function evaluate(
     X::AbstractDataFrame,
     y::Union{AbstractVector{<:Union{String, Symbol}}, Nothing},
     awmds::AbstractVector{<:AWMDescriptor},
-    selector::AbstractFeaturesSelector,
+    selector::AbstractFeatureSelector,
     groupby::Vector{<:Union{Symbol, Tuple{Symbol, Symbol}}},
     aggregatef::Function,
     limiter::AbstractLimiter;

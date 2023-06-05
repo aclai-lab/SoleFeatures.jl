@@ -9,7 +9,7 @@ Removes from provided samples variables indicated by bitmask or selector
 - `X::AbstractDataFrame|MultiModalDataset`: samples to evaluate
 - `y::AbstractVector`: target vector
 - `bm::BitVector`: Vector of bit containing which variables are suitable(1) or not(0)
-- `selector::AbstractFeaturesSelector`: Selector
+- `selector::AbstractFeatureSelector`: Selector
 
 # Keywords
 
@@ -25,14 +25,14 @@ function transform!(X::AbstractDataFrame, bm::BitVector)
     return select!(X, bm)
 end
 
-function transform!(X::AbstractDataFrame, selector::AbstractFeaturesSelector)
+function transform!(X::AbstractDataFrame, selector::AbstractFeatureSelector)
     return transform!(X, apply(X, selector))
 end
 
 function transform!(
     X::AbstractDataFrame,
     y::AbstractVector{<:Class},
-    selector::AbstractFeaturesSelector
+    selector::AbstractFeatureSelector
 )
     return transform!(X, apply(X, y, selector))
 end
@@ -53,7 +53,7 @@ end
 
 function transform!(
     X::SoleData.AbstractMultiModalDataset,
-    selector::AbstractFeaturesSelector;
+    selector::AbstractFeatureSelector;
     frmidx::Union{Integer, Nothing} = nothing
 )
     if (isnothing(frmidx))
@@ -67,7 +67,7 @@ end
 
 transform(X::AbstractDataFrame, args...; kwargs...) = transform!(deepcopy(X), args...; kwargs...)
 transform(X::SoleData.AbstractMultiModalDataset, args...; kwargs...) = transform!(deepcopy(X), args...; kwargs...)
-# (s::AbstractFeaturesSelector)(X, args; kwargs...) = transform(X, args..., kwargs...) # TODO: correct this
+# (s::AbstractFeatureSelector)(X, args; kwargs...) = transform(X, args..., kwargs...) # TODO: correct this
 
 """
     buildbitmask(X, selector)
@@ -81,7 +81,7 @@ True values indicate selected variable index
 
 - `X::AbstractDataFrame`: samples to evaluate
 - `y::AbstractVector{<:Class}`: target vector
-- `selector::AbstractFeaturesSelector`: applied selector
+- `selector::AbstractFeatureSelector`: applied selector
 
 # Keywords
 
@@ -89,7 +89,7 @@ True values indicate selected variable index
 """
 function buildbitmask(
     X::SoleData.MultiModalDataset,
-    selector::AbstractFeaturesSelector,
+    selector::AbstractFeatureSelector,
     frmidx::Integer
 )::Tuple{BitVector, BitVector}
     return buildbitmask(SoleData.modality(X, frmidx), selector)
@@ -99,7 +99,7 @@ end
 
 function buildbitmask(
     X::AbstractDataFrame,
-    selector::AbstractFeaturesSelector
+    selector::AbstractFeatureSelector
 )::BitVector
     idxes = apply(X, selector)
     return _idxes2bm(size(X, 2), idxes)
@@ -108,7 +108,7 @@ end
 function buildbitmask(
     X::AbstractDataFrame,
     y::AbstractVector{<:Class},
-    selector::AbstractFeaturesSelector
+    selector::AbstractFeatureSelector
 )::BitVector
     idxes = apply(X, y, selector)
     return _idxes2bm(size(X, 2), idxes)

@@ -12,7 +12,7 @@ using PyCall
 using MLBase
 
 # abstracts
-export AbstractFeaturesSelector
+export AbstractFeatureSelector
 export AbstractFilterBased
 export AbstractWrapperBased
 export AbstractEmbeddedBased
