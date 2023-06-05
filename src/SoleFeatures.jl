@@ -22,6 +22,7 @@ export VarianceRanking
 export RandomRanking
 export StatisticalAtLeastOnce
 export StatisticalMajority
+export PearsonCorRanking
 export CompoundStatisticalAtLeastOnce
 export CompoundStatisticalMajority
 export CorrelationFilter
@@ -43,6 +44,7 @@ include("filters/univariate/randomfilter.jl")
 include("filters/univariate/statisticalfilter.jl")
 include("filters/univariate/variancefilter.jl")
 include("filters/univariate/chi2filter.jl")
+include("filters/univariate/pearsoncorfilter.jl")
 include("filters/univariate/utils.jl")
 include("filters/multivariate/correlationfilter.jl")
 # Experimental
