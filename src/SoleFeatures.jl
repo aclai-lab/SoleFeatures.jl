@@ -1,5 +1,6 @@
 module SoleFeatures
 
+using Tables
 using StatsBase
 using SoleData
 using Reexport
@@ -37,7 +38,7 @@ include("core.jl")
 # Utils
 include("utils/utils.jl")
 # Filters
-include("filters/limiter.jl")
+# include("filters/limiter.jl")
 include("filters/interface.jl")
 include("filters/univariate/randomfilter.jl")
 include("filters/univariate/statisticalfilter.jl")
