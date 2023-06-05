@@ -55,7 +55,7 @@ function findcorrelation(cormtrx::AbstractMatrix; threshold::Real = 0)
 
     for _ in 1:nr
         vcormtrx = view(cormtrx, Not(cvidx), Not(cvidx))
-        mc1, mc2 = Tuple(findmax(vcormtrx)[2]) # indices of most correlated attributes
+        mc1, mc2 = Tuple(findmax(vcormtrx)[2]) # indices of most correlated variables
         vcormtrx[mc1, mc2] < threshold && break
         mcidx = macv[mc1] >= macv[mc2] ? mc1 : mc2
         bidx = view(oidxes, Not(cvidx))[mcidx]

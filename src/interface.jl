@@ -1,6 +1,9 @@
 # =========================================================================================
 # abstract types
 
+const Class = Union{AbstractString,Symbol}
+const Dataset = Union{AbstractDataFrame,AbstractMatrix}
+
 """
 Abstract supertype for all features selector.
 
@@ -24,9 +27,3 @@ abstract type AbstractWrapperBasedFS <: AbstractFeaturesSelector end
 Abstract supertype filter based selector.
 """
 abstract type AbstractEmbeddedBasedFS <: AbstractFeaturesSelector end
-
-# =========================================================================================
-# types
-
-const Class = Union{AbstractString,Symbol}
-const Dataset = Union{AbstractDataFrame,AbstractMatrix}

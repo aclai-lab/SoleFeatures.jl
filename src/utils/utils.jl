@@ -6,14 +6,14 @@ Return a new normalized DataFrame
 minmax_normalize(c, args...; kwars...) = minmax_normalize!(deepcopy(c), args...; kwars...)
 
 function minmax_normalize!(
-    mfd::SoleData.MultiFrameDataset,
-    frame_index::Integer;
+    md::SoleData.MultiModalDataset,
+    i_modality::Integer;
     min_quantile::Real = 0.0,
     max_quantile::Real = 1.0,
     col_quantile::Bool = true,
 )
     return minmax_normalize!(
-        SoleData.frame(mfd, frame_index);
+        SoleData.modality(md, i_modality);
         min_quantile = min_quantile,
         max_quantile = max_quantile,
         col_quantile = col_quantile
@@ -72,14 +72,14 @@ function minmax_normalize!(
 end
 
 """
-    _fr_bm2mfd_bm(mfd, frame_index, frame_bm)
+    _fr_bm2md_bm(md, i_modality, frame_bm)
 
-frame bitmask to MultiFrameDataset bitmask.
+frame bitmask to MultiModalDataset bitmask.
 
-return bitmask for entire MultiFrameDataset from a frame of it
+return bitmask for entire MultiModalDataset from a frame of it
 """
-function _fr_bm2mfd_bm(
-    mfd::SoleData.MultiFrameDataset,
+function _fr_bm2md_bm(
+    md::SoleData.MultiModalDataset,
     frameidxes::Union{Integer, AbstractVector{<:Integer}},
     framebms::Union{BitVector, AbstractVector{<:BitVector}}
 )::BitVector
@@ -88,34 +88,34 @@ function _fr_bm2mfd_bm(
 
     length(frameidxes) != length(framebms) && throw(DimensionMismatch(""))
 
-    bm = trues(nattributes(mfd))
+    bm = trues(nvariables(md))
     for i in 1:lastindex(frameidxes)
         fridx = frameidxes[i]
         frbm = framebms[i]
-        framedescr = SoleData.frame_descriptor(mfd)[fridx] # frame indices inside mfd
+        framedescr = SoleData.grouped_variables(md)[fridx] # frame indices inside md
         bm[framedescr] = frbm
     end
     return bm
 end
 
 """
-    bm2attr
+    bm2var
 
-return tuple containing names of suitable attributes and names of not suitable attributes
+return tuple containing names of suitable variables and names of not suitable variables
 """
-function bm2attr(mfd::SoleData.MultiFrameDataset, bm::BitVector)
-    return bm2attr(SoleData.data(mfd), bm)
+function bm2var(md::SoleData.MultiModalDataset, bm::BitVector)
+    return bm2var(SoleData.data(md), bm)
 end
 
-function bm2attr(mfd::SoleData.MultiFrameDataset, fridx::Integer, bm::BitVector)
-    return bm2attr(SoleData.frame(mfd, fridx), bm)
+function bm2var(md::SoleData.MultiModalDataset, fridx::Integer, bm::BitVector)
+    return bm2var(SoleData.modality(md, fridx), bm)
 end
 
-function bm2attr(df::AbstractDataFrame, bm::BitVector)
-    attr = names(df)
-    good_attr = attr[findall(bm)]
-    bad_attr = attr[findall(!, bm)]
-    return good_attr, bad_attr
+function bm2var(df::AbstractDataFrame, bm::BitVector)
+    var = names(df)
+    good_var = var[findall(bm)]
+    bad_var = var[findall(!, bm)]
+    return good_var, bad_var
 end
 
 """
@@ -156,15 +156,15 @@ julia> _group_by_class(df, y)
 function _group_by_class(df::AbstractDataFrame, y::AbstractVector{<:Class})
     ndf = DataFrame()
     classes = unique(y)
-    attrsname = names(df)
-    for attr in attrsname
-        coltype = eltype(df[:, attr])
+    varsname = names(df)
+    for var in varsname
+        coltype = eltype(df[:, var])
         col = Vector{Vector{coltype}}()
         for cls in classes
             idxes = findall(==(cls), y)
-            push!(col, df[idxes, attr])
+            push!(col, df[idxes, var])
         end
-        insertcols!(ndf, attr => col)
+        insertcols!(ndf, var => col)
     end
     insertcols!(ndf, :class => classes) # insert class column
     return ndf

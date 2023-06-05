@@ -2,13 +2,13 @@
     transform!(X, args..; kwargs...)
     transform!(X, y, args..; kwargs...)
 
-Removes from provided samples attributes indicated by bitmask or selector
+Removes from provided samples variables indicated by bitmask or selector
 
 # Arguments
 
-- `X::AbstractDataFrame|MultiFrameDataset`: samples to evaluate
+- `X::AbstractDataFrame|MultiModalDataset`: samples to evaluate
 - `y::AbstractVector`: target vector
-- `bm::BitVector`: Vector of bit containing which attributes are suitable(1) or not(0)
+- `bm::BitVector`: Vector of bit containing which variables are suitable(1) or not(0)
 - `selector::AbstractFeaturesSelector`: Selector
 
 # Keywords
@@ -38,35 +38,35 @@ function transform!(
 end
 
 function transform!(
-    X::SoleData.AbstractMultiFrameDataset,
+    X::SoleData.AbstractMultiModalDataset,
     bm::BitVector;
     frmidx::Union{Integer, Nothing} = nothing
 )
     if (isnothing(frmidx))
-        nattributes(X) != length(bm) && throw(DimensionMismatch(""))
-        return SoleData.dropattributes!(X, findall(!, bm))
+        nvariables(X) != length(bm) && throw(DimensionMismatch(""))
+        return SoleData.dropvariables!(X, findall(!, bm))
     else
-        nattributes(X, frmidx) != length(bm) && throw(DimensionMismatch(""))
-        return SoleData.dropattributes!(X, frmidx, findall(!, bm))
+        nvariables(X, frmidx) != length(bm) && throw(DimensionMismatch(""))
+        return SoleData.dropvariables!(X, frmidx, findall(!, bm))
     end
 end
 
 function transform!(
-    X::SoleData.AbstractMultiFrameDataset,
+    X::SoleData.AbstractMultiModalDataset,
     selector::AbstractFeaturesSelector;
     frmidx::Union{Integer, Nothing} = nothing
 )
     if (isnothing(frmidx))
         return transform!(SoleData.data(X), selector)
     else
-        return transform!(SoleData.frame(X, frmidx), selector)
+        return transform!(SoleData.modality(X, frmidx), selector)
     end
 end
 
-# TODO: transform! for MultiFrameDataset with supervised selector
+# TODO: transform! for MultiModalDataset with supervised selector
 
 transform(X::AbstractDataFrame, args...; kwargs...) = transform!(deepcopy(X), args...; kwargs...)
-transform(X::SoleData.AbstractMultiFrameDataset, args...; kwargs...) = transform!(deepcopy(X), args...; kwargs...)
+transform(X::SoleData.AbstractMultiModalDataset, args...; kwargs...) = transform!(deepcopy(X), args...; kwargs...)
 # (s::AbstractFeaturesSelector)(X, args; kwargs...) = transform(X, args..., kwargs...) # TODO: correct this
 
 """
@@ -74,8 +74,8 @@ transform(X::SoleData.AbstractMultiFrameDataset, args...; kwargs...) = transform
     buildbitmask(X, y, selector)
     buildbitmask(X, selector, frmidx)
 
-return a bitmask containing selected attributes from selector.
-True values indicate selected attribute index
+return a bitmask containing selected variables from selector.
+True values indicate selected variable index
 
 # Arguments
 
@@ -88,14 +88,14 @@ True values indicate selected attribute index
 - `frmidx::Integer`: Frame index inside `X`
 """
 function buildbitmask(
-    X::SoleData.MultiFrameDataset,
+    X::SoleData.MultiModalDataset,
     selector::AbstractFeaturesSelector,
     frmidx::Integer
 )::Tuple{BitVector, BitVector}
-    return buildbitmask(SoleData.frame(X, frmidx), selector)
+    return buildbitmask(SoleData.modality(X, frmidx), selector)
 end
 
-# TODO: buildbitmask for MultiFrameDataset with supervised selector
+# TODO: buildbitmask for MultiModalDataset with supervised selector
 
 function buildbitmask(
     X::AbstractDataFrame,

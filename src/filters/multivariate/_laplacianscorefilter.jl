@@ -4,7 +4,7 @@ struct LaplacianScoreFilter{T <: AbstractLimiter} <: AbstractLaplacianScoreFilte
     w_metric::String,
     w_neighbor_mode::String,
     w_weight_mode::String,
-    k::Int,
+    k::Integer,
     t::Real
 end
 
