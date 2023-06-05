@@ -25,7 +25,7 @@ abstract type AbstractEmbeddedBased <: AbstractFeaturesSelector end
 # =========================================================================================
 # Types
 
-const Class = Union{String, Symbol}
+const Class = Union{String, Symbol, Real}
 
 # =========================================================================================
 # AbstractFeaturesSelector
