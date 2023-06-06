@@ -186,12 +186,25 @@ include("./test_function.jl")
                 @test (SoleFeatures.transform!(df, cf) isa DataFrame)
             end
 
-            @testset "VarianceRanking on MultiFrameDataset" begin
-                df = random_df();
-                df = SoleFeatures.minmax_normalize(df; min_quantile=0.0, max_quantile=1.0)
-                mfd = SoleData.MultiFrameDataset([ [1,2,3,4], [5] ], df)
-                vr = VarianceRanking(3)
-                @test (SoleFeatures.transform!(mfd, vr; frmidx=1) isa MultiFrameDataset)
+            @testset "Chi2Filter" begin
+                df = random_df()
+                y = rand([:a, :b, :c], 100)
+                c2r = Chi2Ranking(3)
+                @test (SoleFeatures.transform!(df, y, c2r) isa DataFrame)
+            end
+
+            @testset "PearsonCorRanking" begin
+                df = random_df()
+                y = rand(100)
+                c2r = PearsonCorRanking(3)
+                @test (SoleFeatures.transform!(df, y, c2r) isa DataFrame)
+            end
+
+            @testset "MutualInformationClassif" begin
+                df = random_df()
+                y = rand([:a, :b, :c], 100)
+                mir = MutualInformationClassifRanking(3)
+                @test (SoleFeatures.transform!(df, y, mir) isa DataFrame)
             end
 
         end

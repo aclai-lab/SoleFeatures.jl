@@ -1,3 +1,4 @@
+__precompile__()
 module SoleFeatures
 
 using StatsBase
@@ -23,6 +24,9 @@ export RandomRanking
 export StatisticalAtLeastOnce
 export StatisticalMajority
 export PearsonCorRanking
+export Chi2Ranking
+export Chi2Threshold
+export MutualInformationClassifRanking
 export CompoundStatisticalAtLeastOnce
 export CompoundStatisticalMajority
 export CorrelationFilter
@@ -32,6 +36,12 @@ export apply, buildbitmask, transform, transform!
 export bm2attr
 
 @reexport using DataFrames
+
+const fs = PyNULL()
+function __init__()
+    copy!(fs,
+            pyimport_conda("sklearn.feature_selection", "sklearn"))
+end
 
 include("interface.jl")
 include("core.jl")
@@ -45,6 +55,7 @@ include("filters/univariate/statisticalfilter.jl")
 include("filters/univariate/variancefilter.jl")
 include("filters/univariate/chi2filter.jl")
 include("filters/univariate/pearsoncorfilter.jl")
+include("filters/univariate/mutualinformationclassif.jl")
 include("filters/univariate/utils.jl")
 include("filters/multivariate/correlationfilter.jl")
 # Experimental
