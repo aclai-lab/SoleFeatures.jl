@@ -11,16 +11,16 @@ include("./test_function.jl")
 
     @testset "transform" begin
 
-        @testset "transform!(md, bm; frmidx) using bitmask on a frame of MultiModalDataset" begin
+        @testset "transform!(md, bm; i_modality) using bitmask on a modality of MultiModalDataset" begin
             df = random_timeseries_df(; nvar=10)
             md = SoleData.MultiModalDataset([[3,7,8], [1,2,4], [5,6,9,10]], df)
-            bm_frame = BitVector([0,1,0])
-            idx_frame = 1
+            bm_modality = BitVector([0,1,0])
+            i_modality = 1
             # expected values
             emd = deepcopy(md)
             SoleData.dropvariables!(emd, [3,8])
 
-            SoleFeatures.transform!(md, bm_frame; frmidx=idx_frame)
+            SoleFeatures.transform!(md, bm_modality; i_modality=i_modality)
 
             @test isequal(md, emd)
         end
@@ -28,12 +28,12 @@ include("./test_function.jl")
         @testset "transform!(md, bm) using bitmask on whole MultiModalDataset" begin
             df = random_timeseries_df(; nvar=5)
             md = SoleData.MultiModalDataset([[4,2,1], [5,3]], df)
-            bm_frame = BitVector([0,1,0,1,1])
+            bm_modality = BitVector([0,1,0,1,1])
             # expected values
             emd = deepcopy(md)
             SoleData.dropvariables!(emd, [1,3])
 
-            SoleFeatures.transform!(md, bm_frame)
+            SoleFeatures.transform!(md, bm_modality)
 
             @test isequal(md, emd)
         end
@@ -50,16 +50,16 @@ include("./test_function.jl")
             @test isequal(df, edf)
         end
 
-        @testset "transform(md, bm; frmidx) using bitmask on a frame of MultiModalDataset" begin
+        @testset "transform(md, bm; i_modality) using bitmask on a modality of MultiModalDataset" begin
             df = random_timeseries_df(; nvar=10)
             md = SoleData.MultiModalDataset([[3,7,8], [1,2,4], [5,6,9,10]], df)
-            bm_frame = BitVector([0,1,0])
-            idx_frame = 1
+            bm_modality = BitVector([0,1,0])
+            i_modality = 1
             # expected values
             emd = deepcopy(md)
             SoleData.dropvariables!(emd, [3,8])
 
-            md = SoleFeatures.transform(md, bm_frame; frmidx=idx_frame)
+            md = SoleFeatures.transform(md, bm_modality; i_modality=i_modality)
 
             @test isequal(md, emd)
         end
@@ -67,12 +67,12 @@ include("./test_function.jl")
         @testset "transform(md, bm) using bitmask on whole MultiModalDataset" begin
             df = random_timeseries_df(; nvar=5)
             md = SoleData.MultiModalDataset([[4,2,1], [5,3]], df)
-            bm_frame = BitVector([0,1,0,1,1])
+            bm_modality = BitVector([0,1,0,1,1])
             # expected values
             emd = deepcopy(md)
             SoleData.dropvariables!(emd, [1,3])
 
-            md = SoleFeatures.transform(md, bm_frame)
+            md = SoleFeatures.transform(md, bm_modality)
 
             @test isequal(md, emd)
         end
@@ -93,28 +93,28 @@ include("./test_function.jl")
 
     @testset "utils" begin
 
-        @testset "_fr_bm2md_bm using array of frames and array of bitmasks" begin
+        @testset "_fr_bm2md_bm using array of modalities and array of bitmasks" begin
             df = random_timeseries_df(; nvar=10)
             md = SoleData.MultiModalDataset([[3,7,8], [1,2,4], [5,6,9,10]], df)
-            frms = [1,2,3]
+            i_mods = [1,2,3]
             bms = Vector{BitVector}([ [0,1,0],[0,0,1],[0,1,1,0] ])
             # expected values
             ebm = BitVector([ 0,0,0,1,0,1,1,0,1,0 ])
 
-            resbm = SoleFeatures._fr_bm2md_bm(md, frms, bms)
+            resbm = SoleFeatures._fr_bm2md_bm(md, i_mods, bms)
 
             @test isequal(resbm, ebm)
         end
 
-        @testset "_fr_bm2md_bm using frame and bitmask" begin
+        @testset "_fr_bm2md_bm using modality and bitmask" begin
             df = random_timeseries_df(; nvar=10)
             md = SoleData.MultiModalDataset([[3,7,8], [1,2,4], [5,6,9,10]], df)
-            frm = 2
+            i_mod = 2
             bm = BitVector([0,0,1])
             # expected values
             ebm = BitVector([ 0,0,1,1,1,1,1,1,1,1 ])
 
-            resbm = SoleFeatures._fr_bm2md_bm(md, frm, bm)
+            resbm = SoleFeatures._fr_bm2md_bm(md, i_mod, bm)
 
             @test isequal(resbm, ebm)
         end
@@ -191,7 +191,7 @@ include("./test_function.jl")
                 df = SoleFeatures.minmax_normalize(df; min_quantile=0.0, max_quantile=1.0)
                 md = SoleData.MultiModalDataset([ [1,2,3,4], [5] ], df)
                 vr = VarianceRanking(3)
-                @test (SoleFeatures.transform!(md, vr; frmidx=1) isa MultiModalDataset)
+                @test (SoleFeatures.transform!(md, vr; i_modality=1) isa MultiModalDataset)
             end
 
         end

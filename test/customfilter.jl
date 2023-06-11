@@ -17,13 +17,12 @@ end
 
 # Here you can write the selector traits.
 # Traits can be:
-#   is_univariate(::AbstractCustomFilter) = true
-#   is_supervised(::AbstractCustomFilter) = true
-#   is_unsupervised(::AbstractCustomFilter) = true
+#   isunivariate(::AbstractCustomFilter) = true
+#   issupervised(::AbstractCustomFilter) = true
 #   ...
 
 # ========================================================================================
-# SCORE
+# SCORES
 
 # Here you can write your own scores function
 

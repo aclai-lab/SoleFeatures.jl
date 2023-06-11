@@ -19,7 +19,7 @@ threshold(selector::CorrelationFilter) = selector.threshold
 # ========================================================================================
 # TRAITS
 
-is_unsupervised(::AbstractCorrelationFilter) = true
+issupervised(::AbstractCorrelationFilter) = false
 
 # ========================================================================================
 # APPLY

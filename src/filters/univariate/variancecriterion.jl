@@ -7,7 +7,7 @@ issupervised(::VarianceCriterion) = false
 isunivariate(::VarianceCriterion) = true
 
 # ========================================================================================
-# SCORE
+# SCORES
 
 function scores(c::VarianceCriterion, X::AbstractDataFrame)::Vector{<:Real}
     # sum is scaled with n-1

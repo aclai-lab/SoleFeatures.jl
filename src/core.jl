@@ -1,3 +1,5 @@
+import StatsBase: transform!, transform
+
 """
     transform!(X, args..; kwargs...)
     transform!(X, y, args..; kwargs...)
@@ -6,26 +8,26 @@ Remove from provided samples variables indicated by bitmask or selector
 
 # Arguments
 
-- `X::AbstractDataFrame|MultiModalDataset`: samples to evaluate
+- `X::AbstractDataFrame|AbstractMultiModalDataset`: samples to evaluate
 - `y::AbstractVector`: target vector
 - `bm::BitVector`: Vector of bit containing which variables are suitable(1) or not(0)
-- `selector::AbstractFeatureSelector`: Selector
+- `selector::AbstractFeatureSelector`: Selector (TODO fix)
 
 # Keywords
 
-- `mdlidx::Integer`: Frame index inside `X`
+- `i_modality::Integer`: Index of the modality in `X` (TODO fix)
 """
-function transform!(X::Dataset, idxes::Vector{Int})
+function transform!(X::AnyDataset, idxes::Vector{Int})
     size(X, 2) < length(idxes) && throw(DimensionMismatch(""))
     return DataFrame.select!(X, idxes)
 end
 
-function transform!(X::Dataset, bm::BitVector)
+function transform!(X::AnyDataset, bm::BitVector)
     size(X, 2) != length(bm) && throw(DimensionMismatch(""))
     return DataFrame.select!(X, bm)
 end
 
-function transform!(selector::AbstractFeatureSelector, X::Dataset)
+function transform!(selector::AbstractFeatureSelector, X::AnyDataset)
     return transform!(X, selector(X))
 end
 
@@ -40,30 +42,30 @@ end
 function transform!(
     X::SoleData.AbstractMultiModalDataset,
     bm::BitVector;
-    mdlidx::Union{Integer, Nothing} = nothing
+    i_modality::Union{Integer, Nothing} = nothing
 )
-    if (isnothing(mdlidx))
+    if (isnothing(i_modality))
         nvariables(X) != length(bm) && throw(DimensionMismatch(""))
         return SoleData.dropvariables!(X, findall(!, bm))
     else
-        nvariables(X, mdlidx) != length(bm) && throw(DimensionMismatch(""))
-        return SoleData.dropvariables!(X, mdlidx, findall(!, bm))
+        nvariables(X, i_modality) != length(bm) && throw(DimensionMismatch(""))
+        return SoleData.dropvariables!(X, i_modality, findall(!, bm))
     end
 end
 
 function transform!(
     selector::AbstractFeatureSelector,
     X::SoleData.AbstractMultiModalDataset;
-    mdlidx::Union{Integer, Nothing} = nothing
+    i_modality::Union{Integer, Nothing} = nothing
 )
-    if (isnothing(mdlidx))
+    if (isnothing(i_modality))
         return transform!(SoleData.data(X), selector)
     else
-        return transform!(SoleData.modality(X, mdlidx), selector)
+        return transform!(SoleData.modality(X, i_modality), selector)
     end
 end
 
-# TODO: transform! for MultiModalDataset with supervised selector
+# TODO: transform! for AbstractMultiModalDataset with supervised selector
 
 transform(
     selector::AbstractFeatureSelector,
@@ -82,7 +84,7 @@ transform(
 """
     buildbitmask(selector, X)
     buildbitmask(selector, X, y)
-    buildbitmask(selector, X, mdlidx)
+    buildbitmask(selector, X, i_modality)
 
 return a bitmask containing selected variables from selector.
 True values indicate selected variable index
@@ -95,7 +97,7 @@ True values indicate selected variable index
 
 # Keywords
 
-- `mdlidx::Integer`: Frame index inside `X`
+- `i_modality::Integer`: Index of the modality in `X`
 """
 function buildbitmask(
     selector::AbstractFeatureSelector,
@@ -112,13 +114,13 @@ function buildbitmask(
     return _idxes2bm(size(X, 2), selector(X, y))
 end
 
-# TODO: buildbitmask for MultiModalDataset with supervised selector
+# TODO: buildbitmask for AbstractMultiModalDataset with supervised selector
 function buildbitmask(
     selector::AbstractFeatureSelector,
-    X::SoleData.MultiModalDataset,
-    mdlidx::Integer
+    X::SoleData.AbstractMultiModalDataset,
+    i_modality::Integer
 )::Tuple{BitVector, BitVector}
-    return buildbitmask(SoleData.modality(X, mdlidx), selector)
+    return buildbitmask(SoleData.modality(X, i_modality), selector)
 end
 
 """

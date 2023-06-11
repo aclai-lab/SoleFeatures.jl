@@ -6,7 +6,7 @@ Return a new normalized DataFrame
 minmax_normalize(c, args...; kwars...) = minmax_normalize!(deepcopy(c), args...; kwars...)
 
 function minmax_normalize!(
-    md::SoleData.MultiModalDataset,
+    md::SoleData.AbstractMultiModalDataset,
     i_modality::Integer;
     min_quantile::Real = 0.0,
     max_quantile::Real = 1.0,
@@ -72,28 +72,28 @@ function minmax_normalize!(
 end
 
 """
-    _fr_bm2md_bm(md, i_modality, frame_bm)
+    _fr_bm2md_bm(md, i_modality, modality_bm)
 
-frame bitmask to MultiModalDataset bitmask.
+modality bitmask to AbstractMultiModalDataset bitmask.
 
-return bitmask for entire MultiModalDataset from a frame of it
+return bitmask for entire AbstractMultiModalDataset from a modality of it
 """
 function _fr_bm2md_bm(
-    md::SoleData.MultiModalDataset,
-    frameidxes::Union{Integer, AbstractVector{<:Integer}},
-    framebms::Union{BitVector, AbstractVector{<:BitVector}}
+    md::SoleData.AbstractMultiModalDataset,
+    modalityidxes::Union{Integer, AbstractVector{<:Integer}},
+    modalitybms::Union{BitVector, AbstractVector{<:BitVector}}
 )::BitVector
-    frameidxes = [ frameidxes... ]
-    isa(framebms, BitVector) && (framebms = [ framebms ])
+    modalityidxes = [ modalityidxes... ]
+    isa(modalitybms, BitVector) && (modalitybms = [ modalitybms ])
 
-    length(frameidxes) != length(framebms) && throw(DimensionMismatch(""))
+    length(modalityidxes) != length(modalitybms) && throw(DimensionMismatch(""))
 
     bm = trues(nvariables(md))
-    for i in 1:lastindex(frameidxes)
-        fridx = frameidxes[i]
-        frbm = framebms[i]
-        framedescr = SoleData.grouped_variables(md)[fridx] # frame indices inside md
-        bm[framedescr] = frbm
+    for i in 1:lastindex(modalityidxes)
+        modidx = modalityidxes[i]
+        modbm = modalitybms[i]
+        modalitydescr = SoleData.grouped_variables(md)[modidx] # modality indices inside md
+        bm[modalitydescr] = modbm
     end
     return bm
 end
@@ -103,12 +103,12 @@ end
 
 return tuple containing names of suitable variables and names of not suitable variables
 """
-function bm2var(md::SoleData.MultiModalDataset, bm::BitVector)
+function bm2var(md::SoleData.AbstractMultiModalDataset, bm::BitVector)
     return bm2var(SoleData.data(md), bm)
 end
 
-function bm2var(md::SoleData.MultiModalDataset, fridx::Integer, bm::BitVector)
-    return bm2var(SoleData.modality(md, fridx), bm)
+function bm2var(md::SoleData.AbstractMultiModalDataset, modidx::Integer, bm::BitVector)
+    return bm2var(SoleData.modality(md, modidx), bm)
 end
 
 function bm2var(df::AbstractDataFrame, bm::BitVector)
@@ -121,8 +121,8 @@ end
 """
     _group_by_class(df, y)
 
-Group a data frame by its classes.
-Target column will be called "class" and it will be the last column of dataframe
+Group a dataframe by its classes.
+Target column will be called "class" and it will be the last column of a dataframe
 
 # Examples
 

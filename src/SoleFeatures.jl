@@ -14,8 +14,8 @@ using MLBase
 # abstracts
 export AbstractFeatureSelector
 export AbstractFilterBasedFS
-export AbstractWrapperBasedFS
-export AbstractEmbeddedBasedFS
+export AbstractWrapperFS
+export AbstractEmbeddedFS
 export AbstractLimiter
 # structs
 

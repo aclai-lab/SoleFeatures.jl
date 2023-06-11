@@ -219,10 +219,10 @@ function evaluate(
     # _a(X) = nothing
     # checks
     if (supervised)
-        !is_supervised(selector) && throw(ErrorException("Current selector doesn't contain a supervised implementation"))
+        !issupervised(selector) && throw(ErrorException("Current selector doesn't contain a supervised implementation"))
         # _a(X) = apply(X, y, selector; returnscores=true)
     else
-        !is_unsupervised(selector) && throw(ErrorException("Current selector doesn't contain unsupervised implementation"))
+        !isunsupervised(selector) && throw(ErrorException("Current selector doesn't contain unsupervised implementation"))
         # _a(X) = apply(X, selector; returnscores=true)
     end
 
@@ -243,9 +243,9 @@ function evaluate(
             if (!isnothing(normf) && normgroup) selected_df = normf(selected_df) end
 
             if (supervised)
-                scores = score(selected_df, y, selector)
+                scores = scores(selected_df, y, selector)
             else
-                scores = score(selected_df, selector)
+                scores = scores(selected_df, selector)
             end
 
             groupscores[i] = aggregatef(scores)

@@ -2,33 +2,34 @@
 ###########################################################################################
 ###########################################################################################
 
+"""TODO explain scoring, some are scalar, etc."""
 abstract type AbstractScoringCriterion end
 
 issupervised(sc::AbstractScoringCriterion) =
     error("Please, provide method issupervised($(typeof(sc))).")
 isunivariate(sc::AbstractScoringCriterion) =
     error("Please, provide method isunivariate($(typeof(sc))).")
-isunsupervised(sc::AbstractScoringCriterion) = !issupervised(sc)
 ismultivariate(sc::AbstractScoringCriterion) = !isunivariate(sc)
+isunsupervised(sc::AbstractScoringCriterion) = !issupervised(sc)
 
-idxtype(sc::AbstractScoringCriterion) = ismultivariate(sc) ? Integer : Vector{Integer}
+idxtype(sc::AbstractScoringCriterion) = ismultivariate(sc) ? Integer : AbstractVector{<:Integer}
 scoretype(sc::AbstractScoringCriterion) =
     error("Please, provide method scoretype($(typeof(sc))).")
 detailstype(::AbstractScoringCriterion) = Nothing
 
 function scores(sc::AbstractScoringCriterion, args...; kwargs...)
-    # TODO: provide description for supervised or unsupervised scores methods
+    # TODO: provide description for supervised or unsupervised scoreing methods
     return error("Please, provide method scores($(typeof(sc)), args...; kwargs...).")
 end
 
-function apply(sc::AbstractScoringCriterion, X::Dataset; kwargs...)
+function apply(sc::AbstractScoringCriterion, X::AnyDataset; kwargs...)
     !isunsupervised(sc) && error("Provided criteria is not unsupervised")
     return scores(sc, X; kwargs...)
 end
 
 function apply(
     sc::AbstractScoringCriterion,
-    X::Dataset,
+    X::AnyDataset,
     y::AbstractVector{<:Class};
     kwargs...
 )
@@ -36,11 +37,13 @@ function apply(
     return scores(sc, X, y; kwargs...)
 end
 
+"""TODO explain"""
 abstract type AbstractScalarCriterion <: AbstractScoringCriterion end
 
 scoretype(::AbstractScalarCriterion) = Number
 # polarity(sc::AbstractScalarCriterion) = error("Please, provide method polarity($(typeof(sc))).")
 
+"""TODO explain"""
 abstract type AbstractNonScalarCriterion <: AbstractScoringCriterion end
 
 ###########################################################################################
@@ -202,7 +205,7 @@ criterion(s::FilterSelector) = s.criterion
 limiter(s::FilterSelector) = s.limiter
 
 # TOFIX: Bug when using "returndetails = true"
-function select(s::FilterSelector, X::Dataset, args...; kwargs...)
+function select(s::FilterSelector, X::AnyDataset, args...; kwargs...)
     rd = get(kwargs, :returndetais, false)
     res = apply(criterion(s), X, args...; kwargs...)
     if (rd)

@@ -14,7 +14,7 @@ issupervised(::RandomCriterion) = false
 isunivariate(::RandomCriterion) = false
 
 # ========================================================================================
-# SCORE
+# SCORES
 
 function scores(c::RandomCriterion, X::AbstractDataFrame)::Vector{<:Real}
     s = seed(c)

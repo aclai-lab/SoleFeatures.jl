@@ -55,12 +55,12 @@ verbose(selector::CompoundStatisticalFilter) = selector.verbose
 # ========================================================================================
 # TRAITS
 
-is_supervised(::CompoundStatisticalFilter) = true
+issupervised(::CompoundStatisticalFilter) = true
 
 # ========================================================================================
-# SCORE
+# SCORES
 
-function score(
+function scores(
     X::AbstractDataFrame,
     y::AbstractVector{<:Class},
     selector::CompoundStatisticalFilter
@@ -200,12 +200,12 @@ versus(s::VarianceDistanceFilter) = s.versus
 # ========================================================================================
 # TRAITS
 
-is_supervised(::VarianceDistanceFilter) = true
+issupervised(::VarianceDistanceFilter) = true
 
 # ========================================================================================
-# SCORE
+# SCORES
 
-function score(
+function scores(
     X::AbstractDataFrame,
     y::AbstractVector{<:Class},
     selector::VarianceDistanceFilter
@@ -269,12 +269,12 @@ end
 # # ========================================================================================
 # # TRAITS
 
-# is_supervised(::VarianceDistanceFilter) = true
+# issupervised(::VarianceDistanceFilter) = true
 
 # # ========================================================================================
-# # SCORE
+# # SCORES
 
-# function score(
+# function scores(
 #     X::AbstractDataFrame,
 #     y::AbstractVector{<:Class},
 #     selector::VarianceDistanceFilter
@@ -377,12 +377,12 @@ end
 # # ========================================================================================
 # # TRAITS
 
-# is_supervised(::SupervisedVarianceFilter) = true
+# issupervised(::SupervisedVarianceFilter) = true
 
 # # ========================================================================================
-# # SCORE
+# # SCORES
 
-# function score(
+# function scores(
 #     X::AbstractDataFrame,
 #     y::AbstractVector{<:Class},
 #     selector::SupervisedVarianceFilter

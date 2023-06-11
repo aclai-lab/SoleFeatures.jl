@@ -7,9 +7,9 @@ issupervised(::Chi2Criterion) = true
 isunivariate(::Chi2Criterion) = true
 
 # ========================================================================================
-# SCORE
+# SCORES
 
-function score(
+function scores(
     c::Chi2Criterion,
     X::AbstractDataFrame,
     y::AbstractVector{<:Class}

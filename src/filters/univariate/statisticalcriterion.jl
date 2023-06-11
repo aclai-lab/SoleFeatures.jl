@@ -24,9 +24,9 @@ scoretype(::StatisticalCriterion) = Vector{Real}
 detailstype(::StatisticalCriterion) = DataFrame
 
 # ========================================================================================
-# SCORE
+# SCORES
 
-function score(
+function scores(
     c::StatisticalCriterion,
     X::AbstractDataFrame,
     y::AbstractVector{<:Class};
