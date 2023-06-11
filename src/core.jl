@@ -19,12 +19,12 @@ Remove from provided samples variables indicated by bitmask or selector
 """
 function transform!(X::AnyDataset, idxes::Vector{Int})
     size(X, 2) < length(idxes) && throw(DimensionMismatch(""))
-    return DataFrame.select!(X, idxes)
+    return DataFrames.select!(X, idxes)
 end
 
 function transform!(X::AnyDataset, bm::BitVector)
     size(X, 2) != length(bm) && throw(DimensionMismatch(""))
-    return DataFrame.select!(X, bm)
+    return DataFrames.select!(X, bm)
 end
 
 function transform!(selector::AbstractFeatureSelector, X::AnyDataset)
