@@ -1,20 +1,18 @@
-struct Chi2Filter{T <: AbstractLimiter} <: AbstractChi2Filter{T}
-    limiter::T
-    # parameters
-end
+struct Chi2Criterion <: AbstractScalarCriterion end
 
 # ========================================================================================
 # TRAITS
 
-is_supervised(::AbstractChi2Filter) = true
+issupervised(::Chi2Criterion) = true
+isunivariate(::Chi2Criterion) = true
 
 # ========================================================================================
 # SCORE
 
 function score(
+    c::Chi2Criterion,
     X::AbstractDataFrame,
-    y::AbstractVector{<:Class},
-    selector::Chi2Filter
+    y::AbstractVector{<:Class}
 )::Vector{Float64}
     numcol = size(X, 2)
     scores = Vector{AbstractFloat}(undef, numcol)

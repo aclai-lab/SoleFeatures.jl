@@ -1,27 +1,23 @@
-struct RandomFilter{T <: AbstractLimiter} <: AbstractRandomFilter{T}
-    limiter::T
-    # parameters
+struct RandomCriterion <: AbstractScalarCriterion
     seed::Union{Int, Nothing}
 end
 
 # ========================================================================================
 # ACCESSORS
 
-seed(selector::RandomFilter) = selector.seed
+seed(c::RandomCriterion) = c.seed
 
 # ========================================================================================
 # TRAITS
 
-is_unsupervised(::AbstractRandomFilter) = true
+issupervised(::RandomCriterion) = false
+isunivariate(::RandomCriterion) = false
 
 # ========================================================================================
 # SCORE
 
-function score(
-    X::AbstractDataFrame,
-    selector::RandomFilter
-)::Vector{<:Real}
-    s = seed(selector)
+function scores(c::RandomCriterion, X::AbstractDataFrame)::Vector{<:Real}
+    s = seed(c)
     rng = isnothing(s) ? MersenneTwister() : MersenneTwister(s)
     return rand(rng, ncol(X))
 end

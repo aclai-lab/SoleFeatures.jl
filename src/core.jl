@@ -13,105 +13,112 @@ Remove from provided samples variables indicated by bitmask or selector
 
 # Keywords
 
-- `frmidx::Integer`: Frame index inside `X`
+- `mdlidx::Integer`: Frame index inside `X`
 """
-function transform!(X::AbstractDataFrame, idxes::Vector{Int})
-    ncol(X) < length(idxes) && throw(DimensionMismatch(""))
-    return select!(X, idxes)
+function transform!(X::Dataset, idxes::Vector{Int})
+    size(X, 2) < length(idxes) && throw(DimensionMismatch(""))
+    return DataFrame.select!(X, idxes)
 end
 
-function transform!(X::AbstractDataFrame, bm::BitVector)
-    ncol(X) != length(bm) && throw(DimensionMismatch(""))
-    return select!(X, bm)
+function transform!(X::Dataset, bm::BitVector)
+    size(X, 2) != length(bm) && throw(DimensionMismatch(""))
+    return DataFrame.select!(X, bm)
 end
 
-function transform!(X::AbstractDataFrame, selector::AbstractFeatureSelector)
-    return transform!(X, apply(X, selector))
+function transform!(selector::AbstractFeatureSelector, X::Dataset)
+    return transform!(X, selector(X))
 end
 
 function transform!(
+    selector::AbstractFeatureSelector,
     X::AbstractDataFrame,
-    y::AbstractVector{<:Class},
-    selector::AbstractFeatureSelector
+    y::AbstractVector{<:Class}
 )
-    return transform!(X, apply(X, y, selector))
+    return transform!(X, selector(X, y))
 end
 
 function transform!(
     X::SoleData.AbstractMultiModalDataset,
     bm::BitVector;
-    frmidx::Union{Integer, Nothing} = nothing
+    mdlidx::Union{Integer, Nothing} = nothing
 )
-    if (isnothing(frmidx))
+    if (isnothing(mdlidx))
         nvariables(X) != length(bm) && throw(DimensionMismatch(""))
         return SoleData.dropvariables!(X, findall(!, bm))
     else
-        nvariables(X, frmidx) != length(bm) && throw(DimensionMismatch(""))
-        return SoleData.dropvariables!(X, frmidx, findall(!, bm))
+        nvariables(X, mdlidx) != length(bm) && throw(DimensionMismatch(""))
+        return SoleData.dropvariables!(X, mdlidx, findall(!, bm))
     end
 end
 
 function transform!(
-    X::SoleData.AbstractMultiModalDataset,
-    selector::AbstractFeatureSelector;
-    frmidx::Union{Integer, Nothing} = nothing
+    selector::AbstractFeatureSelector,
+    X::SoleData.AbstractMultiModalDataset;
+    mdlidx::Union{Integer, Nothing} = nothing
 )
-    if (isnothing(frmidx))
+    if (isnothing(mdlidx))
         return transform!(SoleData.data(X), selector)
     else
-        return transform!(SoleData.modality(X, frmidx), selector)
+        return transform!(SoleData.modality(X, mdlidx), selector)
     end
 end
 
 # TODO: transform! for MultiModalDataset with supervised selector
 
-transform(X::AbstractDataFrame, args...; kwargs...) = transform!(deepcopy(X), args...; kwargs...)
-transform(X::SoleData.AbstractMultiModalDataset, args...; kwargs...) = transform!(deepcopy(X), args...; kwargs...)
-# (s::AbstractFeatureSelector)(X, args; kwargs...) = transform(X, args..., kwargs...) # TODO: correct this
+transform(
+    selector::AbstractFeatureSelector,
+    X::AbstractDataFrame,
+    args...;
+    kwargs...
+) = transform!(selector, deepcopy(X), args...; kwargs...)
+
+transform(
+    selector::AbstractFeatureSelector,
+    X::SoleData.AbstractMultiModalDataset,
+    args...;
+    kwargs...
+) = transform!(selector, deepcopy(X), args...; kwargs...)
 
 """
-    buildbitmask(X, selector)
-    buildbitmask(X, y, selector)
-    buildbitmask(X, selector, frmidx)
+    buildbitmask(selector, X)
+    buildbitmask(selector, X, y)
+    buildbitmask(selector, X, mdlidx)
 
 return a bitmask containing selected variables from selector.
 True values indicate selected variable index
 
 # Arguments
 
+- `selector::AbstractFeatureSelector`: applied selector
 - `X::AbstractDataFrame`: samples to evaluate
 - `y::AbstractVector{<:Class}`: target vector
-- `selector::AbstractFeatureSelector`: applied selector
 
 # Keywords
 
-- `frmidx::Integer`: Frame index inside `X`
+- `mdlidx::Integer`: Frame index inside `X`
 """
 function buildbitmask(
-    X::SoleData.MultiModalDataset,
     selector::AbstractFeatureSelector,
-    frmidx::Integer
-)::Tuple{BitVector, BitVector}
-    return buildbitmask(SoleData.modality(X, frmidx), selector)
+    X::AbstractDataFrame
+)::BitVector
+    return _idxes2bm(size(X, 2), selector(X))
+end
+
+function buildbitmask(
+    selector::AbstractFeatureSelector,
+    X::AbstractDataFrame,
+    y::AbstractVector{<:Class}
+)::BitVector
+    return _idxes2bm(size(X, 2), selector(X, y))
 end
 
 # TODO: buildbitmask for MultiModalDataset with supervised selector
-
 function buildbitmask(
-    X::AbstractDataFrame,
-    selector::AbstractFeatureSelector
-)::BitVector
-    idxes = apply(X, selector)
-    return _idxes2bm(size(X, 2), idxes)
-end
-
-function buildbitmask(
-    X::AbstractDataFrame,
-    y::AbstractVector{<:Class},
-    selector::AbstractFeatureSelector
-)::BitVector
-    idxes = apply(X, y, selector)
-    return _idxes2bm(size(X, 2), idxes)
+    selector::AbstractFeatureSelector,
+    X::SoleData.MultiModalDataset,
+    mdlidx::Integer
+)::Tuple{BitVector, BitVector}
+    return buildbitmask(SoleData.modality(X, mdlidx), selector)
 end
 
 """
