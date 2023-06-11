@@ -2,7 +2,7 @@
     transform!(X, args..; kwargs...)
     transform!(X, y, args..; kwargs...)
 
-Removes from provided samples variables indicated by bitmask or selector
+Remove from provided samples variables indicated by bitmask or selector
 
 # Arguments
 

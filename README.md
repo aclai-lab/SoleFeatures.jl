@@ -1,4 +1,6 @@
-# *SoleFeatures.jl* – Feature Selection on Unstructured and Multimodal data
+<div align="center"><a href="https://github.com/aclai-lab/Sole.jl"><img src="logo.png" alt="" title="This package is part of Sole.jl" width="200"></a></div>
+
+# SoleFeatures.jl – Feature Selection on Unstructured and Multimodal data
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://aclai-lab.github.io/SoleFeatures.jl/stable)
 [![Build Status](https://api.cirrus-ci.com/github/aclai-lab/SoleFeatures.jl.svg?branch=main)](https://cirrus-ci.com/github/aclai-lab/SoleFeatures.jl)
