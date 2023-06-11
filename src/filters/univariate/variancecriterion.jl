@@ -1,20 +1,15 @@
-struct VarianceFilter{T <: AbstractLimiter} <: AbstractVarianceFilter{T}
-    limiter::T
-    # parameters
-end
+struct VarianceCriterion <: AbstractScalarCriterion end
 
 # ========================================================================================
 # TRAITS
 
-is_unsupervised(::AbstractVarianceFilter) = true
+issupervised(::VarianceCriterion) = false
+isunivariate(::VarianceCriterion) = true
 
 # ========================================================================================
 # SCORE
 
-function score(
-    X::AbstractDataFrame,
-    selector::VarianceFilter
-)
+function scores(c::VarianceCriterion, X::AbstractDataFrame)::Vector{<:Real}
     # sum is scaled with n-1
     return StatsBase.var.(eachcol(X))
 end

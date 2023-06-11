@@ -4,9 +4,7 @@ on each variables.
 The variable is splitted into as many populations as there are pairs of classes (n*(n-1)/2 pairs class_i vs class_j)
 and the hypothesis test is performed between two population of different classes.
 """
-struct StatisticalFilter{T <: AbstractLimiter} <: AbstractStatisticalFilter{T}
-    limiter::T
-    # parameters
+struct StatisticalCriterion <: AbstractNonScalarCriterion
     htest::Any # HypothesisTests.HypothesisTest
     versus::Symbol
 end
@@ -14,24 +12,28 @@ end
 # ========================================================================================
 # ACCESSORS
 
-htest(selector::StatisticalFilter) = selector.htest
-versus(selector::StatisticalFilter) = selector.versus
+htest(c::StatisticalCriterion) = c.htest
+versus(c::StatisticalCriterion) = c.versus
 
 # ========================================================================================
 # TRAITS
 
-is_supervised(::AbstractStatisticalFilter) = true
+issupervised(::StatisticalCriterion) = true
+isunivariate(::StatisticalCriterion) = true
+scoretype(::StatisticalCriterion) = Vector{Real}
+detailstype(::StatisticalCriterion) = DataFrame
 
 # ========================================================================================
 # SCORE
 
 function score(
+    c::StatisticalCriterion,
     X::AbstractDataFrame,
-    y::AbstractVector{<:Class},
-    selector::StatisticalFilter
+    y::AbstractVector{<:Class};
+    returndetails::Bool = false
 )::DataFrame
-    stattest = htest(selector)
-    vrs = versus(selector)
+    stattest = htest(c)
+    vrs = versus(c)
     numcol = size(X, 2)
     groupx = _group_by_class(X, y)
     # extract and remove classes from groupx
@@ -48,8 +50,14 @@ function score(
             [ [first(setdiff(ic, x)), x] for x in subsets(ic, nclass - 1) ]
     )
 
-    colnames = join.([ [classes[c], classes[vs]] for (c, vs) in itr ], "-vs-")
-    scores = DataFrame(colnames .=> [Float64[]])
+    scores = Vector{Real}()
+    colnames = nothing
+    details = nothing
+    if (returndetails)
+        colnames = join.([ [classes[c], classes[vs]] for (c, vs) in itr ], "-vs-")
+        details = DataFrame(colnames .=> [Float64[]])
+    end
+
     for cidx in 1:numcol
         pvals = []
         for (c, vs) in itr
@@ -60,20 +68,22 @@ function score(
             filter!(!isnan, s2)
             push!(pvals, HypothesisTests.pvalue(stattest(s1, s2)))
         end
+        returndetails && push!(details, pvals)
         push!(scores, pvals)
     end
-    return scores
+
+    return returndetails ? (scores, details) : scores
 end
 
 # ========================================================================================
 # CUSTOM LIMITER
 
-struct StatisticalLimiter{T<:AbstractLimiter} <: AbstractLimiter
+struct StatisticalCriterionLimiter{T<:AbstractLimiter} <: AbstractLimiter
     limiter::T
 end
 
-function limit(scores::DataFrame, sl::StatisticalLimiter)
-    return limit(collect.(collect(eachrow(scores))), sl.limiter)
+function limit(l::StatisticalCriterionLimiter, scores::DataFrame)
+    return limit(collect.(collect(eachrow(scores))), l.limiter)
 end
 
 # ========================================================================================
@@ -88,7 +98,7 @@ function StatisticalMajority(
     (significance < 0 || significance > 1) &&
         throw(DomainError("significance must be within 0 and 1"))
     rejectnull = rejectnullhp ? (<=) : (>)
-    sl = StatisticalLimiter(MajorityLimiter(ThresholdLimiter(significance, rejectnull)))
+    sl = MajorityLimiter(ThresholdLimiter(significance, rejectnull))
     return StatisticalFilter(sl, htest, versus)
 end
 
@@ -101,6 +111,6 @@ function StatisticalAtLeastOnce(
     (significance < 0 || significance > 1) &&
         throw(DomainError("significance must be within 0 and 1"))
     rejectnull = rejectnullhp ? (<=) : (>)
-    sl = StatisticalLimiter(AtLeastLimiter(ThresholdLimiter(significance, rejectnull), 1))
+    sl = AtLeastLimiter(ThresholdLimiter(significance, rejectnull), 1)
     return StatisticalFilter(sl, htest, versus)
 end

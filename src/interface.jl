@@ -1,8 +1,8 @@
 # =========================================================================================
 # abstract types
 
-const Class = Union{AbstractString,Symbol}
 const Dataset = Union{AbstractDataFrame,AbstractMatrix}
+const Class = Union{AbstractString,Symbol}
 
 """
 Abstract supertype for all features selector.
@@ -10,13 +10,12 @@ Abstract supertype for all features selector.
 """
 abstract type AbstractFeatureSelector end
 
+select(::AbstractFeatureSelector, X::Dataset, args...; kwargs...) = error("")
+
 """
 Abstract supertype filter based selector.
 """
 abstract type AbstractFilterBasedFS <: AbstractFeatureSelector end
-
-select(::AbstractFilterBasedFS, X::Dataset, args...; kwargs...) = error("")
-transform!(::AbstractFilterBasedFS, X::Dataset, args...; kwargs...) = error("")
 
 """
 Abstract supertype filter based selector.
