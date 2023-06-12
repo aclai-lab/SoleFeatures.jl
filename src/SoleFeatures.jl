@@ -38,9 +38,16 @@ export bm2attr
 @reexport using DataFrames
 
 const fs = PyNULL()
+const skf = PyNull()
 function __init__()
-    copy!(fs,
-            pyimport_conda("sklearn.feature_selection", "sklearn"))
+    PyCall.Conda.pip(
+        "install",
+        "git+https://github.com/jundongl/scikit-feature.git#egg=skfeature",
+        PyCall.Conda.ROOTENV
+    )
+
+    copy!(skf, pyimport_conda("skfeature", "skfeature"))
+    copy!(fs, pyimport_conda("sklearn.feature_selection", "sklearn"))
 end
 
 include("interface.jl")

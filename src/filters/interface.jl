@@ -9,6 +9,7 @@ abstract type AbstractStatisticalFilter{T<:AbstractLimiter} <: UnivariateFilterB
 abstract type AbstractChi2Filter{T<:AbstractLimiter} <: UnivariateFilterBased{T} end
 abstract type AbstractPearsonCorFilter{T<:AbstractLimiter} <: UnivariateFilterBased{T} end
 abstract type AbstractMutualInformationClassif{T<:AbstractLimiter} <: UnivariateFilterBased{T} end
+abstract type AbstractSupLaplacianScoreFilter{T<:AbstractLimiter} <: UnivariateFilterBased{T} end
 
 is_univariate(::UnivariateFilterBased) = true
 
