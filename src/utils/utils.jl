@@ -6,7 +6,7 @@ Return a new normalized DataFrame
 minmax_normalize(c, args...; kwars...) = minmax_normalize!(deepcopy(c), args...; kwars...)
 
 function minmax_normalize!(
-    mfd::SoleData.MultiFrameDataset,
+    mfd::SoleData.MultiModalDataset,
     frame_index::Integer;
     min_quantile::Real = 0.0,
     max_quantile::Real = 1.0,
@@ -74,12 +74,12 @@ end
 """
     _fr_bm2mfd_bm(mfd, frame_index, frame_bm)
 
-frame bitmask to MultiFrameDataset bitmask.
+frame bitmask to MultiModalDataset bitmask.
 
-return bitmask for entire MultiFrameDataset from a frame of it
+return bitmask for entire MultiModalDataset from a frame of it
 """
 function _fr_bm2mfd_bm(
-    mfd::SoleData.MultiFrameDataset,
+    mfd::SoleData.MultiModalDataset,
     frameidxes::Union{Integer, AbstractVector{<:Integer}},
     framebms::Union{BitVector, AbstractVector{<:BitVector}}
 )::BitVector
@@ -88,11 +88,11 @@ function _fr_bm2mfd_bm(
 
     length(frameidxes) != length(framebms) && throw(DimensionMismatch(""))
 
-    bm = trues(nattributes(mfd))
+    bm = trues(nvariables(mfd))
     for i in 1:lastindex(frameidxes)
         fridx = frameidxes[i]
         frbm = framebms[i]
-        framedescr = SoleData.frame_descriptor(mfd)[fridx] # frame indices inside mfd
+        framedescr = SoleData.grouped_variables(mfd)[fridx] # frame indices inside mfd
         bm[framedescr] = frbm
     end
     return bm
@@ -103,11 +103,11 @@ end
 
 return tuple containing names of suitable attributes and names of not suitable attributes
 """
-function bm2attr(mfd::SoleData.MultiFrameDataset, bm::BitVector)
+function bm2attr(mfd::SoleData.MultiModalDataset, bm::BitVector)
     return bm2attr(SoleData.data(mfd), bm)
 end
 
-function bm2attr(mfd::SoleData.MultiFrameDataset, fridx::Integer, bm::BitVector)
+function bm2attr(mfd::SoleData.MultiModalDataset, fridx::Integer, bm::BitVector)
     return bm2attr(SoleData.frame(mfd, fridx), bm)
 end
 

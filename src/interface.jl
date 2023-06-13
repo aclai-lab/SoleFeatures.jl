@@ -13,12 +13,12 @@ Abstract supertype filter based selector.
 abstract type AbstractFilterBased <: AbstractFeaturesSelector end
 
 """
-Abstract supertype filter based selector.
+Abstract supertype wrapper based selector.
 """
 abstract type AbstractWrapperBased <: AbstractFeaturesSelector end
 
 """
-Abstract supertype filter based selector.
+Abstract supertype embedded based selector.
 """
 abstract type AbstractEmbeddedBased <: AbstractFeaturesSelector end
 
