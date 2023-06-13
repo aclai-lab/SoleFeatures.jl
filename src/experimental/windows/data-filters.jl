@@ -241,9 +241,9 @@ moving_average(univariate_series::AbstractVector, n::Integer, st::Integer) = [su
 moving_average(multivariate_series::AbstractMatrix, n::Integer, st::Integer) = mapslices((x)->(@views moving_average(x,n,st)), multivariate_series, dims=1)
 moving_average_same(univariate_series::AbstractVector, n::Integer)  = [StatsBase.mean(@view univariate_series[max((i-n),1):min((i+n),length(univariate_series))]) for i in 1:length(univariate_series)]
 function moving_average(multivariate_series_dataset::AbstractArray{T,3},  n::Integer, st::Integer) where {T}
-    n_points, n_attributes, n_instances = size(multivariate_series_dataset)
+    n_points, n_variables, n_instances = size(multivariate_series_dataset)
     new_n_points = length(moving_average(Vector{Int}(undef, n_points), n, st))
-    new_X = similar(multivariate_series_dataset, (new_n_points, n_attributes, n_instances))
+    new_X = similar(multivariate_series_dataset, (new_n_points, n_variables, n_instances))
     for n_instance in 1:n_instances
         new_instance = moving_average(multivariate_series_dataset[:, :, n_instance], n, st)
         new_X[:, :, n_instance] .= new_instance

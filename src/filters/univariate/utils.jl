@@ -95,10 +95,10 @@ function score(
             filter!(!isnan, s2)
             useparamtest = all(normalitycheck(selector), [s1, s2])
             if (useparamtest)
-                v && @info "Using param test on attribute $(names(X)[cidx]), $(classes[c]) vs $(classes[vs])"
+                v && @info "Using param test on variable $(names(X)[cidx]), $(classes[c]) vs $(classes[vs])"
                 stattest = paramtest(selector)
             else
-                v && @info "Using non param test on attribute $(names(X)[cidx]), $(classes[c]) vs $(classes[vs])"
+                v && @info "Using non param test on variable $(names(X)[cidx]), $(classes[c]) vs $(classes[vs])"
                 stattest = nonparamtest(selector)
             end
             push!(pvals, HypothesisTests.pvalue(stattest(s1, s2)))

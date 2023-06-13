@@ -34,7 +34,7 @@ const Class = Union{String, Symbol, Real}
     apply(X, selector)
     apply(X, y, selector)
 
-Return vector containing indicies of suitable attributes from selector.
+Return vector containing indicies of suitable variables from selector.
 
 ## ARGUMENTS
 - `X::AbstractDataFrame`: samples to evaluate

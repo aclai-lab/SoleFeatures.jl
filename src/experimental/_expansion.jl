@@ -2,18 +2,18 @@
 # DEPRECATED!!
 # =========================================================================================
 
-# alias: Attribute, MovingWindows, Measure
+# alias: Variable, MovingWindows, Measure
 
 # TODO: change name in AbstractColumnDescriptor
 const AWMDescriptor = Tuple{Symbol, AbstractMovingWindowsIndex, Function}
 
 # constants
 
-const GROUPBY_ATTRIBUTES = :Attributes
+const GROUPBY_VARIABLES = :Variables
 const GROUPBY_WINDOWS = :Windows
 const GROUPBY_MEASURES = :Measures
 const GROUPBY_ID_DICT = Dict{Symbol, Integer}(
-    GROUPBY_ATTRIBUTES => 1,
+    GROUPBY_VARIABLES => 1,
     GROUPBY_WINDOWS => 2,
     GROUPBY_MEASURES => 3
 )
@@ -30,19 +30,19 @@ function printgroups(groups::Vector{Vector{AWMDescriptor}})
 end
 
 function build_awmds(
-    attrs::AbstractVector{Symbol},
+    vars::AbstractVector{Symbol},
     mwies::AbstractVector{<:MovingWindowsIndex},
     measures::AbstractVector{<:Function}
 )::Vector{AWMDescriptor}
-    return [ Iterators.product(attrs, mwies, measures)... ]
+    return [ Iterators.product(vars, mwies, measures)... ]
 end
 
 function build_awmds(
-    attrs::AbstractVector{Symbol},
+    vars::AbstractVector{Symbol},
     mw::AbstractMovingWindows,
     measures::AbstractVector{<:Function}
 )::Vector{AWMDescriptor}
-    return build_awmds(attrs, [mw...], measures)
+    return build_awmds(vars, [mw...], measures)
 end
 
 """
@@ -59,7 +59,7 @@ julia> df = DataFrame(:firstcol => [rand(4), rand(4), rand(4)],
    2 │ [0.0343932, 0.163887, 0.1159, 0.…  [0.18348, 0.977524, 0.00267274, …
    3 │ [0.769576, 0.627574, 0.634936, 0…  [0.339756, 0.144859, 0.451845, 0…
 
-julia> attrs = Symbol.(names(df))
+julia> vars = Symbol.(names(df))
 2-element Vector{Symbol}:
  :firstcol
  :secondcol
@@ -72,7 +72,7 @@ julia> measures = [minimum, maximum]
  minimum (generic function with 13 methods)
  maximum (generic function with 13 methods)
 
-julia> awmds = build_awmds(attrs, [ fnmw... ], measures);
+julia> awmds = build_awmds(vars, [ fnmw... ], measures);
 
 julia> expand(df, awmds)
 3×12 DataFrame
@@ -108,27 +108,27 @@ end
 return name to use in expanded DataFrames from AWMDescriptor
 """
 function _awm2str(awmd::AWMDescriptor)::String
-    attrname = string(awmd[1])
+    varname = string(awmd[1])
     movwin = string(awmd[2])
     measuref = nameof(awmd[3])
-    return join([attrname, movwin, measuref], SEPARATOR)
+    return join([varname, movwin, measuref], SEPARATOR)
 end
 
 function retrive_groups(
-    attributes::AbstractVector{Symbol},
+    variables::AbstractVector{Symbol},
     groupby::Union{Symbol, Tuple{Symbol, Symbol}}
 )::Vector{Vector{Symbol}}
     groups = Dict{String,Vector{Symbol}}()
     # from: https://discourse.julialang.org/t/how-can-i-access-multiple-values-of-a-dictionary-using-a-tuple-of-keys/56868/3
     groupids = collect(getindex.(Ref(GROUPBY_ID_DICT), groupby)) # collect(Tuple) -> Vector
 
-    for attr in attributes
-        # retrive indicated group 'groupids' from current attribute and check if it belongs to 'groups'
-        sel = join(split(String(attr), SEPARATOR)[groupids])
+    for var in variables
+        # retrive indicated group 'groupids' from current variable and check if it belongs to 'groups'
+        sel = join(split(String(var), SEPARATOR)[groupids])
         if (haskey(groups, sel))
-            push!(groups[sel], attr)
+            push!(groups[sel], var)
         else
-            groups[sel] = [ attr ]
+            groups[sel] = [ var ]
         end
     end
 
@@ -150,7 +150,7 @@ julia> df = DataFrame(:firstcol => [rand(4), rand(4), rand(4)],
    2 │ [0.938466, 0.0454927, 0.168932, …  [0.651345, 0.0348096, 0.669513, …
    3 │ [0.757154, 0.401744, 0.783533, 0…  [0.646735, 0.409603, 0.119752, 0…
 
-julia> attrs = Symbol.(names(df))
+julia> vars = Symbol.(names(df))
 2-element Vector{Symbol}:
  :firstcol
  :secondcol
@@ -163,9 +163,9 @@ julia> measures = [minimum, maximum]
  minimum (generic function with 13 methods)
  maximum (generic function with 13 methods)
 
-julia> awmds = build_awmds(attrs, [ fnmw... ], measures);
+julia> awmds = build_awmds(vars, [ fnmw... ], measures);
 
-julia> groups = retrive_groups(awmds, :Attributes);
+julia> groups = retrive_groups(awmds, :Variables);
 
 julia> printgroups(groups)
 Group #1:

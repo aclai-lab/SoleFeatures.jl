@@ -1,7 +1,7 @@
 """
 Perform provided hypothesis test `htest` (from: https://github.com/JuliaStats/HypothesisTests.jl)
-on each attributes.
-The attribute is splitted into as many populations as there are pairs of classes (n*(n-1)/2 pairs class_i vs class_j)
+on each variables.
+The variable is splitted into as many populations as there are pairs of classes (n*(n-1)/2 pairs class_i vs class_j)
 and the hypothesis test is performed between two population of different classes.
 """
 struct StatisticalFilter{T <: AbstractLimiter} <: AbstractStatisticalFilter{T}
