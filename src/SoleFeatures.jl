@@ -38,17 +38,17 @@ export bm2attr
 @reexport using DataFrames
 
 const fs = PyNULL()
-const skf_utils = PyNULL()
-const skf_similarity_based = PyNULL()
+# const skf_utils = PyNULL()
+# const skf_similarity_based = PyNULL()
 function __init__()
-    PyCall.Conda.pip(
-        "install",
-        "git+https://github.com/jundongl/scikit-feature.git#egg=skfeature",
-        PyCall.Conda.ROOTENV
-    )
+    # PyCall.Conda.pip(
+    #     "install",
+    #     "git+https://github.com/jundongl/scikit-feature.git#egg=skfeature",
+    #     PyCall.Conda.ROOTENV
+    # )
 
-    copy!(skf_utils, pyimport_conda("skfeature.utility", "skfeature"))
-    copy!(skf_similarity_based, pyimport_conda("skfeature.function.similarity_based", "skfeature"))
+    # copy!(skf_utils, pyimport_conda("skfeature.utility", "skfeature"))
+    # copy!(skf_similarity_based, pyimport_conda("skfeature.function.similarity_based", "skfeature"))
     copy!(fs, pyimport_conda("sklearn.feature_selection", "sklearn"))
 end
 
