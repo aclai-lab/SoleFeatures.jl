@@ -40,7 +40,7 @@ export bm2var
 const fs = PyNULL()
 function __init__()
     copy!(fs,
-            pyimport_conda("sklearn.feature_selection", "sklearn"))
+            pyimport_conda("sklearn.feature_selection", "scikit-learn"))
 end
 
 include("interface.jl")
