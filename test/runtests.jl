@@ -93,7 +93,7 @@ include("./test_function.jl")
 
     @testset "utils" begin
 
-        @testset "_fr_bm2md_bm using array of frames and array of bitmasks" begin
+        @testset "_fr_bm2md_bm using array of modalities and array of bitmasks" begin
             df = random_timeseries_df(; nvar=10)
             md = SoleData.MultiModalDataset([[3,7,8], [1,2,4], [5,6,9,10]], df)
             frms = [1,2,3]
