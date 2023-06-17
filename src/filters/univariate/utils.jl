@@ -101,7 +101,11 @@ function score(
                 v && @info "Using non param test on variable $(names(X)[cidx]), $(classes[c]) vs $(classes[vs])"
                 stattest = nonparamtest(selector)
             end
-            push!(pvals, HypothesisTests.pvalue(stattest(s1, s2)))
+            if (s1 > zero(s1) && s2 > zero(s2))
+                push!(pvals, HypothesisTests.pvalue(stattest(s1, s2)))
+            else
+                push!(pvals, +Inf)
+            end
         end
         push!(scores, pvals)
     end
