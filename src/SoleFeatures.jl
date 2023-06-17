@@ -38,15 +38,15 @@ export bm2var
 @reexport using DataFrames
 
 const fs = PyNULL()
-const construct_w = PyNULL()
-const lap_score = PyNULL()
+# const construct_w = PyNULL()
+# const lap_score = PyNULL()
 function __init__()
     PyCall.Conda.pip_interop(true, PyCall.Conda.ROOTENV)
 
     copy!(fs, pyimport_conda("sklearn.feature_selection", "scikit-learn"))
-    PyCall.Conda.pip("install", "git+https://github.com/jundongl/scikit-feature.git#egg=skfeature", PyCall.Conda.ROOTENV)
-    copy!(construct_w, pyimport_conda("skfeature.utility.construct_W", "skfeature"))
-    copy!(lap_score, pyimport_conda("skfeature.function.similarity_based.lap_score", "skfeature"))
+    # PyCall.Conda.pip("install", "git+https://github.com/jundongl/scikit-feature.git#egg=skfeature", PyCall.Conda.ROOTENV)
+    # copy!(construct_w, pyimport_conda("skfeature.utility.construct_W", "skfeature"))
+    # copy!(lap_score, pyimport_conda("skfeature.function.similarity_based.lap_score", "skfeature"))
 end
 
 include("interface.jl")
@@ -62,7 +62,7 @@ include("filters/univariate/variancefilter.jl")
 include("filters/univariate/chi2filter.jl")
 include("filters/univariate/pearsoncorfilter.jl")
 include("filters/univariate/mutualinformationclassif.jl")
-include("filters/univariate/suplapscorefiler.jl")
+# include("filters/univariate/suplapscorefiler.jl")
 include("filters/univariate/utils.jl")
 include("filters/multivariate/correlationfilter.jl")
 # Experimental
