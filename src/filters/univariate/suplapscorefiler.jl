@@ -29,10 +29,12 @@ function score(
     y::AbstractVector{<:Class},
     selector::SupLaplacianScoreFilter
 )::Vector{Float64}
+    lmy = labelmap(y)
+    ey = labelencode(lmy, y)
     m = Matrix(X)
     w = construct_w.construct_W(
         Matrix(m);
-        y = y,
+        y = ey,
         metric = string(metric(selector)),
         neighbor_mode = "supervised",
         weight_mode = string(weightmode(selector)),
