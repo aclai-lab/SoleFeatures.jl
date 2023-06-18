@@ -10,6 +10,7 @@ using HypothesisTests
 using IterTools
 using PyCall
 using MLBase
+# using Pkg
 
 # abstracts
 export AbstractFeaturesSelector
@@ -40,7 +41,10 @@ export bm2var
 const fs = PyNULL()
 const construct_w = PyNULL()
 const lap_score = PyNULL()
+const fisher_score = PyNULL()
 function __init__()
+    # ENV["PYTHON"] = ""
+    # Pkg.build("PyCall")
     PyCall.Conda.pip_interop(true, PyCall.Conda.ROOTENV)
 
     PyCall.Conda.add("scipy")
@@ -50,6 +54,7 @@ function __init__()
     copy!(fs, pyimport_conda("sklearn.feature_selection", "scikit-learn"))
     copy!(construct_w, pyimport_conda("skfeature.utility.construct_W", "skfeature"))
     copy!(lap_score, pyimport_conda("skfeature.function.similarity_based.lap_score", "skfeature"))
+    copy!(fisher_score, pyimport_conda("skfeature.function.similarity_based.fisher_score", "skfeature"))
 end
 
 include("interface.jl")
@@ -66,6 +71,7 @@ include("filters/univariate/chi2filter.jl")
 include("filters/univariate/pearsoncorfilter.jl")
 include("filters/univariate/mutualinformationclassif.jl")
 include("filters/univariate/suplapscorefiler.jl")
+include("filters/univariate/fisherscorefilter.jl")
 include("filters/univariate/utils.jl")
 include("filters/multivariate/correlationfilter.jl")
 # Experimental
