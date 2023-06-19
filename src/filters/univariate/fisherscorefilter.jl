@@ -21,9 +21,3 @@ function score(
     scores = fisher_score.fisher_score(Matrix(X), ey)
     return scores
 end
-
-# ========================================================================================
-# CUSTOM CONSTRUCTORS
-
-MutualInformationClassifRanking(nbest) =
-    MutualInformationClassif(RankingLimiter(nbest, true))
