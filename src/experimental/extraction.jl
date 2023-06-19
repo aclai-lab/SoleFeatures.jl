@@ -28,7 +28,7 @@ function extract(df::AbstractDataFrame, es::Array{<:Extractor})
 end
 
 function groupby(es::Array{<:Extractor}, idxes::Union{Int, NTuple{N, Int}}) where {N}
-    res = Dict{Extractor, Vector{Extractor}}()
+    res = Dict{Any, Vector{Extractor}}()
     for e in es
         push!(get!(res, keepat(e, idxes), Vector{Extractor}()), e)
     end
