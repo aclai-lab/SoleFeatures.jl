@@ -63,6 +63,17 @@ end
 function getwindow(v::AbstractVector, mw::AbstractMovingWindows, i::Integer)
     return getwindows(v, mw)[i]
 end
+function getwindow(v::AbstractArray, mw::AbstractMovingWindows, i::Integer...)
+    # TODO: need to check length(i) == ndims(v)
+    return getwindows(v, mw)[i...]
+end
+function getwindow(v::AbstractArray, mw::AbstractMovingWindows, i::AbstractVector{<:Integer})
+    # TODO: need to check length(i) == ndims(v)
+    return getwindows(v, mw)[i...]
+end
+function getwindow(v::AbstractArray{N}, mw::AbstractMovingWindows, i::NTuple{N,<:Integer}) where N
+    return getwindows(v, mw)[i...]
+end
 
 # Fixed number moving windows
 
@@ -91,6 +102,10 @@ end
 
 function getwindows(v::AbstractVector, mw::FixedNumMovingWindows)
     return _moving_window(v; nwindows=nwindows(mw), relative_overlap=reloverlap(mw))
+end
+function getwindows(v::AbstractArray, mw::FixedNumMovingWindows)
+    indices = Base.product(_moving_window.(range.(1, size(v)); nwindows=nwindows(mw), relative_overlap=reloverlap(mw))...)
+    return [v[idxs...] for idxs in indices]
 end
 
 # Fixed size moving windows
@@ -126,3 +141,8 @@ function getwindows(v::AbstractVector, mw::FixedSizeMovingWindows)
     npoints!(mw, v)
     return _moving_window(v; window_size=wsize(mw), window_step=wstep(mw))
 end
+function getwindows(v::AbstractArray, mw::FixedSizeMovingWindows)
+    indices = Base.product(_moving_window.(range.(1, size(v)); window_size=wsize(mw), window_step=wstep(mw))...)
+    return [v[idxs...] for idxs in indices]
+end
+
