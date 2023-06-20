@@ -14,7 +14,7 @@ struct MovingWindowsIndex{T <: AbstractMovingWindows} <: AbstractMovingWindowsIn
     end
 end
 
-(i::MovingWindowsIndex)(v::AbstractVector) = getwindow(v, i)
+(i::MovingWindowsIndex)(m::AbstractArray) = getwindow(m, i)
 
 index(mwi::MovingWindowsIndex) = mwi.index
 movingwindows(mwi::MovingWindowsIndex) = mwi.movingwindows[]
@@ -145,4 +145,3 @@ function getwindows(v::AbstractArray, mw::FixedSizeMovingWindows)
     indices = Base.product(_moving_window.(range.(1, size(v)); window_size=wsize(mw), window_step=wstep(mw))...)
     return [v[idxs...] for idxs in indices]
 end
-
