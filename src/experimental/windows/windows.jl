@@ -145,3 +145,40 @@ function getwindows(v::AbstractArray, mw::FixedSizeMovingWindows)
     indices = Base.product(_moving_window.(range.(1, size(v)); window_size=wsize(mw), window_step=wstep(mw))...)
     return [v[idxs...] for idxs in indices]
 end
+
+
+# ### Centered Window ###
+
+# Fixed number moving windows
+
+struct CenteredMovingWindow <: AbstractMovingWindows
+    nwindows::Int
+
+    function CenteredMovingWindow(nwindows::Integer)
+        nwindows <= 0 && throw(DomainError(nwindows, "Must be greater than 0"))
+        return new(nwindows)
+    end
+end
+
+nwindows(mw::CenteredMovingWindow) = mw.nwindows
+
+function Base.length(mw::CenteredMovingWindow)
+    return nwindows(mw)
+end
+
+function Base.isequal(mw1::CenteredMovingWindow, mw2::CenteredMovingWindow)
+    return nwindows(mw1) == nwindows(mw2)
+end
+
+# TODO: move this in SoleBase!!!
+function _centered_moving_window(l::Integer, nw::Integer)
+    bound_dist = l / (2*nw)
+    # TODO: optimize!!!
+    return [max(1, 1+round(Int, i*bound_dist)):min(l, l - round(Int, i*bound_dist)) for i in 0:(nw-1)]
+end
+
+function getwindows(v::AbstractArray, mw::CenteredMovingWindow)
+    indices = zip(_centered_moving_window.(size(v), nwindows(mw))...)
+    return [v[idxs...] for idxs in indices]
+end
+# TODO: tests for CenteredMovingWindow
