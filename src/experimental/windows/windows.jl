@@ -33,8 +33,8 @@ function Base.isequal(mwi1::AbstractMovingWindowsIndex, mwi2::AbstractMovingWind
     return index(mwi1) == index(mwi2) && movingwindows(mwi1) == movingwindows(mwi2)
 end
 
-function getwindow(v::AbstractVector, mwi::AbstractMovingWindowsIndex)
-    return getwindow(v, movingwindows(mwi), index(mwi))
+function getwindow(a::AbstractArray, mwi::AbstractMovingWindowsIndex)
+    return getwindow(a, movingwindows(mwi), index(mwi))
 end
 
 # ======================== AbstractMovingWindow functions
@@ -60,7 +60,7 @@ function Base.iterate(mw::AbstractMovingWindows, i::Integer = 1)
     return (getindex(mw, i), i+1)
 end
 
-function getwindow(v::AbstractVector, mw::AbstractMovingWindows, i::Integer)
+function getwindow(v::AbstractArray, mw::AbstractMovingWindows, i::Integer)
     return getwindows(v, mw)[i]
 end
 function getwindow(v::AbstractArray, mw::AbstractMovingWindows, i::Integer...)
