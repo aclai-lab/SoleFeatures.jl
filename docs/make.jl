@@ -19,5 +19,9 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/aclai-lab/SoleFeatures.jl",
+    repo = "github.com/aclai-lab/SoleFeatures.jl",
+    devbranch = "main",
+    target = "build",
+    branch = "gh-pages",
+    versions = ["stable" => "v^", "v#.#"],
 )
