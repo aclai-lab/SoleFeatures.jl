@@ -179,7 +179,7 @@ function _moving_window(multivariate_series_dataset::Union{AbstractArray{T,3},D}
     dict = OrderedDict(Iterators.flatten([begin
         instance_windows_dict = _moving_window(instance, args...; return_dict = true, kwargs...)
         OrderedDict(zip(map((k)->(i_instance,k), collect(keys(instance_windows_dict))), values(instance_windows_dict)))
-    end for (i_instance, instance) in enumerate_instances(multivariate_series_dataset)]))
+    end for (i_instance, instance) in enumerate(eachinstance(multivariate_series_dataset))]))
     return_dict ? dict : cat(values(dict)..., dims=3)
 end
 
@@ -207,7 +207,7 @@ function moving_window_filter(
     f::Function,
     kwargs...
 )::Array{T,3} where {T}
-    cat([moving_window_filter(instance; f = f, kwargs...) for (i_instance, instance) in enumerate_instances(multivariate_series_dataset)]..., dims=3)
+    cat([moving_window_filter(instance; f = f, kwargs...) for (i_instance, instance) in enumerate(eachinstance(multivariate_series_dataset))]..., dims=3)
 end
 
 function moving_window_filter(
@@ -215,7 +215,7 @@ function moving_window_filter(
     f::Function,
     kwargs...
 )::D where {T,ID,D<:OrderedDict{ID, <:AbstractMatrix{T}}}
-    OrderedDict([i_instance => moving_window_filter(instance; f = f, kwargs...) for (i_instance, instance) in enumerate_instances(multivariate_series_dataset)])
+    OrderedDict([i_instance => moving_window_filter(instance; f = f, kwargs...) for (i_instance, instance) in enumerate(eachinstance(multivariate_series_dataset))])
 end
 
 # Moving window filter
