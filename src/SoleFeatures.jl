@@ -38,23 +38,37 @@ export bm2var
 
 @reexport using DataFrames
 
+const req_py_pkgs = ["scipy", "scikit-learn", "skfeature"]
 const fs = PyNULL()
 const construct_w = PyNULL()
 const lap_score = PyNULL()
 const fisher_score = PyNULL()
 function __init__()
-    # ENV["PYTHON"] = ""
-    # Pkg.build("PyCall")
-    PyCall.Conda.pip_interop(true, PyCall.Conda.ROOTENV)
 
-    PyCall.Conda.add("scipy")
-    PyCall.Conda.add("scikit-learn")
-    PyCall.Conda.pip("install", "git+https://github.com/jundongl/scikit-feature.git#egg=skfeature", PyCall.Conda.ROOTENV)
+    pypkgs = getindex.(PyCall.Conda.parseconda(`list`, PyCall.Conda.ROOTENV), "name")
+    needinstall = !all(p -> in(p, pypkgs), req_py_pkgs)
+
+    if (needinstall)
+        PyCall.Conda.pip_interop(true, PyCall.Conda.ROOTENV)
+        PyCall.Conda.add("scipy")
+        PyCall.Conda.add("scikit-learn")
+        PyCall.Conda.pip(
+            "install",
+            "git+https://github.com/jundongl/scikit-feature.git#egg=skfeature",
+            PyCall.Conda.ROOTENV
+        )
+    end
 
     copy!(fs, pyimport_conda("sklearn.feature_selection", "scikit-learn"))
     copy!(construct_w, pyimport_conda("skfeature.utility.construct_W", "skfeature"))
-    copy!(lap_score, pyimport_conda("skfeature.function.similarity_based.lap_score", "skfeature"))
-    copy!(fisher_score, pyimport_conda("skfeature.function.similarity_based.fisher_score", "skfeature"))
+    copy!(lap_score, pyimport_conda(
+        "skfeature.function.similarity_based.lap_score",
+        "skfeature"
+    ))
+    copy!(fisher_score, pyimport_conda(
+        "skfeature.function.similarity_based.fisher_score",
+        "skfeature"
+    ))
 end
 
 include("interface.jl")
