@@ -147,9 +147,7 @@ function getwindows(v::AbstractArray, mw::FixedSizeMovingWindows)
 end
 
 
-# ### Centered Window ###
-
-# Fixed number moving windows
+### Centered Window ###
 
 struct CenteredMovingWindow <: AbstractMovingWindows
     nwindows::Int
@@ -182,3 +180,63 @@ function getwindows(v::AbstractArray, mw::CenteredMovingWindow)
     return [v[idxs...] for idxs in indices]
 end
 # TODO: tests for CenteredMovingWindow
+
+### Growing Window ###
+
+struct GrowingdMovingWindow <: AbstractMovingWindows
+    nwindows::Int
+
+    function GrowingdMovingWindow(nwindows::Integer)
+        nwindows <= 0 && throw(DomainError(nwindows, "Must be greater than 0"))
+        return new(nwindows)
+    end
+end
+
+nwindows(mw::GrowingdMovingWindow) = mw.nwindows
+
+function Base.length(mw::GrowingdMovingWindow)
+    return nwindows(mw)
+end
+
+function Base.isequal(mw1::GrowingdMovingWindow, mw2::GrowingdMovingWindow)
+    return nwindows(mw1) == nwindows(mw2)
+end
+
+function _growing_moving_window(l::Integer, nw::Integer)
+    return [ 1:round(Int, l * i / nw) for i in 1:nw ]
+end
+
+function getwindows(v::AbstractArray, mw::GrowingdMovingWindow)
+    indices = zip(_growing_moving_window.(size(v), nwindows(mw))...)
+    return [v[idxs...] for idxs in indices]
+end
+
+### Reverse Growing Window ###
+
+struct ReverseGrowingdMovingWindow <: AbstractMovingWindows
+    nwindows::Int
+
+    function ReverseGrowingdMovingWindow(nwindows::Integer)
+        nwindows <= 0 && throw(DomainError(nwindows, "Must be greater than 0"))
+        return new(nwindows)
+    end
+end
+
+nwindows(mw::ReverseGrowingdMovingWindow) = mw.nwindows
+
+function Base.length(mw::ReverseGrowingdMovingWindow)
+    return nwindows(mw)
+end
+
+function Base.isequal(mw1::ReverseGrowingdMovingWindow, mw2::ReverseGrowingdMovingWindow)
+    return nwindows(mw1) == nwindows(mw2)
+end
+
+function _revgrowing_moving_window(l::Integer, nw::Integer)
+    return [ round(Int, l * (i-1) / nw) + 1:l for i in nw:-1:1 ]
+end
+
+function getwindows(v::AbstractArray, mw::ReverseGrowingdMovingWindow)
+    indices = zip(_revgrowing_moving_window.(size(v), nwindows(mw))...)
+    return [v[idxs...] for idxs in indices]
+end
