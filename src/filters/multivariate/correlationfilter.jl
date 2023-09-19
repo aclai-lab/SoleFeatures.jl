@@ -1,4 +1,4 @@
-struct CorrelationFilter <: AbstractCorrelationFilter
+struct CorrelationFilter <: AbstractScalarCriterion
     corf::Function
     threshold::Real
 
@@ -19,7 +19,7 @@ threshold(selector::CorrelationFilter) = selector.threshold
 # ========================================================================================
 # TRAITS
 
-issupervised(::AbstractCorrelationFilter) = false
+issupervised(::AbstractScalarCriterion) = false
 
 # ========================================================================================
 # APPLY
