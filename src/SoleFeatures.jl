@@ -48,7 +48,7 @@ function __init__()
     pypkgs = getindex.(PyCall.Conda.parseconda(`list`, PyCall.Conda.ROOTENV), "name")
     needinstall = !all(p -> in(p, pypkgs), req_py_pkgs)
 
-    if (needinstall)
+    # if (needinstall)
         PyCall.Conda.pip_interop(true, PyCall.Conda.ROOTENV)
         PyCall.Conda.add("scipy")
         PyCall.Conda.add("scikit-learn")
@@ -57,7 +57,7 @@ function __init__()
             "git+https://github.com/jundongl/scikit-feature.git#egg=skfeature",
             PyCall.Conda.ROOTENV
         )
-    end
+    # end
 
     copy!(fs, pyimport_conda("sklearn.feature_selection", "scikit-learn"))
     copy!(construct_w, pyimport_conda("skfeature.utility.construct_W", "skfeature"))
