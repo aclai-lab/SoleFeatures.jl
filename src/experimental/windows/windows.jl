@@ -14,7 +14,7 @@ struct MovingWindowsIndex{T <: AbstractMovingWindows} <: AbstractMovingWindowsIn
     end
 end
 
-(i::MovingWindowsIndex)(v::AbstractVector) = getwindow(v, i)
+(i::MovingWindowsIndex)(m::AbstractArray) = getwindow(m, i)
 
 index(mwi::MovingWindowsIndex) = mwi.index
 movingwindows(mwi::MovingWindowsIndex) = mwi.movingwindows[]
@@ -33,8 +33,8 @@ function Base.isequal(mwi1::AbstractMovingWindowsIndex, mwi2::AbstractMovingWind
     return index(mwi1) == index(mwi2) && movingwindows(mwi1) == movingwindows(mwi2)
 end
 
-function getwindow(v::AbstractVector, mwi::AbstractMovingWindowsIndex)
-    return getwindow(v, movingwindows(mwi), index(mwi))
+function getwindow(a::AbstractArray, mwi::AbstractMovingWindowsIndex)
+    return getwindow(a, movingwindows(mwi), index(mwi))
 end
 
 # ======================== AbstractMovingWindow functions
@@ -60,8 +60,19 @@ function Base.iterate(mw::AbstractMovingWindows, i::Integer = 1)
     return (getindex(mw, i), i+1)
 end
 
-function getwindow(v::AbstractVector, mw::AbstractMovingWindows, i::Integer)
+function getwindow(v::AbstractArray, mw::AbstractMovingWindows, i::Integer)
     return getwindows(v, mw)[i]
+end
+function getwindow(v::AbstractArray, mw::AbstractMovingWindows, i::Integer...)
+    # TODO: need to check length(i) == ndims(v)
+    return getwindows(v, mw)[i...]
+end
+function getwindow(v::AbstractArray, mw::AbstractMovingWindows, i::AbstractVector{<:Integer})
+    # TODO: need to check length(i) == ndims(v)
+    return getwindows(v, mw)[i...]
+end
+function getwindow(v::AbstractArray{N}, mw::AbstractMovingWindows, i::NTuple{N,<:Integer}) where N
+    return getwindows(v, mw)[i...]
 end
 
 # Fixed number moving windows
@@ -91,6 +102,10 @@ end
 
 function getwindows(v::AbstractVector, mw::FixedNumMovingWindows)
     return _moving_window(v; nwindows=nwindows(mw), relative_overlap=reloverlap(mw))
+end
+function getwindows(v::AbstractArray, mw::FixedNumMovingWindows)
+    indices = Base.product(_moving_window.(range.(1, size(v)); nwindows=nwindows(mw), relative_overlap=reloverlap(mw))...)
+    return [v[idxs...] for idxs in indices]
 end
 
 # Fixed size moving windows
@@ -125,4 +140,103 @@ end
 function getwindows(v::AbstractVector, mw::FixedSizeMovingWindows)
     npoints!(mw, v)
     return _moving_window(v; window_size=wsize(mw), window_step=wstep(mw))
+end
+function getwindows(v::AbstractArray, mw::FixedSizeMovingWindows)
+    indices = Base.product(_moving_window.(range.(1, size(v)); window_size=wsize(mw), window_step=wstep(mw))...)
+    return [v[idxs...] for idxs in indices]
+end
+
+
+### Centered Window ###
+
+struct CenteredMovingWindow <: AbstractMovingWindows
+    nwindows::Int
+
+    function CenteredMovingWindow(nwindows::Integer)
+        nwindows <= 0 && throw(DomainError(nwindows, "Must be greater than 0"))
+        return new(nwindows)
+    end
+end
+
+nwindows(mw::CenteredMovingWindow) = mw.nwindows
+
+function Base.length(mw::CenteredMovingWindow)
+    return nwindows(mw)
+end
+
+function Base.isequal(mw1::CenteredMovingWindow, mw2::CenteredMovingWindow)
+    return nwindows(mw1) == nwindows(mw2)
+end
+
+# TODO: move this in SoleBase!!!
+function _centered_moving_window(l::Integer, nw::Integer)
+    bound_dist = l / (2*nw)
+    # TODO: optimize!!!
+    return [max(1, 1+round(Int, i*bound_dist)):min(l, l - round(Int, i*bound_dist)) for i in 0:(nw-1)]
+end
+
+function getwindows(v::AbstractArray, mw::CenteredMovingWindow)
+    indices = zip(_centered_moving_window.(size(v), nwindows(mw))...)
+    return [v[idxs...] for idxs in indices]
+end
+# TODO: tests for CenteredMovingWindow
+
+### Growing Window ###
+
+struct GrowingdMovingWindow <: AbstractMovingWindows
+    nwindows::Int
+
+    function GrowingdMovingWindow(nwindows::Integer)
+        nwindows <= 0 && throw(DomainError(nwindows, "Must be greater than 0"))
+        return new(nwindows)
+    end
+end
+
+nwindows(mw::GrowingdMovingWindow) = mw.nwindows
+
+function Base.length(mw::GrowingdMovingWindow)
+    return nwindows(mw)
+end
+
+function Base.isequal(mw1::GrowingdMovingWindow, mw2::GrowingdMovingWindow)
+    return nwindows(mw1) == nwindows(mw2)
+end
+
+function _growing_moving_window(l::Integer, nw::Integer)
+    return [ 1:round(Int, l * i / nw) for i in 1:nw ]
+end
+
+function getwindows(v::AbstractArray, mw::GrowingdMovingWindow)
+    indices = zip(_growing_moving_window.(size(v), nwindows(mw))...)
+    return [v[idxs...] for idxs in indices]
+end
+
+### Reverse Growing Window ###
+
+struct ReverseGrowingdMovingWindow <: AbstractMovingWindows
+    nwindows::Int
+
+    function ReverseGrowingdMovingWindow(nwindows::Integer)
+        nwindows <= 0 && throw(DomainError(nwindows, "Must be greater than 0"))
+        return new(nwindows)
+    end
+end
+
+nwindows(mw::ReverseGrowingdMovingWindow) = mw.nwindows
+
+function Base.length(mw::ReverseGrowingdMovingWindow)
+    return nwindows(mw)
+end
+
+function Base.isequal(mw1::ReverseGrowingdMovingWindow, mw2::ReverseGrowingdMovingWindow)
+    return nwindows(mw1) == nwindows(mw2)
+end
+
+function _revgrowing_moving_window(l::Integer, nw::Integer)
+    return [ round(Int, l * (i-1) / nw) + 1:l for i in nw:-1:1 ]
+end
+
+function getwindows(v::AbstractArray, mw::ReverseGrowingdMovingWindow)
+    indices = zip(_revgrowing_moving_window.(size(v), nwindows(mw))...)
+    return [v[idxs...] for idxs in indices]
 end

@@ -23,12 +23,20 @@ function _extract(v::AbstractVector, e::Extractor)
     return res
 end
 
+# function extract(df::AbstractDataFrame, es::Array{<:Extractor})
+#     return DataFrame(string.(es) .=> _extract.(getindex.([df], :, getindex.(es, 1)), es))
+# end
+
 function extract(df::AbstractDataFrame, es::Array{<:Extractor})
-    return DataFrame(string.(es) .=> _extract.(getindex.([df], :, getindex.(es, 1)), es))
+    m = Matrix(undef, size(df, 1), length(es))
+    Threads.@threads for (i, e) in collect(enumerate(es))
+        m[:, i] .= _extract(df[:, e[1]], e)
+    end
+    return DataFrame([[v for v in m[:,i]] for i in 1:size(m, 2)], string.(es))
 end
 
 function groupby(es::Array{<:Extractor}, idxes::Union{Int, NTuple{N, Int}}) where {N}
-    res = Dict{Extractor, Vector{Extractor}}()
+    res = Dict{Any, Vector{Extractor}}()
     for e in es
         push!(get!(res, keepat(e, idxes), Vector{Extractor}()), e)
     end

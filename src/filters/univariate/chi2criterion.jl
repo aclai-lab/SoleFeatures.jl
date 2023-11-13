@@ -31,5 +31,5 @@ end
 # ========================================================================================
 # CUSTOM CONSTRUCTORS
 
-ThresholdChi2(; alpha = 0.05) = Chi2Filter(ThresholdLimiter(alpha, <=))
-RankingChi2(nbest) =  Chi2Filter(RankingLimiter(nbest, false))
+Chi2Threshold(; alpha = 0.05) = Chi2Filter(ThresholdLimiter(alpha, <=))
+Chi2Ranking(nbest) =  Chi2Filter(RankingLimiter(nbest, false))

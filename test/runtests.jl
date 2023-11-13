@@ -194,6 +194,27 @@ include("./test_function.jl")
                 @test (SoleFeatures.transform!(md, vr; i_modality=1) isa MultiModalDataset)
             end
 
+            @testset "Chi2Filter" begin
+                df = random_df()
+                y = rand([:a, :b, :c], 100)
+                c2r = Chi2Ranking(3)
+                @test (SoleFeatures.transform!(df, y, c2r) isa DataFrame)
+            end
+
+            @testset "PearsonCorRanking" begin
+                df = random_df()
+                y = rand(100)
+                c2r = PearsonCorRanking(3)
+                @test (SoleFeatures.transform!(df, y, c2r) isa DataFrame)
+            end
+
+            @testset "MutualInformationClassif" begin
+                df = random_df()
+                y = rand([:a, :b, :c], 100)
+                mir = MutualInformationClassifRanking(3)
+                @test (SoleFeatures.transform!(df, y, mir) isa DataFrame)
+            end
+
         end
 
     end

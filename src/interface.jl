@@ -15,6 +15,26 @@ function select(s::AbstractFeatureSelector, X::AnyDataset, args...; kwargs...)
     return error("Please, provide method " *
                  "select(::$(typeof(s)), X::$(typeof(X)), " *
                  "args...::$(typeof(args)); kwargs...::$(typeof(kwargs))).")
+
+# =========================================================================================
+# AbstractFeatureSelector
+
+"""
+    apply(X, selector)
+    apply(X, y, selector)
+
+Return vector containing indicies of suitable variables from selector.
+
+## ARGUMENTS
+- `X::AbstractDataFrame`: samples to evaluate
+- `y::AbstractVector{<:Class}`: target vector
+- `selector::AbstractFeatureSelector`: applied selector
+"""
+function apply(
+    X::AbstractDataFrame,
+    selector::AbstractFeatureSelector
+)
+    return error("Unsupervised `apply` not implemented for: $(typeof(selector))")
 end
 
 """

@@ -63,6 +63,9 @@ function minmax_normalize!(
     min::Real,
     max::Real
 )
+    if (min == max)
+        return repeat([0.5], length(v))
+    end
     min = float(min)
     max = float(max)
     max = 1 / (max - min)

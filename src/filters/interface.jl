@@ -12,6 +12,16 @@ isunivariate(sc::AbstractScoringCriterion) =
 ismultivariate(sc::AbstractScoringCriterion) = !isunivariate(sc)
 isunsupervised(sc::AbstractScoringCriterion) = !issupervised(sc)
 
+abstract type UnivariateFilterBased{T<:AbstractLimiter} <: AbstractFilterBasedFS end
+abstract type AbstractVarianceFilter{T<:AbstractLimiter} <: UnivariateFilterBased{T} end
+abstract type AbstractRandomFilter{T<:AbstractLimiter} <: UnivariateFilterBased{T} end
+abstract type AbstractStatisticalFilter{T<:AbstractLimiter} <: UnivariateFilterBased{T} end
+abstract type AbstractChi2Filter{T<:AbstractLimiter} <: UnivariateFilterBased{T} end
+abstract type AbstractPearsonCorFilter{T<:AbstractLimiter} <: UnivariateFilterBased{T} end
+abstract type AbstractMutualInformationClassif{T<:AbstractLimiter} <: UnivariateFilterBased{T} end
+abstract type AbstractSupLaplacianScore{T<:AbstractLimiter} <: UnivariateFilterBased{T} end
+abstract type AbstractFisherScore{T<:AbstractLimiter} <: UnivariateFilterBased{T} end
+
 idxtype(sc::AbstractScoringCriterion) = ismultivariate(sc) ? Integer : AbstractVector{<:Integer}
 scoretype(sc::AbstractScoringCriterion) =
     error("Please, provide method scoretype($(typeof(sc))).")
