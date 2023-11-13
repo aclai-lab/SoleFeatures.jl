@@ -6,9 +6,10 @@ DocMeta.setdocmeta!(SoleFeatures, :DocTestSetup, :(using SoleFeatures); recursiv
 makedocs(;
     modules=[SoleFeatures],
     authors="Patrik Cavina, Giovanni Pagliarini, Eduard I. Stan",
-    repo="https://github.com/aclai-lab/SoleFeatures.jl/blob/{commit}{path}#{line}",
+    repo=Documenter.Remotes.GitHub("aclai-lab", "SoleFeatures.jl"),
     sitename="SoleFeatures.jl",
     format=Documenter.HTML(;
+        size_threshold = 4000000,
         prettyurls=get(ENV, "CI", "false") == "true",
         canonical="https://aclai-lab.github.io/SoleFeatures.jl",
         assets=String[],
