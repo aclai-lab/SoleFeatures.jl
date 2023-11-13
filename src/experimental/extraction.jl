@@ -1,14 +1,14 @@
 struct DescribedDataFrame{T} <: AbstractDataFrame
     df::DataFrame
-    descriptors::Dict{T, Int}
+    descriptors::Dict{T,Int}
 end
 
 const _SEPARATOR = "@@@"
 
 """
-First element must be the name of the attribute
+First element must be the name of the variable
 """
-const Extractor = Tuple{Union{String, Symbol}, Vararg{Any}}
+const Extractor = Tuple{Union{String,Symbol},Vararg{Any}}
 
 @inline iscallable(::Function) = true
 @inline iscallable(c::Any) = !isempty(methods(c))
@@ -27,19 +27,19 @@ function extract(df::AbstractDataFrame, es::Array{<:Extractor})
     return DataFrame(string.(es) .=> _extract.(getindex.([df], :, getindex.(es, 1)), es))
 end
 
-function groupby(es::Array{<:Extractor}, idxes::Union{Int, NTuple{N, Int}}) where {N}
-    res = Dict{Extractor, Vector{Extractor}}()
+function groupby(es::Array{<:Extractor}, idxes::Union{Int,NTuple{N,Int}}) where {N}
+    res = Dict{Extractor,Vector{Extractor}}()
     for e in es
         push!(get!(res, keepat(e, idxes), Vector{Extractor}()), e)
     end
     return [ values(res)... ]
 end
 
-function representatives(es::Array{<:Extractor}, idxes::Union{Int, NTuple{N, Int}}) where {N}
+function representatives(es::Array{<:Extractor}, idxes::Union{Int,NTuple{N,Int}}) where {N}
     return unique(keepat.(es, [ idxes ]))
 end
 
-function keepat(e::Extractor, idxes::Union{Int, NTuple{N, Int}}) where {N}
+function keepat(e::Extractor, idxes::Union{Int,NTuple{N,Int}}) where {N}
     return getindex(e, [idxes...])
 end
 

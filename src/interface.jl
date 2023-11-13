@@ -25,7 +25,7 @@ abstract type AbstractEmbeddedBased <: AbstractFeaturesSelector end
 # =========================================================================================
 # Types
 
-const Class = Union{String, Symbol}
+const Class = Union{String,Symbol}
 
 # =========================================================================================
 # AbstractFeaturesSelector
@@ -34,7 +34,7 @@ const Class = Union{String, Symbol}
     apply(X, selector)
     apply(X, y, selector)
 
-Return vector containing indicies of suitable attributes from selector.
+Return vector containing indicies of suitable variables from selector.
 
 ## ARGUMENTS
 - `X::AbstractDataFrame`: samples to evaluate

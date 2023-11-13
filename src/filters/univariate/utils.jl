@@ -3,7 +3,7 @@
 # ========================================================================================
 
 # TODO: implement versus mode
-struct CompoundStatisticalFilter{T <: AbstractLimiter} <: AbstractStatisticalFilter{T}
+struct CompoundStatisticalFilter{T<:AbstractLimiter} <: AbstractStatisticalFilter{T}
     limiter::T
     # parameters
     paramtest::Any # HypothesisTests.HypothesisTest
@@ -19,7 +19,7 @@ struct CompoundStatisticalFilter{T <: AbstractLimiter} <: AbstractStatisticalFil
         normalitycheck::Function,
         versus::Symbol,
         verbose::Bool
-    ) where {T <: AbstractLimiter}
+    ) where {T<:AbstractLimiter}
         !(versus in [:ovo, :ova]) && throw(ErrorException("Versus not allowed.\nValid symbols:\n\t:ova = one vs all\n:ovo = one vs one "))
         return new{T}(limiter, paramtest, nonparamtest, normalitycheck, versus, verbose)
     end
@@ -30,7 +30,7 @@ struct CompoundStatisticalFilter{T <: AbstractLimiter} <: AbstractStatisticalFil
         nonparamtest::Any, # HypothesisTests.HypothesisTest,
         versus::Symbol,
         verbose::Bool
-    ) where {T <: AbstractLimiter}
+    ) where {T<:AbstractLimiter}
         return new{T}(limiter, paramtest, nonparamtest, is_normal_distribuited, versus, verbose)
     end
 
@@ -38,7 +38,7 @@ struct CompoundStatisticalFilter{T <: AbstractLimiter} <: AbstractStatisticalFil
         limiter::T,
         paramtest::Any, # HypothesisTests.HypothesisTest,
         nonparamtest::Any # HypothesisTests.HypothesisTest
-    ) where {T <: AbstractLimiter}
+    ) where {T<:AbstractLimiter}
         return new{T}(limiter, paramtest, nonparamtest, is_normal_distribuited, :ova, true)
     end
 end
@@ -95,10 +95,10 @@ function score(
             filter!(!isnan, s2)
             useparamtest = all(normalitycheck(selector), [s1, s2])
             if (useparamtest)
-                v && @info "Using param test on attribute $(names(X)[cidx]), $(classes[c]) vs $(classes[vs])"
+                v && @info "Using param test on variable $(names(X)[cidx]), $(classes[c]) vs $(classes[vs])"
                 stattest = paramtest(selector)
             else
-                v && @info "Using non param test on attribute $(names(X)[cidx]), $(classes[c]) vs $(classes[vs])"
+                v && @info "Using non param test on variable $(names(X)[cidx]), $(classes[c]) vs $(classes[vs])"
                 stattest = nonparamtest(selector)
             end
             push!(pvals, HypothesisTests.pvalue(stattest(s1, s2)))
@@ -181,12 +181,12 @@ end
 
 abstract type AbstractVarianceDistanceFilter{T<:AbstractLimiter} <: UnivariateFilterBased{T} end
 
-struct VarianceDistanceFilter{T <: AbstractLimiter} <: AbstractVarianceDistanceFilter{T}
+struct VarianceDistanceFilter{T<:AbstractLimiter} <: AbstractVarianceDistanceFilter{T}
     limiter::T
     # parameters
     versus::Symbol
 
-    function VarianceDistanceFilter(limiter::T, versus::Symbol) where T <: AbstractLimiter
+    function VarianceDistanceFilter(limiter::T, versus::Symbol) where {T<:AbstractLimiter}
         !(versus in [:ovo, :ova]) && throw(ErrorException("Versus not allowed.\nValid symbols:\n\t:ova = one vs all\n:ovo = one vs one "))
         return new{T}(limiter, versus)
     end
@@ -220,7 +220,7 @@ function score(
     nclass = length(classes)
     ic = 1:nclass
 
-    # orgiginal variance of each columns
+    # orgiginal variance of each column
     ovars = StatsBase.var.(eachcol(X))
     # Each element is an array with 2 elements.
     # The first item is the index of the class considered and
@@ -251,7 +251,7 @@ function VarianceDistanceRanking(nbest::Integer; versus::Symbol = :ova)
     return VarianceDistanceFilter(RankingLimiter(nbest, true), versus)
 end
 
-# struct VarianceDistanceFilter{T <: AbstractLimiter} <: AbstractVarianceDistanceFilter{T}
+# struct VarianceDistanceFilter{T<:AbstractLimiter} <: AbstractVarianceDistanceFilter{T}
 #     limiter::T
 #     # parameters
 #     downsampling::Bool
@@ -291,7 +291,7 @@ end
 #     # if binary classes then iterate only over the first
 #     classitr = classeslen == 2 ? classeslen - 1 : classeslen
 
-#     # orgiginal variance of each columns
+#     # orgiginal variance of each column
 #     ovars = StatsBase.var.(eachcol(X))
 
 #     dsmake = downsampling(selector)
@@ -369,7 +369,7 @@ end
 
 # abstract type AbstractSupervisedVarianceFilter{T<:AbstractLimiter} <: UnivariateFilterBased{T} end
 
-# struct SupervisedVarianceFilter{T <: AbstractLimiter} <: AbstractSupervisedVarianceFilter{T}
+# struct SupervisedVarianceFilter{T<:AbstractLimiter} <: AbstractSupervisedVarianceFilter{T}
 #     limiter::T
 #     # parameters
 # end

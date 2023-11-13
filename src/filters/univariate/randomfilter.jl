@@ -1,7 +1,7 @@
-struct RandomFilter{T <: AbstractLimiter} <: AbstractRandomFilter{T}
+struct RandomFilter{T<:AbstractLimiter} <: AbstractRandomFilter{T}
     limiter::T
     # parameters
-    seed::Union{Int, Nothing}
+    seed::Union{Int,Nothing}
 end
 
 # ========================================================================================

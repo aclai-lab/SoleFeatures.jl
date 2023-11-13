@@ -175,7 +175,7 @@ function _moving_window(multivariate_series::AbstractMatrix{T}, args...; return_
     dict = OrderedDict([r => multivariate_series[r,:] for r in _moving_window(size(multivariate_series, 1), args...; kwargs...)])
     return_dict ? dict : collect(values(dict))
 end
-function _moving_window(multivariate_series_dataset::Union{AbstractArray{T,3},D}, args...; return_dict = false, kwargs...) where {T, D<:OrderedDict{<:Any, <:AbstractMatrix{T}}}
+function _moving_window(multivariate_series_dataset::Union{AbstractArray{T,3},D}, args...; return_dict = false, kwargs...) where {T,D<:OrderedDict{<:Any,<:AbstractMatrix{T}}}
     dict = OrderedDict(Iterators.flatten([begin
         instance_windows_dict = _moving_window(instance, args...; return_dict = true, kwargs...)
         OrderedDict(zip(map((k)->(i_instance,k), collect(keys(instance_windows_dict))), values(instance_windows_dict)))
@@ -214,7 +214,7 @@ function moving_window_filter(
     multivariate_series_dataset::D;
     f::Function,
     kwargs...
-)::D where {T,ID,D<:OrderedDict{ID, <:AbstractMatrix{T}}}
+)::D where {T,ID,D<:OrderedDict{ID,<:AbstractMatrix{T}}}
     OrderedDict([i_instance => moving_window_filter(instance; f = f, kwargs...) for (i_instance, instance) in enumerate_instances(multivariate_series_dataset)])
 end
 
@@ -241,9 +241,9 @@ moving_average(univariate_series::AbstractVector, n::Integer, st::Integer) = [su
 moving_average(multivariate_series::AbstractMatrix, n::Integer, st::Integer) = mapslices((x)->(@views moving_average(x,n,st)), multivariate_series, dims=1)
 moving_average_same(univariate_series::AbstractVector, n::Integer)  = [StatsBase.mean(@view univariate_series[max((i-n),1):min((i+n),length(univariate_series))]) for i in 1:length(univariate_series)]
 function moving_average(multivariate_series_dataset::AbstractArray{T,3},  n::Integer, st::Integer) where {T}
-    n_points, n_attributes, n_instances = size(multivariate_series_dataset)
+    n_points, n_variables, n_instances = size(multivariate_series_dataset)
     new_n_points = length(moving_average(Vector{Int}(undef, n_points), n, st))
-    new_X = similar(multivariate_series_dataset, (new_n_points, n_attributes, n_instances))
+    new_X = similar(multivariate_series_dataset, (new_n_points, n_variables, n_instances))
     for n_instance in 1:n_instances
         new_instance = moving_average(multivariate_series_dataset[:, :, n_instance], n, st)
         new_X[:, :, n_instance] .= new_instance
@@ -274,11 +274,11 @@ function moving_partitioning_filter(
 end
 
 function moving_partitioning_filter(
-    multivariate_series_dataset::OrderedDict{ID, <:AbstractMatrix{T}},
+    multivariate_series_dataset::OrderedDict{ID,<:AbstractMatrix{T}},
     args...;
     return_dict = true,
     kwargs...
-)::OrderedDict{<:Tuple{ID,<:UnitRange{<:Int}}, <:AbstractMatrix{T}} where {T,ID}
+)::OrderedDict{<:Tuple{ID,<:UnitRange{<:Int}},<:AbstractMatrix{T}} where {T,ID}
     dict = _moving_window(multivariate_series_dataset, args...; return_dict = true, kwargs...)
     return_dict ? dict : cat(values(dict)..., dims=3)
 end

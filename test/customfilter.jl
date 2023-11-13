@@ -2,7 +2,7 @@
 # USE THIS TEMPLATE TO CREATE NEW FILTER SELECTOR
 # ========================================================================================
 
-struct CustomFilter{T <: AbstractLimiter} <: AbstractCustomFilter{T}
+struct CustomFilter{T<:AbstractLimiter} <: AbstractCustomFilter{T}
     limiter::T
     # parameters
 end

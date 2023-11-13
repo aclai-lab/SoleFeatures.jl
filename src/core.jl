@@ -2,18 +2,18 @@
     transform!(X, args..; kwargs...)
     transform!(X, y, args..; kwargs...)
 
-Removes from provided samples attributes indicated by bitmask or selector
+Removes from provided samples variables indicated by bitmask or selector
 
 # Arguments
 
-- `X::AbstractDataFrame|MultiFrameDataset`: samples to evaluate
+- `X::AbstractDataFrame|MultiModalDataset`: samples to evaluate
 - `y::AbstractVector`: target vector
-- `bm::BitVector`: Vector of bit containing which attributes are suitable(1) or not(0)
+- `bm::BitVector`: Vector of bit containing which variables are suitable(1) or not(0)
 - `selector::AbstractFeaturesSelector`: Selector
 
 # Keywords
 
-- `frmidx::Integer`: Frame index inside `X`
+- `i_modality::Integer`: Modality index
 """
 function transform!(X::AbstractDataFrame, idxes::Vector{Int})
     ncol(X) < length(idxes) && throw(DimensionMismatch(""))
@@ -38,44 +38,44 @@ function transform!(
 end
 
 function transform!(
-    X::SoleData.AbstractMultiFrameDataset,
+    X::SoleData.AbstractMultiModalDataset,
     bm::BitVector;
-    frmidx::Union{Integer, Nothing} = nothing
+    i_modality::Union{Integer,Nothing} = nothing
 )
-    if (isnothing(frmidx))
-        nattributes(X) != length(bm) && throw(DimensionMismatch(""))
-        return SoleData.dropattributes!(X, findall(!, bm))
+    if (isnothing(i_modality))
+        nvariables(X) != length(bm) && throw(DimensionMismatch(""))
+        return SoleData.dropvariables!(X, findall(!, bm))
     else
-        nattributes(X, frmidx) != length(bm) && throw(DimensionMismatch(""))
-        return SoleData.dropattributes!(X, frmidx, findall(!, bm))
+        nvariables(X, i_modality) != length(bm) && throw(DimensionMismatch(""))
+        return SoleData.dropvariables!(X, i_modality, findall(!, bm))
     end
 end
 
 function transform!(
-    X::SoleData.AbstractMultiFrameDataset,
+    X::SoleData.AbstractMultiModalDataset,
     selector::AbstractFeaturesSelector;
-    frmidx::Union{Integer, Nothing} = nothing
+    i_modality::Union{Integer,Nothing} = nothing
 )
-    if (isnothing(frmidx))
+    if (isnothing(i_modality))
         return transform!(SoleData.data(X), selector)
     else
-        return transform!(SoleData.frame(X, frmidx), selector)
+        return transform!(SoleData.modality(X, i_modality), selector)
     end
 end
 
-# TODO: transform! for MultiFrameDataset with supervised selector
+# TODO: transform! for MultiModalDataset with supervised selector
 
 transform(X::AbstractDataFrame, args...; kwargs...) = transform!(deepcopy(X), args...; kwargs...)
-transform(X::SoleData.AbstractMultiFrameDataset, args...; kwargs...) = transform!(deepcopy(X), args...; kwargs...)
+transform(X::SoleData.AbstractMultiModalDataset, args...; kwargs...) = transform!(deepcopy(X), args...; kwargs...)
 # (s::AbstractFeaturesSelector)(X, args; kwargs...) = transform(X, args..., kwargs...) # TODO: correct this
 
 """
     buildbitmask(X, selector)
     buildbitmask(X, y, selector)
-    buildbitmask(X, selector, frmidx)
+    buildbitmask(X, selector, i_modality)
 
-return a bitmask containing selected attributes from selector.
-True values indicate selected attribute index
+return a bitmask containing selected variables from selector.
+True values indicate selected variable index
 
 # Arguments
 
@@ -85,17 +85,17 @@ True values indicate selected attribute index
 
 # Keywords
 
-- `frmidx::Integer`: Frame index inside `X`
+- `i_modality::Integer`: Modality index
 """
 function buildbitmask(
-    X::SoleData.MultiFrameDataset,
+    X::SoleData.MultiModalDataset,
     selector::AbstractFeaturesSelector,
-    frmidx::Integer
-)::Tuple{BitVector, BitVector}
-    return buildbitmask(SoleData.frame(X, frmidx), selector)
+    i_modality::Integer
+)::Tuple{BitVector,BitVector}
+    return buildbitmask(SoleData.modality(X, i_modality), selector)
 end
 
-# TODO: buildbitmask for MultiFrameDataset with supervised selector
+# TODO: buildbitmask for MultiModalDataset with supervised selector
 
 function buildbitmask(
     X::AbstractDataFrame,

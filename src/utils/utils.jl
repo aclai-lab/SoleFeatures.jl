@@ -6,14 +6,14 @@ Return a new normalized DataFrame
 minmax_normalize(c, args...; kwars...) = minmax_normalize!(deepcopy(c), args...; kwars...)
 
 function minmax_normalize!(
-    mfd::SoleData.MultiFrameDataset,
+    md::SoleData.MultiModalDataset,
     frame_index::Integer;
     min_quantile::Real = 0.0,
     max_quantile::Real = 1.0,
     col_quantile::Bool = true,
 )
     return minmax_normalize!(
-        SoleData.frame(mfd, frame_index);
+        SoleData.modality(md, frame_index);
         min_quantile = min_quantile,
         max_quantile = max_quantile,
         col_quantile = col_quantile
@@ -72,56 +72,56 @@ function minmax_normalize!(
 end
 
 """
-    _fr_bm2mfd_bm(mfd, frame_index, frame_bm)
+    _mod_bm2mfd_bm(md, frame_index, frame_bm)
 
-frame bitmask to MultiFrameDataset bitmask.
+Modality bitmask to MultiModalDataset bitmask.
 
-return bitmask for entire MultiFrameDataset from a frame of it
+return bitmask for entire MultiModalDataset from a modality of it
 """
-function _fr_bm2mfd_bm(
-    mfd::SoleData.MultiFrameDataset,
-    frameidxes::Union{Integer, AbstractVector{<:Integer}},
-    framebms::Union{BitVector, AbstractVector{<:BitVector}}
+function _mod_bm2mfd_bm(
+    md::SoleData.MultiModalDataset,
+    i_mods::Union{Integer,AbstractVector{<:Integer}},
+    framebms::Union{BitVector,AbstractVector{<:BitVector}}
 )::BitVector
-    frameidxes = [ frameidxes... ]
+    i_mods = [ i_mods... ]
     isa(framebms, BitVector) && (framebms = [ framebms ])
 
-    length(frameidxes) != length(framebms) && throw(DimensionMismatch(""))
+    length(i_mods) != length(framebms) && throw(DimensionMismatch(""))
 
-    bm = trues(nattributes(mfd))
-    for i in 1:lastindex(frameidxes)
-        fridx = frameidxes[i]
+    bm = trues(nvariables(md))
+    for i in 1:lastindex(i_mods)
+        i_modality = i_mods[i]
         frbm = framebms[i]
-        framedescr = SoleData.frame_descriptor(mfd)[fridx] # frame indices inside mfd
+        framedescr = SoleData.grouped_variables(md)[i_modality] # modality indices in md
         bm[framedescr] = frbm
     end
     return bm
 end
 
 """
-    bm2attr
+    bm2var
 
-return tuple containing names of suitable attributes and names of not suitable attributes
+return tuple containing names of suitable variables and names of not suitable variables
 """
-function bm2attr(mfd::SoleData.MultiFrameDataset, bm::BitVector)
-    return bm2attr(SoleData.data(mfd), bm)
+function bm2var(md::SoleData.MultiModalDataset, bm::BitVector)
+    return bm2var(SoleData.data(md), bm)
 end
 
-function bm2attr(mfd::SoleData.MultiFrameDataset, fridx::Integer, bm::BitVector)
-    return bm2attr(SoleData.frame(mfd, fridx), bm)
+function bm2var(md::SoleData.MultiModalDataset, i_modality::Integer, bm::BitVector)
+    return bm2var(SoleData.modality(md, i_modality), bm)
 end
 
-function bm2attr(df::AbstractDataFrame, bm::BitVector)
-    attr = names(df)
-    good_attr = attr[findall(bm)]
-    bad_attr = attr[findall(!, bm)]
-    return good_attr, bad_attr
+function bm2var(df::AbstractDataFrame, bm::BitVector)
+    var = names(df)
+    good_var = var[findall(bm)]
+    bad_var = var[findall(!, bm)]
+    return good_var, bad_var
 end
 
 """
     _group_by_class(df, y)
 
-Group a data frame by its classes.
+Group a data modality by its classes.
 Target column will be called "class" and it will be the last column of dataframe
 
 # Examples
@@ -156,15 +156,15 @@ julia> _group_by_class(df, y)
 function _group_by_class(df::AbstractDataFrame, y::AbstractVector{<:Class})
     ndf = DataFrame()
     classes = unique(y)
-    attrsname = names(df)
-    for attr in attrsname
-        coltype = eltype(df[:, attr])
+    varsname = names(df)
+    for var in varsname
+        coltype = eltype(df[:, var])
         col = Vector{Vector{coltype}}()
         for cls in classes
             idxes = findall(==(cls), y)
-            push!(col, df[idxes, attr])
+            push!(col, df[idxes, var])
         end
-        insertcols!(ndf, attr => col)
+        insertcols!(ndf, var => col)
     end
     insertcols!(ndf, :class => classes) # insert class column
     return ndf

@@ -115,30 +115,30 @@ function build_fake_bit_mask(n=5)::BitVector
     return rand(Bool, n)
 end
 
-function random_timeseries_mfd(;ninstances=100, nattr=5, ts_len=5)
-    df = random_timeseries_df(;ninstances=ninstances, nattr=nattr, ts_len=ts_len)
-    fd = [ collect(1:nattr) ]
-    return MultiFrameDataset(fd, df)
+function random_timeseries_mfd(;ninstances=100, nvar=5, ts_len=5)
+    df = random_timeseries_df(;ninstances=ninstances, nvar=nvar, ts_len=ts_len)
+    fd = [ collect(1:nvar) ]
+    return MultiModalDataset(df, fd)
 end
 
-function random_timeseries_df(;ninstances=100, nattr=5, ts_len=5)
+function random_timeseries_df(;ninstances=100, nvar=5, ts_len=5)
     df = DataFrame()
-    for i in 1:nattr
+    for i in 1:nvar
         setproperty!(df, Symbol("a", i), [ rand(ts_len) for _ in 1:ninstances ])
     end
     return df
 end
 
-function random_df(;ninstances=100, nattr=5)
+function random_df(;ninstances=100, nvar=5)
     df = DataFrame()
-    for i in 1:nattr
+    for i in 1:nvar
         insertcols!(df, string("a", i) => rand(ninstances))
     end
     return df
 end
 
-function random_mfd(;ninstances=100, nattr=5)
-    df = random_df(;ninstances = ninstances, nattr = nattr)
-    fd = [ collect(1:nattr) ]
-    return MultiFrameDataset(fd, df)
+function random_mfd(;ninstances=100, nvar=5)
+    df = random_df(;ninstances = ninstances, nvar = nvar)
+    fd = [ collect(1:nvar) ]
+    return MultiModalDataset(df, fd)
 end

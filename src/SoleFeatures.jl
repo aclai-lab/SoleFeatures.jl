@@ -28,7 +28,7 @@ export CorrelationFilter
 # main functions
 export apply, buildbitmask, transform, transform!
 # utils
-export bm2attr
+export bm2var
 
 @reexport using DataFrames
 

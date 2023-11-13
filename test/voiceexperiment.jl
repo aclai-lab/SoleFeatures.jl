@@ -13,27 +13,27 @@ isdefined(Main, :Catch22) && (Base.nameof(f::SuperFeature) = getname(f)) # wrap 
 # ================== PREPARE DATASET ==================
 @info "PREPARE DATASET"
 
-# 28 attributes 2 classes
+# 28 variables 2 classes
 # X, y = arff_2_mfd_multivariate("/home/patrik/develop/aclai/features_selection/results-sole/datasets/FingerMovements_TRAIN.arff")
-# X = SoleData.frame(X, 1)
+# X = SoleData.modality(X, 1)
 
-# ================== PREPARE ATTRIBUTES, WINDOWS, MEASURES ==================
-@info "PREPARE ATTRIBUTES, WINDOWS, MEASURES"
+# ================== PREPARE VARIABLES, WINDOWS, MEASURES ==================
+@info "PREPARE VARIABLES, WINDOWS, MEASURES"
 
 # prepare awmds
-attrs = Symbol.(names(X))
+vars = Symbol.(names(X))
 fnmw = SoleFeatures.FixedNumMovingWindows(3, 0.25)
 measures = [catch22..., minimum, maximum, StatsBase.mean]
-awmds = SoleFeatures.build_awmds(attrs, [ fnmw... ], measures);
+awmds = SoleFeatures.build_awmds(vars, [ fnmw... ], measures);
 
 # ================== UTILS ==================
 @info "UTILS"
 
-lenattrs = length(attrs)
+lenvars = length(vars)
 lenwins = length(fnmw)
 lenmeasures = length(measures)
-lentot = lenattrs * lenwins * lenmeasures
-println("# Attributes: $(lenattrs)")
+lentot = lenvars * lenwins * lenmeasures
+println("# Variables: $(lenvars)")
 println("# Windows: $(lenwins)")
 println("# Measures: $(lenmeasures)")
 println("# Total features: $(lentot)")
@@ -41,30 +41,30 @@ println("# Total features: $(lentot)")
 # ================== STEP 1: UNSUPERVISED FEATURE SELECTION ==================
 @info "STEP 1: UNSUPERVISED FEATURE SELECTION"
 
-# prepare selector for each group: grouping for (Attributes, Measures) it will be 3 item (windows) in each group
+# prepare selector for each group: grouping for (Variables, Measures) it will be 3 item (windows) in each group
 selector = VarianceRanking(lenwins)
 
-# prepare group by: in this case it will be 56 groups (Attributes * Measures)
-groupby = [(SoleFeatures.GROUPBY_ATTRIBUTES, SoleFeatures.GROUPBY_MEASURES)]
+# prepare group by: in this case it will be 56 groups (Variables * Measures)
+groupbykey = [(SoleFeatures.GROUPBY_VARIABLES, SoleFeatures.GROUPBY_MEASURES)]
 
 # prepare aggragate function to apply for each group
 aggregatef = StatsBase.mean
 
 # prepare limiter to retrive lentot/2 groups
-limiter = SoleFeatures.RankingLimiter(Int(ceil(lenattrs*lenmeasures/2)), true)
+limiter = SoleFeatures.RankingLimiter(Int(ceil(lenvars*lenmeasures/2)), true)
 
 # prepare norm function
-normf(X) = SoleFeatures.minmax_normalize(X; min_quantile=0.01, max_quantile=0.99, col_quantile=false) # TODO: change "col_quantile" in "mode" in something that accept symbol (:ALLATTRIBUTES, :BYATTRIBUTES)
+normf(X) = SoleFeatures.minmax_normalize(X; min_quantile=0.01, max_quantile=0.99, col_quantile=false) # TODO: change "col_quantile" in "mode" in something that accept symbol (:ALLVARIABLES, :BYVARIABLES)
 
 # get result
-awmds_res = SoleFeatures.evaluate(X, y, awmds, selector, groupby, aggregatef, limiter; normf=normf)
+awmds_res = SoleFeatures.evaluate(X, y, awmds, selector, groupbykey, aggregatef, limiter; normf=normf)
 println("Length: $(length(awmds_res)/lenwins)")
 
 # ================== STEP 2: SUPERVISED FEATURE SELECTION ==================
 @info "STEP 2: SUPERVISED FEATURE SELECTION"
 
 limiter = SoleFeatures.RankingLimiter(10, true)
-awmds_res = SoleFeatures.evaluate(X, y, awmds_res, selector, groupby, aggregatef, limiter; normf=normf, supervised=true)
+awmds_res = SoleFeatures.evaluate(X, y, awmds_res, selector, groupbykey, aggregatef, limiter; normf=normf, supervised=true)
 println("Length: $(length(awmds_res)/lenwins)")
 
 # ================== STEP 3: VALIDATION ==================
@@ -73,7 +73,7 @@ println("Length: $(length(awmds_res)/lenwins)")
 # It is sufficient that two population split correctly
 statisticsfs = StatisticalThreshold(1)
 limiter = SoleFeatures.ThresholdLimiter(0.01, >=) # TODO: use eps instead of 0.01?
-awmds_check = SoleFeatures.evaluate(X, y, awmds_res, statisticsfs, groupby, aggregatef, limiter; normf=normf, supervised=true)
+awmds_check = SoleFeatures.evaluate(X, y, awmds_res, statisticsfs, groupbykey, aggregatef, limiter; normf=normf, supervised=true)
 
 # ================== OUTPUT ==================
 
