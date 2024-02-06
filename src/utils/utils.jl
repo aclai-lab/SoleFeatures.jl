@@ -1,4 +1,4 @@
-# TODO: minmax_normalize in SoleData
+# TODO: minmax_normalize in MultiData
 """
 Normalize passed DataFrame using min-max normalization.
 Return a new normalized DataFrame
@@ -6,14 +6,14 @@ Return a new normalized DataFrame
 minmax_normalize(c, args...; kwars...) = minmax_normalize!(deepcopy(c), args...; kwars...)
 
 function minmax_normalize!(
-    md::SoleData.MultiModalDataset,
+    md::MultiData.MultiDataset,
     frame_index::Integer;
     min_quantile::Real = 0.0,
     max_quantile::Real = 1.0,
     col_quantile::Bool = true,
 )
     return minmax_normalize!(
-        SoleData.modality(md, frame_index);
+        MultiData.modality(md, frame_index);
         min_quantile = min_quantile,
         max_quantile = max_quantile,
         col_quantile = col_quantile
@@ -74,12 +74,12 @@ end
 """
     _mod_bm2mfd_bm(md, frame_index, frame_bm)
 
-Modality bitmask to MultiModalDataset bitmask.
+Modality bitmask to MultiDataset bitmask.
 
-return bitmask for entire MultiModalDataset from a modality of it
+return bitmask for entire MultiDataset from a modality of it
 """
 function _mod_bm2mfd_bm(
-    md::SoleData.MultiModalDataset,
+    md::MultiData.MultiDataset,
     i_mods::Union{Integer,AbstractVector{<:Integer}},
     framebms::Union{BitVector,AbstractVector{<:BitVector}}
 )::BitVector
@@ -92,7 +92,7 @@ function _mod_bm2mfd_bm(
     for i in 1:lastindex(i_mods)
         i_modality = i_mods[i]
         frbm = framebms[i]
-        framedescr = SoleData.grouped_variables(md)[i_modality] # modality indices in md
+        framedescr = MultiData.grouped_variables(md)[i_modality] # modality indices in md
         bm[framedescr] = frbm
     end
     return bm
@@ -103,12 +103,12 @@ end
 
 return tuple containing names of suitable variables and names of not suitable variables
 """
-function bm2var(md::SoleData.MultiModalDataset, bm::BitVector)
-    return bm2var(SoleData.data(md), bm)
+function bm2var(md::MultiData.MultiDataset, bm::BitVector)
+    return bm2var(MultiData.data(md), bm)
 end
 
-function bm2var(md::SoleData.MultiModalDataset, i_modality::Integer, bm::BitVector)
-    return bm2var(SoleData.modality(md, i_modality), bm)
+function bm2var(md::MultiData.MultiDataset, i_modality::Integer, bm::BitVector)
+    return bm2var(MultiData.modality(md, i_modality), bm)
 end
 
 function bm2var(df::AbstractDataFrame, bm::BitVector)

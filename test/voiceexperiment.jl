@@ -15,7 +15,7 @@ isdefined(Main, :Catch22) && (Base.nameof(f::SuperFeature) = getname(f)) # wrap 
 
 # 28 variables 2 classes
 # X, y = arff_2_mfd_multivariate("/home/patrik/develop/aclai/features_selection/results-sole/datasets/FingerMovements_TRAIN.arff")
-# X = SoleData.modality(X, 1)
+# X = MultiData.modality(X, 1)
 
 # ================== PREPARE VARIABLES, WINDOWS, MEASURES ==================
 @info "PREPARE VARIABLES, WINDOWS, MEASURES"

@@ -6,7 +6,7 @@ Removes from provided samples variables indicated by bitmask or selector
 
 # Arguments
 
-- `X::AbstractDataFrame|MultiModalDataset`: samples to evaluate
+- `X::AbstractDataFrame|MultiDataset`: samples to evaluate
 - `y::AbstractVector`: target vector
 - `bm::BitVector`: Vector of bit containing which variables are suitable(1) or not(0)
 - `selector::AbstractFeaturesSelector`: Selector
@@ -38,35 +38,35 @@ function transform!(
 end
 
 function transform!(
-    X::SoleData.AbstractMultiModalDataset,
+    X::MultiData.AbstractMultiDataset,
     bm::BitVector;
     i_modality::Union{Integer,Nothing} = nothing
 )
     if (isnothing(i_modality))
         nvariables(X) != length(bm) && throw(DimensionMismatch(""))
-        return SoleData.dropvariables!(X, findall(!, bm))
+        return MultiData.dropvariables!(X, findall(!, bm))
     else
         nvariables(X, i_modality) != length(bm) && throw(DimensionMismatch(""))
-        return SoleData.dropvariables!(X, i_modality, findall(!, bm))
+        return MultiData.dropvariables!(X, i_modality, findall(!, bm))
     end
 end
 
 function transform!(
-    X::SoleData.AbstractMultiModalDataset,
+    X::MultiData.AbstractMultiDataset,
     selector::AbstractFeaturesSelector;
     i_modality::Union{Integer,Nothing} = nothing
 )
     if (isnothing(i_modality))
-        return transform!(SoleData.data(X), selector)
+        return transform!(MultiData.data(X), selector)
     else
-        return transform!(SoleData.modality(X, i_modality), selector)
+        return transform!(MultiData.modality(X, i_modality), selector)
     end
 end
 
-# TODO: transform! for MultiModalDataset with supervised selector
+# TODO: transform! for MultiDataset with supervised selector
 
 transform(X::AbstractDataFrame, args...; kwargs...) = transform!(deepcopy(X), args...; kwargs...)
-transform(X::SoleData.AbstractMultiModalDataset, args...; kwargs...) = transform!(deepcopy(X), args...; kwargs...)
+transform(X::MultiData.AbstractMultiDataset, args...; kwargs...) = transform!(deepcopy(X), args...; kwargs...)
 # (s::AbstractFeaturesSelector)(X, args; kwargs...) = transform(X, args..., kwargs...) # TODO: correct this
 
 """
@@ -88,14 +88,14 @@ True values indicate selected variable index
 - `i_modality::Integer`: Modality index
 """
 function buildbitmask(
-    X::SoleData.MultiModalDataset,
+    X::MultiData.MultiDataset,
     selector::AbstractFeaturesSelector,
     i_modality::Integer
 )::Tuple{BitVector,BitVector}
-    return buildbitmask(SoleData.modality(X, i_modality), selector)
+    return buildbitmask(MultiData.modality(X, i_modality), selector)
 end
 
-# TODO: buildbitmask for MultiModalDataset with supervised selector
+# TODO: buildbitmask for MultiDataset with supervised selector
 
 function buildbitmask(
     X::AbstractDataFrame,

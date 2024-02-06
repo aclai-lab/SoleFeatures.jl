@@ -118,7 +118,7 @@ end
 function random_timeseries_mfd(;ninstances=100, nvar=5, ts_len=5)
     df = random_timeseries_df(;ninstances=ninstances, nvar=nvar, ts_len=ts_len)
     fd = [ collect(1:nvar) ]
-    return MultiModalDataset(df, fd)
+    return MultiDataset(df, fd)
 end
 
 function random_timeseries_df(;ninstances=100, nvar=5, ts_len=5)
@@ -140,5 +140,5 @@ end
 function random_mfd(;ninstances=100, nvar=5)
     df = random_df(;ninstances = ninstances, nvar = nvar)
     fd = [ collect(1:nvar) ]
-    return MultiModalDataset(df, fd)
+    return MultiDataset(df, fd)
 end
