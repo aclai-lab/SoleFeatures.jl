@@ -5,14 +5,14 @@
 # alias: Variable, MovingWindows, Measure
 
 # TODO: change name in AbstractColumnDescriptor
-const AWMDescriptor = Tuple{Symbol, AbstractMovingWindowsIndex, Function}
+const AWMDescriptor = Tuple{Symbol,AbstractMovingWindowsIndex,Function}
 
 # constants
 
 const GROUPBY_VARIABLES = :Variables
 const GROUPBY_WINDOWS = :Windows
 const GROUPBY_MEASURES = :Measures
-const GROUPBY_ID_DICT = Dict{Symbol, Integer}(
+const GROUPBY_ID_DICT = Dict{Symbol,Integer}(
     GROUPBY_VARIABLES => 1,
     GROUPBY_WINDOWS => 2,
     GROUPBY_MEASURES => 3
@@ -116,11 +116,11 @@ end
 
 function retrive_groups(
     variables::AbstractVector{Symbol},
-    groupby::Union{Symbol, Tuple{Symbol, Symbol}}
+    groupbykey::Union{Symbol,Tuple{Symbol,Symbol}}
 )::Vector{Vector{Symbol}}
     groups = Dict{String,Vector{Symbol}}()
     # from: https://discourse.julialang.org/t/how-can-i-access-multiple-values-of-a-dictionary-using-a-tuple-of-keys/56868/3
-    groupids = collect(getindex.(Ref(GROUPBY_ID_DICT), groupby)) # collect(Tuple) -> Vector
+    groupids = collect(getindex.(Ref(GROUPBY_ID_DICT), groupbykey)) # collect(Tuple) -> Vector
 
     for var in variables
         # retrive indicated group 'groupids' from current variable and check if it belongs to 'groups'
@@ -187,11 +187,11 @@ Group #2:
 """
 function retrive_groups(
     awmds::AbstractVector{<:AWMDescriptor},
-    groupby::Union{Symbol, Tuple{Symbol, Symbol}},
+    groupbykey::Union{Symbol,Tuple{Symbol,Symbol}},
 )::Vector{Vector{AWMDescriptor}}
     groups = Dict{String,Vector{AWMDescriptor}}()
     # from: https://discourse.julialang.org/t/how-can-i-access-multiple-values-of-a-dictionary-using-a-tuple-of-keys/56868/3
-    groupids = [ collect(getindex.(Ref(GROUPBY_ID_DICT), groupby))... ] # collect(Tuple) -> Vector
+    groupids = [ collect(getindex.(Ref(GROUPBY_ID_DICT), groupbykey))... ] # collect(Tuple) -> Vector
     for awm in awmds
         # retrive indicated group 'groupids' from current awmd and check if it belongs to 'groups'
         sel = string(awm[groupids]...)
@@ -206,13 +206,13 @@ end
 
 function evaluate(
     X::AbstractDataFrame,
-    y::Union{AbstractVector{<:Union{String, Symbol}}, Nothing},
+    y::Union{AbstractVector{<:Union{String,Symbol}},Nothing},
     awmds::AbstractVector{<:AWMDescriptor},
     selector::AbstractFeaturesSelector,
-    groupby::Vector{<:Union{Symbol, Tuple{Symbol, Symbol}}},
+    groupbykey::Vector{<:Union{Symbol,Tuple{Symbol,Symbol}}},
     aggregatef::Function,
     limiter::AbstractLimiter;
-    normf::Union{Function, Nothing}=nothing,
+    normf::Union{Function,Nothing}=nothing,
     normgroup=true,
     supervised=false
 )
@@ -231,7 +231,7 @@ function evaluate(
     # global normalization
     if (!isnothing(normf) && !normgroup) eX = normf(eX) end
 
-    for grby in groupby
+    for grby in groupbykey
         groups = retrive_groups(awmds, grby) # groups made of Vector{Vector{AWMDescriptor}}
         groupscores = Vector{Real}(undef, length(groups))
 

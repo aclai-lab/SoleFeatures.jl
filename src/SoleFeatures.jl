@@ -2,6 +2,7 @@ __precompile__()
 module SoleFeatures
 
 using StatsBase
+using MultiData
 using SoleData
 using Reexport
 using Random

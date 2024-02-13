@@ -2,7 +2,7 @@ using HypothesisTests
 using StatsBase
 using Test
 using Revise
-using SoleData
+using MultiData
 using SoleFeatures
 
 include("./test_function.jl")
@@ -11,31 +11,31 @@ include("./test_function.jl")
 
     @testset "transform" begin
 
-        @testset "transform!(md, bm; frmidx) using bitmask on a frame of MultiModalDataset" begin
+        @testset "transform!(md, bm; i_modality) using bitmask on a modality of MultiDataset" begin
             df = random_timeseries_df(; nvar=10)
-            md = SoleData.MultiModalDataset([[3,7,8], [1,2,4], [5,6,9,10]], df)
-            bm_frame = BitVector([0,1,0])
-            idx_frame = 1
+            md = MultiData.MultiDataset(df, [[3,7,8], [1,2,4], [5,6,9,10]])
+            bm_mod = BitVector([0,1,0])
+            idx_mod = 1
             # expected values
-            emd = deepcopy(md)
-            SoleData.dropvariables!(emd, [3,8])
+            emfd = deepcopy(md)
+            MultiData.dropvariables!(emfd, [3,8])
 
-            SoleFeatures.transform!(md, bm_frame; frmidx=idx_frame)
+            SoleFeatures.transform!(md, bm_mod; i_modality=idx_mod)
 
-            @test isequal(md, emd)
+            @test isequal(md, emfd)
         end
 
-        @testset "transform!(md, bm) using bitmask on whole MultiModalDataset" begin
+        @testset "transform!(md, bm) using bitmask on whole MultiDataset" begin
             df = random_timeseries_df(; nvar=5)
-            md = SoleData.MultiModalDataset([[4,2,1], [5,3]], df)
-            bm_frame = BitVector([0,1,0,1,1])
+            md = MultiData.MultiDataset(df, [[4,2,1], [5,3]])
+            bm_mod = BitVector([0,1,0,1,1])
             # expected values
-            emd = deepcopy(md)
-            SoleData.dropvariables!(emd, [1,3])
+            emfd = deepcopy(md)
+            MultiData.dropvariables!(emfd, [1,3])
 
-            SoleFeatures.transform!(md, bm_frame)
+            SoleFeatures.transform!(md, bm_mod)
 
-            @test isequal(md, emd)
+            @test isequal(md, emfd)
         end
 
         @testset "transform!(df, bm) using bitmask on DataFrame" begin
@@ -50,31 +50,31 @@ include("./test_function.jl")
             @test isequal(df, edf)
         end
 
-        @testset "transform(md, bm; frmidx) using bitmask on a frame of MultiModalDataset" begin
+        @testset "transform(md, bm; i_modality) using bitmask on a modality of MultiDataset" begin
             df = random_timeseries_df(; nvar=10)
-            md = SoleData.MultiModalDataset([[3,7,8], [1,2,4], [5,6,9,10]], df)
-            bm_frame = BitVector([0,1,0])
-            idx_frame = 1
+            md = MultiData.MultiDataset(df, [[3,7,8], [1,2,4], [5,6,9,10]])
+            bm_mod = BitVector([0,1,0])
+            idx_mod = 1
             # expected values
-            emd = deepcopy(md)
-            SoleData.dropvariables!(emd, [3,8])
+            emfd = deepcopy(md)
+            MultiData.dropvariables!(emfd, [3,8])
 
-            md = SoleFeatures.transform(md, bm_frame; frmidx=idx_frame)
+            md = SoleFeatures.transform(md, bm_mod; i_modality=idx_mod)
 
-            @test isequal(md, emd)
+            @test isequal(md, emfd)
         end
 
-        @testset "transform(md, bm) using bitmask on whole MultiModalDataset" begin
+        @testset "transform(md, bm) using bitmask on whole MultiDataset" begin
             df = random_timeseries_df(; nvar=5)
-            md = SoleData.MultiModalDataset([[4,2,1], [5,3]], df)
-            bm_frame = BitVector([0,1,0,1,1])
+            md = MultiData.MultiDataset(df, [[4,2,1], [5,3]])
+            bm_mod = BitVector([0,1,0,1,1])
             # expected values
-            emd = deepcopy(md)
-            SoleData.dropvariables!(emd, [1,3])
+            emfd = deepcopy(md)
+            MultiData.dropvariables!(emfd, [1,3])
 
-            md = SoleFeatures.transform(md, bm_frame)
+            md = SoleFeatures.transform(md, bm_mod)
 
-            @test isequal(md, emd)
+            @test isequal(md, emfd)
         end
 
         @testset "transform(df, bm) using bitmask on DataFrame" begin
@@ -93,28 +93,28 @@ include("./test_function.jl")
 
     @testset "utils" begin
 
-        @testset "_fr_bm2md_bm using array of modalities and array of bitmasks" begin
+        @testset "_mod_bm2mfd_bm using array of frames and array of bitmasks" begin
             df = random_timeseries_df(; nvar=10)
-            md = SoleData.MultiModalDataset([[3,7,8], [1,2,4], [5,6,9,10]], df)
+            md = MultiData.MultiDataset(df, [[3,7,8], [1,2,4], [5,6,9,10]])
             frms = [1,2,3]
             bms = Vector{BitVector}([ [0,1,0],[0,0,1],[0,1,1,0] ])
             # expected values
             ebm = BitVector([ 0,0,0,1,0,1,1,0,1,0 ])
 
-            resbm = SoleFeatures._fr_bm2md_bm(md, frms, bms)
+            resbm = SoleFeatures._mod_bm2mfd_bm(md, frms, bms)
 
             @test isequal(resbm, ebm)
         end
 
-        @testset "_fr_bm2md_bm using frame and bitmask" begin
+        @testset "_mod_bm2mfd_bm using modality and bitmask" begin
             df = random_timeseries_df(; nvar=10)
-            md = SoleData.MultiModalDataset([[3,7,8], [1,2,4], [5,6,9,10]], df)
+            md = MultiData.MultiDataset(df, [[3,7,8], [1,2,4], [5,6,9,10]])
             frm = 2
             bm = BitVector([0,0,1])
             # expected values
             ebm = BitVector([ 0,0,1,1,1,1,1,1,1,1 ])
 
-            resbm = SoleFeatures._fr_bm2md_bm(md, frm, bm)
+            resbm = SoleFeatures._mod_bm2mfd_bm(md, frm, bm)
 
             @test isequal(resbm, ebm)
         end
@@ -207,12 +207,13 @@ include("./test_function.jl")
                 @test (SoleFeatures.transform!(df, y, mir) isa DataFrame)
             end
 
-            # @testset "VarianceRanking on MultiModalDataset" begin
+            # TODO: make this work: see the FIXME in the file test/runtests.jl
+            # @testset "VarianceRanking on MultiDataset" begin
             #     df = random_df();
             #     df = SoleFeatures.minmax_normalize(df; min_quantile=0.0, max_quantile=1.0)
-            #     md = SoleData.MultiModalDataset([ [1,2,3,4], [5] ], df)
+            #     md = MultiData.MultiDataset([ [1,2,3,4], [5] ], df)
             #     vr = VarianceRanking(3)
-            #     @test (SoleFeatures.transform!(md, vr; frmidx=1) isa MultiModalDataset)
+            #     @test (SoleFeatures.transform!(md, vr; i_modality=1) isa MultiDataset)
             # end
 
         end

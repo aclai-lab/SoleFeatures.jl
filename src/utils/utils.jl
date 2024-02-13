@@ -1,4 +1,4 @@
-# TODO: minmax_normalize in SoleData
+# TODO: minmax_normalize in MultiData
 """
 Normalize passed DataFrame using min-max normalization.
 Return a new normalized DataFrame
@@ -6,14 +6,14 @@ Return a new normalized DataFrame
 minmax_normalize(c, args...; kwars...) = minmax_normalize!(deepcopy(c), args...; kwars...)
 
 function minmax_normalize!(
-    md::SoleData.MultiModalDataset,
-    i_modality::Integer;
+    md::MultiData.MultiDataset,
+    frame_index::Integer;
     min_quantile::Real = 0.0,
     max_quantile::Real = 1.0,
     col_quantile::Bool = true,
 )
     return minmax_normalize!(
-        SoleData.modality(md, i_modality);
+        MultiData.modality(md, frame_index);
         min_quantile = min_quantile,
         max_quantile = max_quantile,
         col_quantile = col_quantile
@@ -75,27 +75,27 @@ function minmax_normalize!(
 end
 
 """
-    _fr_bm2md_bm(md, i_modality, frame_bm)
+    _mod_bm2mfd_bm(md, frame_index, frame_bm)
 
-frame bitmask to MultiModalDataset bitmask.
+Modality bitmask to MultiDataset bitmask.
 
-return bitmask for entire MultiModalDataset from a frame of it
+return bitmask for entire MultiDataset from a modality of it
 """
-function _fr_bm2md_bm(
-    md::SoleData.MultiModalDataset,
-    frameidxes::Union{Integer, AbstractVector{<:Integer}},
-    framebms::Union{BitVector, AbstractVector{<:BitVector}}
+function _mod_bm2mfd_bm(
+    md::MultiData.MultiDataset,
+    i_mods::Union{Integer,AbstractVector{<:Integer}},
+    framebms::Union{BitVector,AbstractVector{<:BitVector}}
 )::BitVector
-    frameidxes = [ frameidxes... ]
+    i_mods = [ i_mods... ]
     isa(framebms, BitVector) && (framebms = [ framebms ])
 
-    length(frameidxes) != length(framebms) && throw(DimensionMismatch(""))
+    length(i_mods) != length(framebms) && throw(DimensionMismatch(""))
 
     bm = trues(nvariables(md))
-    for i in 1:lastindex(frameidxes)
-        fridx = frameidxes[i]
+    for i in 1:lastindex(i_mods)
+        i_modality = i_mods[i]
         frbm = framebms[i]
-        framedescr = SoleData.grouped_variables(md)[fridx] # frame indices inside md
+        framedescr = MultiData.grouped_variables(md)[i_modality] # modality indices in md
         bm[framedescr] = frbm
     end
     return bm
@@ -106,12 +106,12 @@ end
 
 return tuple containing names of suitable variables and names of not suitable variables
 """
-function bm2var(md::SoleData.MultiModalDataset, bm::BitVector)
-    return bm2var(SoleData.data(md), bm)
+function bm2var(md::MultiData.MultiDataset, bm::BitVector)
+    return bm2var(MultiData.data(md), bm)
 end
 
-function bm2var(md::SoleData.MultiModalDataset, fridx::Integer, bm::BitVector)
-    return bm2var(SoleData.modality(md, fridx), bm)
+function bm2var(md::MultiData.MultiDataset, i_modality::Integer, bm::BitVector)
+    return bm2var(MultiData.modality(md, i_modality), bm)
 end
 
 function bm2var(df::AbstractDataFrame, bm::BitVector)
@@ -124,7 +124,7 @@ end
 """
     _group_by_class(df, y)
 
-Group a data frame by its classes.
+Group a data modality by its classes.
 Target column will be called "class" and it will be the last column of dataframe
 
 # Examples

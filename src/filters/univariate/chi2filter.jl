@@ -1,4 +1,4 @@
-struct Chi2Filter{T <: AbstractLimiter} <: AbstractChi2Filter{T}
+struct Chi2Filter{T<:AbstractLimiter} <: AbstractChi2Filter{T}
     limiter::T
     # parameters
 end

@@ -115,10 +115,10 @@ function build_fake_bit_mask(n=5)::BitVector
     return rand(Bool, n)
 end
 
-function random_timeseries_md(;ninstances=100, nvar=5, ts_len=5)
+function random_timeseries_mfd(;ninstances=100, nvar=5, ts_len=5)
     df = random_timeseries_df(;ninstances=ninstances, nvar=nvar, ts_len=ts_len)
     fd = [ collect(1:nvar) ]
-    return MultiModalDataset(fd, df)
+    return MultiDataset(df, fd)
 end
 
 function random_timeseries_df(;ninstances=100, nvar=5, ts_len=5)
@@ -137,8 +137,8 @@ function random_df(;ninstances=100, nvar=5)
     return df
 end
 
-function random_md(;ninstances=100, nvar=5)
+function random_mfd(;ninstances=100, nvar=5)
     df = random_df(;ninstances = ninstances, nvar = nvar)
     fd = [ collect(1:nvar) ]
-    return MultiModalDataset(fd, df)
+    return MultiDataset(df, fd)
 end

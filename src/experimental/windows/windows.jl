@@ -1,13 +1,13 @@
 # ======================== moving windows index
 
-struct MovingWindowsIndex{T <: AbstractMovingWindows} <: AbstractMovingWindowsIndex
+struct MovingWindowsIndex{T<:AbstractMovingWindows} <: AbstractMovingWindowsIndex
     index::Int
     movingwindows::Base.RefValue{T}
 
     function MovingWindowsIndex(
         index::Integer,
         movingwindows::Base.Ref{T}
-    ) where {T <: AbstractMovingWindows}
+    ) where {T<:AbstractMovingWindows}
         index > length(movingwindows[]) &&
             throw(DimensionMismatch("Not valid index"))
         return new{T}(index, movingwindows)
@@ -113,7 +113,7 @@ end
 mutable struct FixedSizeMovingWindows <: AbstractMovingWindows
     wsize::Int
     wstep::Int
-    npoints::Union{Int, Nothing}
+    npoints::Union{Int,Nothing}
 
     FixedSizeMovingWindows(wsize::Integer, wstep::Integer) = new(wsize, wstep, nothing)
 end

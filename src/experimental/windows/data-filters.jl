@@ -175,7 +175,7 @@ function _moving_window(multivariate_series::AbstractMatrix{T}, args...; return_
     dict = OrderedDict([r => multivariate_series[r,:] for r in _moving_window(size(multivariate_series, 1), args...; kwargs...)])
     return_dict ? dict : collect(values(dict))
 end
-function _moving_window(multivariate_series_dataset::Union{AbstractArray{T,3},D}, args...; return_dict = false, kwargs...) where {T, D<:OrderedDict{<:Any, <:AbstractMatrix{T}}}
+function _moving_window(multivariate_series_dataset::Union{AbstractArray{T,3},D}, args...; return_dict = false, kwargs...) where {T,D<:OrderedDict{<:Any,<:AbstractMatrix{T}}}
     dict = OrderedDict(Iterators.flatten([begin
         instance_windows_dict = _moving_window(instance, args...; return_dict = true, kwargs...)
         OrderedDict(zip(map((k)->(i_instance,k), collect(keys(instance_windows_dict))), values(instance_windows_dict)))
@@ -214,7 +214,7 @@ function moving_window_filter(
     multivariate_series_dataset::D;
     f::Function,
     kwargs...
-)::D where {T,ID,D<:OrderedDict{ID, <:AbstractMatrix{T}}}
+)::D where {T,ID,D<:OrderedDict{ID,<:AbstractMatrix{T}}}
     OrderedDict([i_instance => moving_window_filter(instance; f = f, kwargs...) for (i_instance, instance) in enumerate_instances(multivariate_series_dataset)])
 end
 
@@ -274,11 +274,11 @@ function moving_partitioning_filter(
 end
 
 function moving_partitioning_filter(
-    multivariate_series_dataset::OrderedDict{ID, <:AbstractMatrix{T}},
+    multivariate_series_dataset::OrderedDict{ID,<:AbstractMatrix{T}},
     args...;
     return_dict = true,
     kwargs...
-)::OrderedDict{<:Tuple{ID,<:UnitRange{<:Int}}, <:AbstractMatrix{T}} where {T,ID}
+)::OrderedDict{<:Tuple{ID,<:UnitRange{<:Int}},<:AbstractMatrix{T}} where {T,ID}
     dict = _moving_window(multivariate_series_dataset, args...; return_dict = true, kwargs...)
     return_dict ? dict : cat(values(dict)..., dims=3)
 end

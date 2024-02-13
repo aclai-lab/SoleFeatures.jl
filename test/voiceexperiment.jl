@@ -14,8 +14,8 @@ isdefined(Main, :Catch22) && (Base.nameof(f::SuperFeature) = getname(f)) # wrap 
 @info "PREPARE DATASET"
 
 # 28 variables 2 classes
-# X, y = arff_2_md_multivariate("/home/patrik/develop/aclai/features_selection/results-sole/datasets/FingerMovements_TRAIN.arff")
-# X = SoleData.modality(X, 1)
+# X, y = arff_2_mfd_multivariate("/home/patrik/develop/aclai/features_selection/results-sole/datasets/FingerMovements_TRAIN.arff")
+# X = MultiData.modality(X, 1)
 
 # ================== PREPARE VARIABLES, WINDOWS, MEASURES ==================
 @info "PREPARE VARIABLES, WINDOWS, MEASURES"
@@ -45,7 +45,7 @@ println("# Total features: $(lentot)")
 selector = VarianceRanking(lenwins)
 
 # prepare group by: in this case it will be 56 groups (Variables * Measures)
-groupby = [(SoleFeatures.GROUPBY_VARIABLES, SoleFeatures.GROUPBY_MEASURES)]
+groupbykey = [(SoleFeatures.GROUPBY_VARIABLES, SoleFeatures.GROUPBY_MEASURES)]
 
 # prepare aggragate function to apply for each group
 aggregatef = StatsBase.mean
@@ -57,14 +57,14 @@ limiter = SoleFeatures.RankingLimiter(Int(ceil(lenvars*lenmeasures/2)), true)
 normf(X) = SoleFeatures.minmax_normalize(X; min_quantile=0.01, max_quantile=0.99, col_quantile=false) # TODO: change "col_quantile" in "mode" in something that accept symbol (:ALLVARIABLES, :BYVARIABLES)
 
 # get result
-awmds_res = SoleFeatures.evaluate(X, y, awmds, selector, groupby, aggregatef, limiter; normf=normf)
+awmds_res = SoleFeatures.evaluate(X, y, awmds, selector, groupbykey, aggregatef, limiter; normf=normf)
 println("Length: $(length(awmds_res)/lenwins)")
 
 # ================== STEP 2: SUPERVISED FEATURE SELECTION ==================
 @info "STEP 2: SUPERVISED FEATURE SELECTION"
 
 limiter = SoleFeatures.RankingLimiter(10, true)
-awmds_res = SoleFeatures.evaluate(X, y, awmds_res, selector, groupby, aggregatef, limiter; normf=normf, supervised=true)
+awmds_res = SoleFeatures.evaluate(X, y, awmds_res, selector, groupbykey, aggregatef, limiter; normf=normf, supervised=true)
 println("Length: $(length(awmds_res)/lenwins)")
 
 # ================== STEP 3: VALIDATION ==================
@@ -73,7 +73,7 @@ println("Length: $(length(awmds_res)/lenwins)")
 # It is sufficient that two population split correctly
 statisticsfs = StatisticalThreshold(1)
 limiter = SoleFeatures.ThresholdLimiter(0.01, >=) # TODO: use eps instead of 0.01?
-awmds_check = SoleFeatures.evaluate(X, y, awmds_res, statisticsfs, groupby, aggregatef, limiter; normf=normf, supervised=true)
+awmds_check = SoleFeatures.evaluate(X, y, awmds_res, statisticsfs, groupbykey, aggregatef, limiter; normf=normf, supervised=true)
 
 # ================== OUTPUT ==================
 

@@ -1,4 +1,4 @@
-struct VarianceFilter{T <: AbstractLimiter} <: AbstractVarianceFilter{T}
+struct VarianceFilter{T<:AbstractLimiter} <: AbstractVarianceFilter{T}
     limiter::T
     # parameters
 end

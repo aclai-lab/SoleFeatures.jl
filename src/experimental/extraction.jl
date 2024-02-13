@@ -1,6 +1,6 @@
 struct DescribedDataFrame{T} <: AbstractDataFrame
     df::DataFrame
-    descriptors::Dict{T, Int}
+    descriptors::Dict{T,Int}
 end
 
 const _SEPARATOR = "@@@"
@@ -8,7 +8,7 @@ const _SEPARATOR = "@@@"
 """
 First element must be the name of the variable
 """
-const Extractor = Tuple{Union{String, Symbol}, Vararg{Any}}
+const Extractor = Tuple{Union{String,Symbol},Vararg{Any}}
 
 @inline iscallable(::Function) = true
 @inline iscallable(c::Any) = !isempty(methods(c))
@@ -43,11 +43,11 @@ function groupby(es::Array{<:Extractor}, idxes::Union{Int, NTuple{N, Int}}) wher
     return [ values(res)... ]
 end
 
-function representatives(es::Array{<:Extractor}, idxes::Union{Int, NTuple{N, Int}}) where {N}
+function representatives(es::Array{<:Extractor}, idxes::Union{Int,NTuple{N,Int}}) where {N}
     return unique(keepat.(es, [ idxes ]))
 end
 
-function keepat(e::Extractor, idxes::Union{Int, NTuple{N, Int}}) where {N}
+function keepat(e::Extractor, idxes::Union{Int,NTuple{N,Int}}) where {N}
     return getindex(e, [idxes...])
 end
 

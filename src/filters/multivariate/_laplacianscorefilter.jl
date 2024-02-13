@@ -1,4 +1,4 @@
-struct LaplacianScoreFilter{T <: AbstractLimiter} <: AbstractLaplacianScoreFilter{T}
+struct LaplacianScoreFilter{T<:AbstractLimiter} <: AbstractLaplacianScoreFilter{T}
     limiter::T,
     # parameters
     w_metric::String,
