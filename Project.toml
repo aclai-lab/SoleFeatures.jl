@@ -27,6 +27,7 @@ OrderedCollections = "1"
 PyCall = "1"
 Reexport = "1"
 Revise = "3"
+SoleData = "0.13"
 StatsBase = "0.34"
 julia = "1"
 
