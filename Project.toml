@@ -33,7 +33,7 @@ PyCall = "1"
 Random = "1"
 Reexport = "1"
 Revise = "3"
-SoleData = "0.13"
+SoleData = "0.14"
 StatsBase = "0.30 - 0.34"
 julia = "1"
 
