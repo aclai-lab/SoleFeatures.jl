@@ -2,9 +2,26 @@
 module SoleFeatures
 
 using SoleBase
+using MultiData
 using StatsBase, Catch22
 using CategoricalArrays, DataFrames
 using Random
+
+include("interface.jl")
+export AbstractFilterBased
+include("utils/utils.jl")
+
+# filters
+include("filters/limiter.jl")
+export AbstractLimiter
+export PercentageLimiter
+include("filters/interface.jl")
+
+include("filters/univariate/identityfilter.jl")
+include("filters/univariate/mutualinformationclassif.jl")
+export MutualInformationClassifRanking
+include("filters/univariate/variancefilter.jl")
+export VarianceRanking, VarianceThreshold
 
 include("utils/features_set.jl")
 export mode_5, mode_10, embedding_dist, acf_timescale, acf_first_min, ami2, trev, outlier_timing_pos
@@ -12,13 +29,12 @@ export outlier_timing_neg, whiten_timescale, forecast_error, ami_timescale, high
 export stretch_high, entropy_pairs, rs_range, dfa, low_freq_power, centroid_freq, transition_variance, periodicity
 export base_set, catch9, catch22_set, complete_set
 
-include("dataset/dataset_structs.jl")
+include("dataset/interface.jl")
 export Feature
 
 include("dataset/prepare_dataset.jl")
 export feature_selection_preprocess
 
-# using MultiData
 # using SoleData
 # using Reexport
 # using LinearAlgebra
@@ -30,20 +46,17 @@ export feature_selection_preprocess
 
 # # abstracts
 # export AbstractFeaturesSelector
-# export AbstractFilterBased
 # export AbstractWrapperBased
 # export AbstractEmbeddedBased
-# export AbstractLimiter
+
 # # structs
-# export VarianceThreshold
-# export VarianceRanking
 # export RandomRanking
 # export StatisticalAtLeastOnce
 # export StatisticalMajority
 # export PearsonCorRanking
 # export Chi2Ranking
 # export Chi2Threshold
-# export MutualInformationClassifRanking
+
 # export CompoundStatisticalAtLeastOnce
 # export CompoundStatisticalMajority
 # export CorrelationFilter
@@ -87,19 +100,17 @@ export feature_selection_preprocess
 #     ))
 # end
 
-# include("interface.jl")
 # include("core.jl")
 # # Utils
-# include("utils/utils.jl")
+
 # # Filters
-# include("filters/limiter.jl")
-# include("filters/interface.jl")
+
 # include("filters/univariate/randomfilter.jl")
 # include("filters/univariate/statisticalfilter.jl")
-# include("filters/univariate/variancefilter.jl")
+
 # include("filters/univariate/chi2filter.jl")
 # include("filters/univariate/pearsoncorfilter.jl")
-# include("filters/univariate/mutualinformationclassif.jl")
+
 # include("filters/univariate/suplapscorefiler.jl")
 # include("filters/univariate/fisherscorefilter.jl")
 # include("filters/univariate/utils.jl")

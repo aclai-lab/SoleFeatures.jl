@@ -1,4 +1,34 @@
 # ---------------------------------------------------------------------------- #
+#                               abstract types                                 #
+# ---------------------------------------------------------------------------- #
+# """
+# Abstract type for dataset configuration outputs
+# """
+# abstract type AbstractDatasetConfig end
+
+# """
+# Abstract type for dataset outputs
+# """
+# abstract type AbstractDataset end
+
+# """
+# Abstract type for dataset train, test and validation indexing
+# """
+# abstract type AbstractIndexCollection end
+
+"""
+Abstract type for feature struct
+"""
+abstract type AbstractFeature end
+
+# ---------------------------------------------------------------------------- #
+#                                    types                                     #
+# ---------------------------------------------------------------------------- #
+const VarName   = Union{Symbol, String}
+const VarNames  = Union{Vector{String}, Vector{Symbol}, Nothing}
+const FeatNames = Union{Vector{<:Base.Callable}, Nothing}
+
+# ---------------------------------------------------------------------------- #
 #                                    dataset                                   #
 # ---------------------------------------------------------------------------- #
 # const DEFAULT_PREPROC = (
@@ -29,25 +59,7 @@ const WIN_PARAMS = Dict(
     adaptivewindow => (nwindows = 20, relative_overlap = 0.5)
 )
 
-# """
-# Abstract type for dataset configuration outputs
-# """
-# abstract type AbstractDatasetConfig end
 
-# """
-# Abstract type for dataset outputs
-# """
-# abstract type AbstractDataset end
-
-# """
-# Abstract type for dataset train, test and validation indexing
-# """
-# abstract type AbstractIndexCollection end
-
-"""
-Abstract type for feature struct
-"""
-abstract type AbstractFeature end
 
 # """
 #     DatasetInfo{F<:Base.Callable, R<:Real, I<:Integer, RNG<:AbstractRNG} <: AbstractDatasetConfig
@@ -262,7 +274,7 @@ A parametric struct that represents a feature extracted from time series data.
 ```julia
 Feature(value::Number, var::Union{Symbol,String}, feats::Symbol, nwin::Integer)
 """
-struct Feature{V<:Number, T<:Union{Symbol, String}} <: AbstractFeature
+struct Feature{V<:Number, T<:VarName} <: AbstractFeature
     value :: V
     var   :: T
     feats :: Symbol
@@ -275,8 +287,7 @@ struct Feature{V<:Number, T<:Union{Symbol, String}} <: AbstractFeature
 end
 
 # Pretty printing
-Base.show(io::IO, f::Feature) = print(io, 
-    "Feature($(f.value), $(f.var), $(f.feats), window=$(f.nwin))")
+Base.show(io::IO, f::Feature) = print(io, round(f.value, digits=4))
 
 # Value access methods
 Base.getproperty(f::Feature, s::Symbol) = getfield(f, s)
@@ -310,3 +321,7 @@ variable_name(f::Feature) = f.var
 feature_type(f::Feature) = f.feats
 # Get window number
 window_number(f::Feature) = f.nwin
+
+# ---------------------------------------------------------------------------- #
+#                            functions definitions                             #
+# ---------------------------------------------------------------------------- #

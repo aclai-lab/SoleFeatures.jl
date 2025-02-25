@@ -1,15 +1,12 @@
+# ---------------------------------------------------------------------------- #
+#                       mutual information classificator                       #
+# ---------------------------------------------------------------------------- #
 struct MutualInformationClassif{T <: AbstractLimiter} <: AbstractMutualInformationClassif{T}
     limiter::T
-    # parameters
+    # TODO parameters
 end
 
-# ========================================================================================
-# TRAITS
-
 is_supervised(::AbstractMutualInformationClassif) = true
-
-# ========================================================================================
-# SCORE
 
 function score(
     X::AbstractDataFrame,
@@ -20,8 +17,5 @@ function score(
     return scores
 end
 
-# ========================================================================================
-# CUSTOM CONSTRUCTORS
-
-MutualInformationClassifRanking(nbest) =
-    MutualInformationClassif(RankingLimiter(nbest, true))
+# Ranking
+MutualInformationClassifRanking(nbest) = MutualInformationClassif(RankingLimiter(nbest, true))

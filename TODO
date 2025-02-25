@@ -1,0 +1,14 @@
+Da chiedere a Fede:
+1- AbstractDataframe o Dataframe?
+2- Pull request insieme
+3- windowing multidimensione da implementare più avanti: potrebbe essere problematico mettere troppa carne al fuoco
+
+- Verifica che parametri servono a VarianceFilter
+
+### Importante
+
+Ricostruisci il dataset come aggregate, ma gli aggiungi un vettore con i dati delle colonne.
+
+rifai l'export catch22 con function e verifica con string(funzione)
+
+lascia dataframe e lascia in TODO la conversione a matrice

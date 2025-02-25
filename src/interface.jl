@@ -1,11 +1,13 @@
-# =========================================================================================
-# abstract types
-
+# ---------------------------------------------------------------------------- #
+#                               abstract types                                 #
+# ---------------------------------------------------------------------------- #
 """
 Abstract supertype for all features selector.
-
 """
 abstract type AbstractFeaturesSelector end
+
+is_supervised(::AbstractFeaturesSelector) = true
+is_unsupervised(::AbstractFeaturesSelector) = true
 
 """
 Abstract supertype filter based selector.
@@ -22,14 +24,14 @@ Abstract supertype filter based selector.
 """
 abstract type AbstractEmbeddedBased <: AbstractFeaturesSelector end
 
-# =========================================================================================
-# Types
+# ---------------------------------------------------------------------------- #
+#                                    types                                     #
+# ---------------------------------------------------------------------------- #
+const Class = Union{CategoricalValue, String, Symbol, Real}
 
-const Class = Union{String, Symbol, Real}
-
-# =========================================================================================
-# AbstractFeaturesSelector
-
+# ---------------------------------------------------------------------------- #
+#                            functions definitions                             #
+# ---------------------------------------------------------------------------- #
 """
     apply(X, selector)
     apply(X, y, selector)

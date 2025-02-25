@@ -69,9 +69,9 @@ parameters defined in `winparams`.
 """
 function _treatment(
     X::DataFrame,
-    vnames::AbstractVector{String},
+    vnames::VarNames,
     treatment::Symbol,
-    features::AbstractVector{<:Base.Callable},
+    features::FeatNames,
     winparams::NamedTuple
 )
     # check parameters
@@ -409,8 +409,8 @@ result = feature_selection_preprocess(df,
 """
 function feature_selection_preprocess(
     X::DataFrame;
-    vnames::Union{Vector{String}, Vector{Symbol}, Nothing}=nothing,
-    features::Union{Vector{<:Base.Callable}, Nothing}=nothing,
+    vnames::VarNames=nothing,
+    features::FeatNames=nothing,
     nwindows::Union{Int, Nothing}=nothing
 )
     # check parameters
