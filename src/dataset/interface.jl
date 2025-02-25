@@ -256,71 +256,43 @@ const WIN_PARAMS = Dict(
 # end
 
 """
-    Feature{V<:Number, T<:Union{Symbol, String}} <: AbstractFeature
+    InfoFeat{V<:Number, T<:Union{Symbol, String}} <: AbstractFeature
 
-A parametric struct that represents a feature extracted from time series data.
+Holds info on colum dataset, used in feature selection.
 
 # Type Parameters
-- `V`: Type of the feature value (must be a subtype of `Number`)
 - `T`: Type of the variable name (must be either `Symbol` or `String`)
 
 # Fields
-- `value::V`: The numerical value of the feature
-- `var::T`: The variable name/identifier
 - `feats::Symbol`: The feature extraction function name
+- `var::T`: The variable name/identifier
 - `nwin::Int`: The window number (must be positive)
 
 # Constructors
 ```julia
-Feature(value::Number, var::Union{Symbol,String}, feats::Symbol, nwin::Integer)
+InfoFeat(feats::Symbol, var::Union{Symbol,String}, nwin::Integer)
 """
-struct Feature{V<:Number, T<:VarName} <: AbstractFeature
-    value :: V
-    var   :: T
+struct InfoFeat{T<:VarName} <: AbstractFeature
     feats :: Symbol
+    var   :: T
     nwin  :: Int
 
-    function Feature(value::Number, var::Union{Symbol,String}, feats::Symbol, nwin::Integer)
+    function InfoFeat(feats::Symbol, var::VarName, nwin::Int)
         nwin > 0 || throw(ArgumentError("Window number must be positive"))
-        new{typeof(value), typeof(var)}(value, var, feats, nwin)
+        new{typeof(var)}(feats, var, nwin)
     end
 end
 
-# Pretty printing
-Base.show(io::IO, f::Feature) = print(io, round(f.value, digits=4))
-
 # Value access methods
-Base.getproperty(f::Feature, s::Symbol) = getfield(f, s)
-Base.propertynames(::Feature) = (:value, :var, :feats, :nwin)
-
-# Conversion methods for NaN handling
-Base.convert(::Type{Feature}, x::Missing) = Feature(NaN, :missing, :none, 1)
-Base.convert(::Type{Feature}, x::Nothing) = Feature(NaN, :nothing, :none, 1)
-
-# Test if value is NaN
-Base.isnan(f::Feature) = isnan(f.value)
-
-# Numeric comparisons
-Base.isless(f::Feature, x::Number) = isless(f.value, x)
-Base.isless(x::Number, f::Feature) = isless(x, f.value)
-Base.isless(f1::Feature, f2::Feature) = isless(f1.value, f2.value)
-
-# Convert to number for arithmetic operations
-Base.convert(::Type{Number}, f::Feature) = f.value
-Base.convert(::Type{Float64}, f::Feature) = convert(Float64, f.value)
-
-# Forward numeric operations to the value field
-for op in (:+, :-, :*, :/, :^)
-    @eval Base.$op(f::Feature, x::Number) = $op(f.value, x)
-    @eval Base.$op(x::Number, f::Feature) = $op(x, f.value)
-end
+Base.getproperty(f::InfoFeat, s::Symbol) = getfield(f, s)
+Base.propertynames(::InfoFeat) = (:feats, :var, :nwin)
 
 # Get variable name
-variable_name(f::Feature) = f.var
+variable_name(f::InfoFeat) = f.var
 # Get feature type
-feature_type(f::Feature) = f.feats
+feature_type(f::InfoFeat) = f.feats
 # Get window number
-window_number(f::Feature) = f.nwin
+window_number(f::InfoFeat) = f.nwin
 
 # ---------------------------------------------------------------------------- #
 #                            functions definitions                             #

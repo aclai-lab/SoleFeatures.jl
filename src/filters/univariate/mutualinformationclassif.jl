@@ -7,6 +7,7 @@ struct MutualInformationClassif{T <: AbstractLimiter} <: AbstractMutualInformati
 end
 
 is_supervised(::AbstractMutualInformationClassif) = true
+is_unsupervised(::AbstractMutualInformationClassif) = false
 
 function score(
     X::AbstractDataFrame,

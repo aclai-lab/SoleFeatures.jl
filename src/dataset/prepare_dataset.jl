@@ -83,38 +83,23 @@ function _treatment(
     n_intervals = winparams.type(max_interval; _wparams...)
 
     # Initialize DataFrame
-    if treatment == :aggregate        # propositional
-        if n_intervals == 1
-            valid_X = DataFrame([v => Float64[]
-                                 for v in [string(f, "(", v, ")")
-                                       for f in features for v in vnames]]
-            )
-        else
-            valid_X = DataFrame([v => Float64[]
-                                 for v in [string(f, "(", v, ")w", i)
-                                       for f in features for v in vnames
-                                       for i in 1:length(n_intervals)]]
-            )
-        end
+    valid_X = begin
+        if treatment == :aggregate        # propositional
+            if n_intervals == 1
+                DataFrame([v => Float64[]
+                            for v in [string(f, "(", v, ")")
+                                for f in features for v in vnames]]
+                )
+            else
+                DataFrame([v => Float64[]
+                            for v in [string(f, "(", v, ")w", i)
+                                for f in features for v in vnames
+                                for i in 1:length(n_intervals)]]
+                )
+            end
 
-    elseif treatment == :reducesize   # modal
-        # valid_X = DataFrame([name => Vector{Float64}[] for name in vnames])
-        valid_X = DataFrame([name => Vector{Float64}[] for name in vnames])
-
-    elseif treatment == :feature_selection
-        if n_intervals == 1
-            # valid_X = DataFrame([v => Float64[]
-            valid_X = DataFrame([v => Feature[]
-                for v in [string(f, "(", v, ")")
-                    for f in features for v in vnames]]
-            )
-        else
-            # valid_X = DataFrame([v => Float64[]
-            valid_X = DataFrame([v => Feature[]
-                for v in [string(f, "(", v, ")w", i)
-                    for f in features for v in vnames
-                    for i in 1:length(n_intervals)]]
-            )
+        elseif treatment == :reducesize   # modal
+            DataFrame([name => Vector{Float64}[] for name in vnames])
         end
     end
 
@@ -138,14 +123,6 @@ function _treatment(
                     # if interval_diff is positive, fill the rest with NaN
                     fill(NaN, interval_diff)) for col in row
                 ]
-            )
-        elseif treatment == :feature_selection
-            push!(valid_X, vcat([
-                vcat([
-                    Feature(f(col[r]), vnames[i], Symbol(f), w) for (w, r) in enumerate(row_intervals)],
-                    # if interval_diff is positive, fill the rest with NaN
-                    fill(NaN, interval_diff)) for (i, col) in enumerate(row), f in features
-                ]...)
             )
         end
     end
@@ -416,12 +393,24 @@ function feature_selection_preprocess(
     # check parameters
     isnothing(vnames) && (vnames = names(X))
     isnothing(features) && (features = DEFAULT_FE.features)
-    treatment = :feature_selection
+    treatment = :aggregate
     _ = _check_dimensions(X)
     if !isnothing(nwindows)
         nwindows > 0 || throw(ArgumentError("Number of windows must be positive."))
     end
     winparams = isnothing(nwindows) ? DEFAULT_FE_WINPARAMS : merge(DEFAULT_FE_WINPARAMS, (nwindows = nwindows,))
 
-    _treatment(X, vnames, treatment, features, winparams)
+    # Xinfo = [v => InfoFeat[f, Symbol(v), i]
+    #     for f in features for v in vnames
+    #     for i in 1:length(nwindows)]
+
+    #     # Replace the Xinfo creation with:
+    Xinfo = [
+        (f, v, i) => InfoFeat(Symbol(f), v, i)
+        for f in features 
+        for v in vnames 
+        for i in 1:nwindows
+    ]
+
+    _treatment(X, vnames, treatment, features, winparams), Xinfo
 end
