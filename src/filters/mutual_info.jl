@@ -1,11 +1,3 @@
-# packages
-using StatsBase
-using SparseArrays, CategoricalArrays
-using SpecialFunctions  # For digamma function
-using NearestNeighbors  # For KDTree and knn
-using Base.Threads: @threads
-using Random
-
 # ---------------------------------------------------------------------------- #
 #                                    utils                                     #
 # ---------------------------------------------------------------------------- #
@@ -257,7 +249,7 @@ References
        Data Sets". PLoS ONE 9(2), 2014.
 """
 function _estimate_mi(
-    Xdf::AbstractDataFrame,
+    Xdf::AbstractMatrix,
     y::AbstractVector{<:SoleFeatures.Class};
     discrete_mode::Union{AbstractArray, Nothing}=nothing,
     discrete_target::Bool=false,
@@ -302,7 +294,7 @@ function _estimate_mi(
     mi = Vector{Float64}(undef, n_features)
     
     # Use threading for parallel computation
-    @threads for i in 1:n_features
+    Threads.@threads for i in 1:n_features
         x = X[:, i]
         mi[i] = _compute_mi(x, y, discrete_mask[i], discrete_target, n_neighbors)
     end

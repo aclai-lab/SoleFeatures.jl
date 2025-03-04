@@ -14,10 +14,9 @@ using CSV
 using Statistics
 using MLBase
 using NaturalSort
+using CategoricalArrays
 
-
-using PyCall
-fs = pyimport_conda("sklearn.feature_selection", "scikit-learn")
+include("/home/paso/Documents/Aclai/Sole/SoleFeatures.jl/src/filters/mutual_info.jl")
 
 struct PyMutualInformationClassif{T <: SoleFeatures.AbstractLimiter} <: SoleFeatures.AbstractMutualInformationClassif{T}
     limiter::T
@@ -31,9 +30,7 @@ function SoleFeatures.score(
     y::AbstractVector{<:Integer},
     selector::PyMutualInformationClassif{<:SoleFeatures.AbstractLimiter}
 )::Vector{Float64}
-    # Convert DataFrame to Matrix for scikit-learn
-    X_matrix = Matrix(X)
-    scores = fs.mutual_info_classif(X_matrix, y)
+    scores = mutual_info_classif(X, y)
     return Float64.(scores)
 end
 
@@ -68,6 +65,11 @@ include("/home/paso/Documents/Aclai/Sole/SoleFeatures.jl/src/experimental/window
 include("/home/paso/Documents/Aclai/Sole/SoleFeatures.jl/src/experimental/extraction.jl")
 include("/home/paso/Documents/Aclai/Sole/SoleFeatures.jl/src/experimental/windows/data-filters.jl")
 
+# ---------------------------------------------------------------------------- #
+#                                    types                                     #
+# ---------------------------------------------------------------------------- #
+const ABT = Union{NamedTuple{(:aggrby,:aggregatef,:group_before_score)}, Nothing}
+
 # /------------------- FUNCTIONS -----------------------------
 
 # TODO: super ugly!!! this should be done by SoleFeatures but better than this
@@ -83,29 +85,35 @@ using `limiter`. `X` is the dataset as `AbstractDataFrame`.
 If a supervised selector is passed the `y` parameter is needed: an `AbstractVector`
 of labels.
 """
-
-# QUESTA é la parte importante
 function _fs(
-    X::AbstractDataFrame,
+    X::AbstractMatrix,
     y::Union{AbstractVector,Nothing},
+    Xinfo::AbstractVector{<:SoleFeatures.InfoFeat},
     selector::SoleFeatures.AbstractFeaturesSelector,
     limiter::SoleFeatures.AbstractLimiter
-)::Tuple{Union{Vector{Float64},AbstractDataFrame}, Vector{Int}}
-    # TODO: check supervised/unsupervised depending on
-    #         y being nothing and the type of selector
-    score = isnothing(y) ?
+)::Tuple{Vector{Int},Vector{SoleFeatures.Score}}
+    scores = isnothing(y) || SoleFeatures.is_unsupervised(selector) ?
         SoleFeatures.score(X, selector) :
         SoleFeatures.score(X, y, selector)
-        # limit è il metodo per fare i tagli
-    idxes = SoleFeatures.limit(score, limiter)
-    return score, idxes
+    # limit è il metodo per fare i tagli
+    idxes = SoleFeatures.limit(scores, limiter)
+
+    # Store scores directly in the Xinfo objects
+    # for (i, score) in enumerate(scores)
+    #     setfield!(Xinfo[i], score_target, score)
+    # end
+
+    # return score, idxes
+    return idxes, [SoleFeatures.Score(i.id, score) for (i, score) in zip(Xinfo, scores)]
 end
+
 function _fs(
-    X::AbstractDataFrame,
+    X::AbstractMatrix,
+    Xinfo::AbstractVector{<:SoleFeatures.InfoFeat},
     selector::SoleFeatures.AbstractFeaturesSelector,
     limiter::SoleFeatures.AbstractLimiter
-)::Tuple{Vector{Float64},Vector{Int}}
-    return _fs(X, nothing, selector, limiter)
+)::Tuple{Vector{Int},Vector{SoleFeatures.Score}}
+    return _fs(X, nothing, Xinfo, selector, limiter)
 end
 
 """
@@ -115,30 +123,35 @@ Retrieve unique group names of `X` by splitting column names using
 `groups_separator` and looking only at `aggrby` portion of the name.
 """
 function group_names(
-    Xnames::AbstractVector{<:AbstractString},
-    aggrby::Tuple{Vararg{Integer}};
-    groups_separator::AbstractString = _SEPARATOR
+    Xinfo::AbstractVector{<:SoleFeatures.InfoFeat},
+    aggrby::Tuple{Vararg{Symbol}}
 )::Vector{Vector{<:AbstractString}}
-    splitted_names = split.(Xnames, groups_separator)
 
-    # checks
-    if !allequal(length.(splitted_names))
-        throw(ArgumentError("Not all column names are splitted in equal number " *
-            "of pieces: $(length.(splitted_names))"))
-    end
-
-    if any(>(length(first(splitted_names))), aggrby)
-        throw(ArgumentError("Invalid `aggrby` passed: $aggrby but column names " *
-            "were divided into $(length(first(splitted_names))) pieces"))
+    # Verify all properties exist in the InfoFeat objects
+    for prop in aggrby
+        if !hasproperty(first(Xinfo), prop)
+            throw(ArgumentError("InfoFeat objects don't have property: $prop"))
+        end
     end
 
     # get unique group names
-    ixs = sort([aggrby...])
-    return unique([sn[ixs] for sn in splitted_names])
+    # ixs = sort([aggrby...])
+
+    # return unique([getfield(x, ag) for x in Xinfo for ag in [aggrby...]])
+
+        # Get unique combinations of values for the specified fields
+        unique_combinations = unique([
+            Tuple(string(getfield(info, field)) for field in aggrby)
+            for info in Xinfo
+        ])
+        
+        # Convert tuples to vectors
+        return [collect(combination) for combination in unique_combinations]
 end
-function group_names(X::AbstractDataFrame, args...; kwargs...)
-    group_names(names(X), args...; kwargs...)
-end
+
+# function group_names(X::AbstractDataFrame, args...; kwargs...)
+#     group_names(names(X), args...; kwargs...)
+# end
 
 """
     _is_part_of_the_group(group_name, column_name, ixs)
@@ -169,24 +182,46 @@ function _is_part_of_the_group(
     )
 end
 
-function group_indices_by_column_names(
-    Xnames::AbstractVector{<:AbstractString},
-    aggrby::Tuple{Vararg{Integer}};
-    groups_separator::AbstractString = _SEPARATOR
+function group_id_by_aggrby(
+    Xinfo::AbstractVector{<:SoleFeatures.InfoFeat},
+    aggrby::Tuple{Vararg{Symbol}}
 )::Vector{Vector{Int}}
-    g_names = group_names(Xnames, aggrby; groups_separator = groups_separator)
+    g_names = group_names(Xinfo, aggrby)
 
-    ixs = sort([aggrby...])
-    res = [findall(Xname -> _is_part_of_the_group(cur_g_name, Xname, ixs; groups_separator = groups_separator), Xnames)
-            for cur_g_name in g_names]
+    # ixs = sort([aggrby...])
+    # res = [findall(Xname -> _is_part_of_the_group(cur_g_name, Xname, ixs; groups_separator = groups_separator), Xnames)
+    #         for cur_g_name in g_names]
 
-    @assert !any(isempty.(res)) "Some of the groups are empty!"
+    # Get all unique combinations of values for the specified fields
+    value_combinations = unique([
+        Tuple(getfield(info, field) for field in aggrby)
+        for info in Xinfo
+    ])
+    # For each unique combination, find all indices with matching values
+    ixs = [
+        findall(i -> Tuple(getfield(Xinfo[i], field) for field in aggrby) == combination, 
+                1:length(Xinfo))
+        for combination in value_combinations
+    ]
 
-    return res
+    # @assert !any(isempty.(res)) "Some of the groups are empty!"
+    any(isempty.(ixs)) && throw(ErrorException("Some of the groups are empty!"))
+    # return res
+    return ixs
 end
-function group_indices_by_column_names(X::AbstractDataFrame, args...; kwargs...)
-    return group_indices_by_column_names(names(X), args...; kwargs...)
-end
+
+# Xinfo = "Y[Hand tip r]", :minimum, 3), "Y[Hand tip r]", :minimum, 4), SoleFeatures.InfoFeat{String}(2, "Y[Hand tip l]", :maximum, 2), SoleFeatures.InfoFeat{String}(2, "Y[Hand tip l]", :maximum, 3), SoleFeatures.InfoFeat{String}(2, "Y[Hand tip l]", :maximum, 4), SoleFeatures.InfoFeat{String}(2, "Y[Hand tip l]", :maximum, 5), SoleFeatures.InfoFeat{String}(5, "Y[Hand tip r]", :maximum, 2), SoleFeatures.InfoFeat{String}(20, "Y[Thumb l]", :maximum, 3), SoleFeatures.InfoFeat{String}(20, "Y[Thumb l]", :maximum, 4), SoleFeatures.InfoFeat{String}(2, "Y[Hand tip l]", :mean, 3), SoleFeatures.InfoFeat{String}(2, "Y[Hand tip l]", :mean, 4)]
+# Xnames = ["Z[Hand tip l]@@@W2(6,0.05)@@@minimum", "X[Hand tip r]@@@W2(6,0.05)@@@minimum", "Y[Elbow l]@@@W1(6,0.05)@@@maximum", "Z[Elbow l]@@@W1(6,0.05)@@@maximum", "X[Elbow r]@@@W1(6,0.05)@@@maximum", "Y[Elbow r]@@@W1(6,0.05)@@@maximum", "Y[Hand tip l]@@@W2(6,0.05)@@@maximum", "Z[Thumb l]@@@W5(6,0.05)@@@maximum", "X[Thumb r]@@@W5(6,0.05)@@@maximum", "Z[Elbow l]@@@W1(6,0.05)@@@mean", "X[Elbow r]@@@W1(6,0.05)@@@mean"]
+
+# g_names = Vector{<:AbstractString}[["Y[Hand tip r]"], ["Y[Hand tip l]"], ["Y[Thumb l]"]]
+# g_indices = [[1, 2, 7], [3, 4, 5, 6, 10, 11], [8, 9]]
+# g_names = Vector{<:AbstractString}[SubString{String}["Z[Hand tip l]"], SubString{String}["X[Hand tip r]"], SubString{String}["Y[Elbow l]"], SubString{String}["Z[Elbow l]"], SubString{String}["X[Elbow r]"], SubString{String}["Y[Elbow r]"], SubString{String}["Y[Hand tip l]"], SubString{String}["Z[Thumb l]"], SubString{String}["X[Thumb r]"]]
+# length(g_names) = 9
+
+# function group_indices_by_column_names(X::AbstractDataFrame, args...; kwargs...)
+#     return group_indices_by_column_names(names(X), args...; kwargs...)
+# end
+
 function group_by_column_names(
     X::AbstractDataFrame,
     aggrby::Tuple{Vararg{Integer}};
@@ -194,6 +229,7 @@ function group_by_column_names(
 )::Vector{SubDataFrame}
     return [(@view X[:,idxs]) for idxs in group_indices_by_column_names(X, aggrby; groups_separator = groups_separator)]
 end
+
 """
 Perform feature selection on groups
 
@@ -218,28 +254,34 @@ Perform feature selection on groups
 # TODO: expand documentation
 """
 function _fsgroup(
-    X::AbstractDataFrame,
+    X::AbstractMatrix,
     y::Union{AbstractVector,Nothing},
+    Xinfo::AbstractVector{<:SoleFeatures.InfoFeat},
     selector::SoleFeatures.AbstractFeaturesSelector,
     limiter::SoleFeatures.AbstractLimiter,
-    aggrby::Tuple{Vararg{Integer}};
-    groups_separator::AbstractString = _SEPARATOR,
+    aggrby::Tuple{Vararg{Symbol}};
     aggregatef::Function = mean,
     group_before_score::Union{Val{true},Val{false}} = Val(true),
-)::Tuple{Vector{Int},Vector{Vector{Int}},Vector{<:Real},Vector{Vector{<:Real}}}
-    g_indices = group_indices_by_column_names(X, aggrby; groups_separator = groups_separator)
-@show g_indices
+# )::Tuple{Vector{Int},Vector{Vector{Int}},Vector{<:Real},Vector{Vector{<:Real}}}
+)::Tuple{Vector{Int},Vector{Vector{Int}},Vector{SoleFeatures.GroupScore},Vector{Vector{<:Real}}}
+    g_indices = group_id_by_aggrby(Xinfo, aggrby)
+
     scores = []
-    groups_score = Vector(undef, length(g_indices))
+    groups_score = SoleFeatures.GroupScore[]
+    # groups_score = Vector(undef, length(g_indices))
+
     if group_before_score isa Val{true}
         # === group and then evaluate score internally to each group ===
         for (i, cur_g_indices) in enumerate(g_indices)
+
             s = isnothing(y) || SoleFeatures.is_unsupervised(selector) ?
                 SoleFeatures.score(X[:,cur_g_indices], selector) :
                 SoleFeatures.score(X[:,cur_g_indices], y, selector)
 
             push!(scores, s) # save scores of variables of current group
-            groups_score[i] = aggregatef(s) # save aggregated group score
+            grp = Tuple(Symbol.(collect(getfield(first(Xinfo[cur_g_indices]), a) for a in aggrby)))
+            push!(groups_score, SoleFeatures.GroupScore(grp, aggregatef(s))) # save scores of variables of current group
+            # groups_score[i] = aggregatef(s) # save aggregated group score
         end
     else
         # === calculate scores for all variables and then group ===
@@ -249,7 +291,9 @@ function _fsgroup(
 
         for (i, cur_g_indices) in enumerate(g_indices)
             push!(scores, allscores[cur_g_indices]) # save scores of variables of current group
-            groups_score[i] = aggregatef(allscores[cur_g_indices]) # save aggregated group score
+            grp = Tuple(Symbol.(collect(getfield(first(Xinfo[cur_g_indices]), a) for a in aggrby)))
+            push!(groups_score, SoleFeatures.GroupScore(grp, aggregatef(allscores[cur_g_indices])))
+            # groups_score[i] = aggregatef(allscores[cur_g_indices]) # save aggregated group score
         end
     end
 
@@ -263,17 +307,20 @@ function _fsgroup(
     # second element: indices of variables for each group
     # third element: score of each group
     # fourth element: score of each variable grouped
+    # return sel_idxes, g_indices, groups_score, scores
     return sel_idxes, g_indices, groups_score, scores
 end
 
 function _fsgroup(
-    X::AbstractDataFrame,
+    X::AbstractMatrix,
+    Xinfo::AbstractVector{<:SoleFeatures.InfoFeat},
     selector::SoleFeatures.AbstractFeaturesSelector,
     limiter::SoleFeatures.AbstractLimiter,
-    aggrby::Tuple{Vararg{Integer}};
+    aggrby::Tuple{Vararg{Symbol}};
     kwargs...
-)::Tuple{Vector{Int},Vector{Vector{Int}},Vector{<:Real},Vector{Vector{<:Real}}}
-    return _fsgroup(X, nothing, selector, limiter, aggrby; kwargs...)
+# )::Tuple{Vector{Int},Vector{Vector{Int}},Vector{<:Real},Vector{Vector{<:Real}}}
+)::Tuple{Vector{Int},Vector{Vector{Int}},Vector{SoleFeatures.GroupScore},Vector{Vector{<:Real}}}
+    return _fsgroup(X, nothing, Xinfo, selector, limiter, aggrby; kwargs...)
 end
 
 """
@@ -375,37 +422,67 @@ function _fix_nan_inf_dataset!(
     return X, y
 end
 
+# # TODO if working move to SoleFeatures
+# function _features_groupby(
+#     Xinfo::Vector{<:SoleFeatures.InfoFeat},
+#     aggrby::Tuple{Vararg{Symbol}}
+# )::Vector{Vector{Int}}
+#     g_names = group_names(Xinfo, aggrby)
+
+#     res = Dict{Any, Vector{Int}}()
+#     for (i, g) in enumerate(Xinfo)
+#         key = Tuple(getproperty(g, field) for field in group)
+#         push!(get!(res, key, Int[]), i)
+#     end
+#     return collect(values(res))  # Return the grouped indices
+# end
+
 """
-TODO: documentation
+    _normalize_dataset!(
+        X::AbstractMatrix{T},
+        Xinfo::Vector{<:SoleFeatures.InfoFeat};
+        min_quantile::AbstractFloat=0.00,
+        max_quantile::AbstractFloat=1.00,
+        group::Tuple{Vararg{Symbol}}=(:nwin, :feat),
+    ) where {T<:Number}
+
+Normalize the dataset matrix `X` by applying min-max normalization to groups of features.
+
+## Parameters
+- `X`: The input matrix to be normalized in-place
+- `Xinfo`: A vector of feature information objects that contain metadata about each feature
+- `min_quantile`: The quantile to use as the minimum value (default: 0.00)
+  - When set to 0.00, uses the absolute minimum value
+  - Higher values (e.g., 0.05) ignore lower outliers by using the specified quantile instead
+- `max_quantile`: The quantile to use as the maximum value (default: 1.00)
+  - When set to 1.00, uses the absolute maximum value
+  - Lower values (e.g., 0.95) ignore upper outliers by using the specified quantile instead
+- `group`: A tuple of symbols representing fields in the `InfoFeat` objects to group by (default: (:nwin, :feat))
+  - Features with the same values for these fields will be normalized together
+  - For example, with the default (:nwin, :feat), features from the same window and of the same type
+    will be normalized as a group, preserving their relative scale
+
+## Details
+The function performs group-wise normalization, which is essential when working with features that 
+should maintain their relative scales. For example, when working with time series data, different 
+measures (min, max, mean) applied to the same window should be normalized together to preserve 
+their relationships.
 """
 function _normalize_dataset!(
-    X::AbstractDataFrame,
-    es::AbstractVector;
-    min_quantile::AbstractFloat = 0.00,
-    max_quantile::AbstractFloat = 1.00,
-    group::Union{Tuple{Vararg{Int}},Int} = (2, 3),
-)
-    for group in groupby(es, group)
-        colsname = string.(group)
+    X::AbstractMatrix{T},
+    Xinfo::Vector{<:SoleFeatures.InfoFeat};
+    min_quantile::AbstractFloat=0.00,
+    max_quantile::AbstractFloat=1.00,
+    group::Tuple{Vararg{Symbol}}=(:nwin, :feat),
+) where {T<:Number}
+    for g in _features_groupby(Xinfo, group)
         SoleFeatures.minmax_normalize!(
-            X[!, colsname];
+            view(X, :, g);
             min_quantile = min_quantile,
             max_quantile = max_quantile,
             col_quantile = false
         )
     end
-
-    # TODO: check this!!! maybe this is not
-    #         the proper way to handle this :(
-    _fix_nan_inf_dataset!(X, nothing;
-        replace_special_float = true,
-        convert_nan_to = 0.5,
-        convert_inf_to = 0.5,
-        convert_ninf_to = 0.5,
-        remove_too_nan_instance = false,
-    )
-
-    return X
 end
 
 @safeconst FSMidResults =  NamedTuple{
@@ -417,22 +494,41 @@ end
 
 """
 TODO: documentation
+
+# Feature Selection with Aggregation Control
+
+## Overview
+The `feature_selection` function allows precise control over how feature aggregation
+is applied during the multi-step feature selection process.
+
+## Aggregation Parameter (`aggrby`)
+The `aggrby` parameter can be provided in two ways:
+
+1. **Single NamedTuple**: When provided as a single NamedTuple (not a vector), 
+   aggregation is only applied during the final step of feature selection.
+   The function automatically creates a vector where:
+   - All positions except the last contain `nothing`
+   - The last position contains the provided aggregation parameters
+
+2. **Vector of NamedTuples**: When provided as a vector, each element specifies 
+   the aggregation behavior for the corresponding step in `fs_methods`.
 """
 function feature_selection(
-    X::AbstractDataFrame,
-    y::Union{Nothing,AbstractVector};
+    X::AbstractMatrix{T},
+    y::Union{Nothing,AbstractVector},
+    Xinfo::Vector{<:SoleFeatures.InfoFeat};
 
-    groups_separator::AbstractString = _SEPARATOR,
+    # groups_separator::AbstractString = _SEPARATOR,
 
-    ex_windows::AbstractVector = [ FixedNumMovingWindows(5, 0.05)... ],
-    ex_measures::AbstractVector{Union{Function, SuperFeature}} = [minimum, maximum, mean],
+    # ex_windows::AbstractVector = [ FixedNumMovingWindows(5, 0.05)... ],
+    # ex_measures::AbstractVector{Union{Function, SuperFeature}} = [minimum, maximum, mean],
 
     # cosa vuoi fare al dataset, crea la tripla var, win, feats
-    extract_tuples::AbstractVector = vec(collect(Iterators.product(names(X), ex_windows, ex_measures))),
+    # extract_tuples::AbstractVector = vec(collect(Iterators.product(names(X), ex_windows, ex_measures))),
 
     # tipo di aggregazione che si vuole alla fine
-    aggrby::Union{ABT,AbstractVector{<:ABT}} where ABT <: Union{Nothing,NamedTuple{(:aggrby,:aggregatef,:group_before_score)}} = (
-        aggrby = tuple(1:length(split(first(names(X)), groups_separator))...),
+    aggrby::Union{ABT,AbstractVector{<:ABT}} = (
+        aggrby = (:var,),
         aggregatef = length, # NOTE: or mean, minimum, maximum to aggregate scores instead of just counting number of selected features for each group
         group_before_score = Val(true),
     ),
@@ -452,14 +548,15 @@ function feature_selection(
         ),
     ],
 
-    fix_special_floats::Bool = false,
-    fix_special_floats_kwargs::NamedTuple = NamedTuple(),
-    normalize::Bool = false,
+    # fix_special_floats::Bool = false,
+    # fix_special_floats_kwargs::NamedTuple = NamedTuple(),
+    norm::Bool = false,
     normalize_kwargs::NamedTuple = NamedTuple(),
 
     cache_extracted_dataset::Union{Nothing,AbstractString} = nothing,
     return_mid_results::Union{Val{true},Val{false}} = Val(true),
-)::Union{DataFrame,Tuple{DataFrame,FSMidResults}}
+# )::Union{DataFrame,Tuple{DataFrame,FSMidResults}} where {T<:Number}
+) where {T<:Number}
 
     # ==================== PREPARE INPUTS ====================
 
@@ -471,73 +568,78 @@ function feature_selection(
 
     # ==================== PREPARE LABELS ====================
 
-    oy = deepcopy(y)
-    y = labelencode(labelmap(oy), oy)
+    y_coded = @. CategoricalArrays.levelcode(y)
 
     # ================== DATASET EXTRACTION ==================
 
     # QUI inizia feature selection
     # extract new dataset
-    newX = begin
-        local ced
-        local _extr
-        ced = cache_extracted_dataset
-        _extr = extract
-        # TODO: this Float64 is a strong assumption!
-        Float64.(@scache_if !isnothing(ced) "dse" ced _extr(X, extract_tuples))
-    end
+    # newX = begin
+    #     local ced
+    #     local _extr
+    #     ced = cache_extracted_dataset
+    #     _extr = extract
+    #     # TODO: this Float64 is a strong assumption!
+    #     Float64.(@scache_if !isnothing(ced) "dse" ced _extr(X, extract_tuples))
+    # end
 
-    # groups_separator = "@@@"
-    if groups_separator != _SEPARATOR
-        rename!(x -> replace(x, _SEPARATOR => groups_separator), newX)
-    end
-    extraction_column_names = names(newX)
+    # # groups_separator = "@@@"
+    # if groups_separator != _SEPARATOR
+    #     rename!(x -> replace(x, _SEPARATOR => groups_separator), newX)
+    # end
+    # extraction_column_names = names(newX)
 
 
     # =================== SPECIAL FLOAT FIX ===================
 
-    if fix_special_floats
-        @warn "DANGER!!! It is really discouraged to call this function " *
-            "`fix_special_floats` set to `true`"
-        fix_special_floats_kwargs = merge(fix_special_floats_kwargs, (remove_too_nan_instance = false,))
-        _fix_nan_inf_dataset!(newX, y; fix_special_floats_kwargs...)
-        # FIXME: this function could alter the length o `y` and create
-        #          heavy inconsistencies!!! (this is why I forced
-        #          `remove_too_nan_instance` to false)
-    end
+    # if fix_special_floats
+    #     @warn "DANGER!!! It is really discouraged to call this function " *
+    #         "`fix_special_floats` set to `true`"
+    #     fix_special_floats_kwargs = merge(fix_special_floats_kwargs, (remove_too_nan_instance = false,))
+    #     _fix_nan_inf_dataset!(newX, y; fix_special_floats_kwargs...)
+    #     # FIXME: this function could alter the length o `y` and create
+    #     #          heavy inconsistencies!!! (this is why I forced
+    #     #          `remove_too_nan_instance` to false)
+    # end
 
     # ================== DATASET NORMALIZATION ==================
 
-    normalize && _normalize_dataset!(newX, extract_tuples; normalize_kwargs...)
+    norm && _normalize_dataset!(X, Xinfo; normalize_kwargs...)
 
     # =================== NO FEATURE SELECTION ==================
 
-    # if no feature selector was passed we can assume the user just wanted to extract features from dataset
-    if length(fs_methods) == 0
-        if isa(return_mid_results, Val{true})
-            return newX, NamedTuple()
-        else
-            return newX
-        end
-    end
+    # # if no feature selector was passed we can assume the user just wanted to extract features from dataset
+    # if length(fs_methods) == 0
+    #     if isa(return_mid_results, Val{true})
+    #         return X, NamedTuple()
+    #     else
+    #         return X
+    #     end
+    # end
 
     # ===================== FEATURE SELECTION ===================
 
     # questo serve solo per generare grafici
-    fs_mid_results = NamedTuple{(:score,:indices,:name2score,:group_aggr_func,:group_indices,:aggrby)}[]
+    # fs_mid_results = NamedTuple{(:score,:indices,:name2score,:group_aggr_func,:group_indices,:aggrby)}[]
+    fs_mid_results = NamedTuple{(:indices,:group_aggr_func,:group_indices,:aggrby)}[]
 
     for (fsm, gfs_params) in zip(fs_methods, aggrby)
+        current_dataset_col_slice = 1:size(X, 2)
 
-        # pick survived columns only
-        current_dataset_col_slice = 1:ncol(newX)
+         # pick survived columns only
         for i in 1:length(fs_mid_results)
             current_dataset_col_slice = current_dataset_col_slice[fs_mid_results[i].indices]
         end
-        currX = @view newX[:,current_dataset_col_slice]
 
-        dataset_param = isnothing(y) || SoleFeatures.is_unsupervised(fsm.selector) ? (currX,) : (currX, y)
+        currX = @view X[:,current_dataset_col_slice]
+        currXinfo = @view Xinfo[current_dataset_col_slice]
 
-        score, idxes, g_indices =
+        dataset_param = isnothing(y_coded) || SoleFeatures.is_unsupervised(fsm.selector) ? 
+            (currX, currXinfo) : 
+            (currX, y_coded, currXinfo)
+
+        # score, idxes, g_indices =
+        idxes, scores, g_indices =
             if isnothing(gfs_params)
                 # perform normal feature selection
                 _fs(dataset_param..., fsm...)..., nothing
@@ -545,46 +647,43 @@ function feature_selection(
                 # perform aggregated feature selection
                 sel_g_indices, g_indices, g_scores, grouped_variable_scores = _fsgroup(
                     dataset_param..., fsm..., gfs_params.aggrby;
-                    groups_separator = groups_separator,
                     aggregatef = gfs_params.aggregatef,
                     group_before_score = gfs_params.group_before_score
                 )
 
                 # find indices to re-sort the scores of all variables to their
-                #    original position in dataset columns
+                # original position in dataset columns
                 old_sort = sortperm(vcat(g_indices...))
-                @show vcat(vcat(grouped_variable_scores...)[old_sort]...)
-                @show vcat(g_indices[sel_g_indices]...)
-                @show g_indices
-                vcat(vcat(grouped_variable_scores...)[old_sort]...), vcat(g_indices[sel_g_indices]...), g_indices
+                
+                vcat(g_indices[sel_g_indices]...), vcat(vcat(grouped_variable_scores...)[old_sort]...), g_indices
             end
 
         sort!(idxes)
 
         push!(fs_mid_results, (
-            score = score,
+            # score = score,
             indices = idxes,
-            name2score = Dict{String,Number}(names(currX) .=> score),
+            # name2score = Dict{String,Number}(names(currX) .=> score),
             group_aggr_func = isnothing(gfs_params) ? nothing : gfs_params.aggregatef,
-
             group_indices = g_indices,
             aggrby = isnothing(gfs_params) ? nothing : gfs_params.aggrby
-
         ))
     end
 
-    dataset_col_slice = 1:ncol(newX)
+    dataset_col_slice = 1:size(X, 2)
     for i in 1:length(fs_mid_results)
+        # @show fs_mid_results[i].indices
         dataset_col_slice = dataset_col_slice[fs_mid_results[i].indices]
     end
 
-    if isa(return_mid_results, Val{true})
+    # if isa(return_mid_results, Val{true})
 
-        return newX[:,dataset_col_slice], (extraction_column_names = extraction_column_names, fs_mid_results = fs_mid_results)
+    #     return X[:,dataset_col_slice], (extraction_column_names = extraction_column_names, fs_mid_results = fs_mid_results)
 
-    else
-        return newX[:,dataset_col_slice]
-    end
+    # else
+        # return X[:,dataset_col_slice]
+    # end
+    return X
 end
 
 """
@@ -828,16 +927,14 @@ end
 # load a time-series dataset
 df, y = SoleData.load_arff_dataset("NATOPS")
 
-ws = [FixedNumMovingWindows(6, 0.05)...]
 ms = [minimum, maximum, mean]
-
 fs_methods = [
 	( # STEP 1: unsupervised variance-based filter
 		selector = SoleFeatures.VarianceFilter(SoleFeatures.IdentityLimiter()),
 		limiter = SoleFeatures.PercentageLimiter(0.025),
 	),
 	( # STEP 2: supervised Mutual Information filter
-		selector = PyMutualInformationClassif(SoleFeatures.IdentityLimiter()),
+		selector = SoleFeatures.MutualInformationClassif(SoleFeatures.IdentityLimiter()),
 		limiter = SoleFeatures.PercentageLimiter(0.01),
 	),
 	# ( # STEP 3: group results by variable
@@ -847,12 +944,9 @@ fs_methods = [
 ]
 
 # prepare dataset for feature selection
-Xdf, Xinfo = @test_nowarn SoleFeatures.feature_selection_preprocess(df; features=ms, nwindows=6)
+Xdf, Xinfo = @test_nowarn SoleFeatures.feature_selection_preprocess(df; features=ms, type=SoleFeatures.adaptivewindow, nwindows=6, relative_overlap=0.05)
 
 @info "FEATURE SELECTION"
 
-X, fs_mid_results = feature_selection(df, y, ex_windows = ws, ex_measures = ms, fs_methods = fs_methods, normalize = true)
-# using BenchmarkTools
-# @btime X, fs_mid_results = feature_selection(df, y, ex_windows = ws, ex_measures = ms, fs_methods = fs_methods, normalize = true)
-
-# 435.317 ms (8943026 allocations: 531.93 MiB)
+Xm = Matrix(Xdf)
+a=feature_selection(Xm, y, Xinfo, fs_methods = fs_methods, norm = false)

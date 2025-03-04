@@ -21,6 +21,11 @@ Abstract type for feature struct
 """
 abstract type AbstractFeature end
 
+"""
+Abstract type for score struct
+"""
+abstract type AbstractScore end
+
 # ---------------------------------------------------------------------------- #
 #                                    types                                     #
 # ---------------------------------------------------------------------------- #
@@ -256,43 +261,93 @@ const WIN_PARAMS = Dict(
 # end
 
 """
-    InfoFeat{V<:Number, T<:Union{Symbol, String}} <: AbstractFeature
+    InfoFeat{T<:VarName} <: AbstractFeature
 
-Holds info on colum dataset, used in feature selection.
+Holds information about dataset columns, used in feature selection.
 
 # Type Parameters
-- `T`: Type of the variable name (must be either `Symbol` or `String`)
+- `T`: VarName type (must be either `Symbol` or `String`)
 
 # Fields
-- `feats::Symbol`: The feature extraction function name
-- `var::T`: The variable name/identifier
-- `nwin::Int`: The window number (must be positive)
+- `id   :: Int`     : Unique identifier for the feature (Int or nothing)
+- `feat :: Symbol`  : The feature extraction function name
+- `var  :: T`       : The variable name/identifier
+- `nwin :: Int`     : The window number (must be positive)
 
 # Constructors
 ```julia
-InfoFeat(feats::Symbol, var::Union{Symbol,String}, nwin::Integer)
+InfoFeat(id::Id, feat::Symbol, var::Union{Symbol,String}, nwin::Integer)
 """
 struct InfoFeat{T<:VarName} <: AbstractFeature
-    feats :: Symbol
-    var   :: T
-    nwin  :: Int
+    id     :: Int
+    var    :: T
+    feat   :: Symbol
+    nwin   :: Int
 
-    function InfoFeat(feats::Symbol, var::VarName, nwin::Int)
+    function InfoFeat(id::Int, var::VarName, feat::Symbol, nwin::Int)
         nwin > 0 || throw(ArgumentError("Window number must be positive"))
-        new{typeof(var)}(feats, var, nwin)
+        new{typeof(var)}(id, var, feat, nwin)
     end
 end
 
 # Value access methods
 Base.getproperty(f::InfoFeat, s::Symbol) = getfield(f, s)
-Base.propertynames(::InfoFeat) = (:feats, :var, :nwin)
+Base.propertynames(::InfoFeat)           = (:id, :feat, :var, :nwin)
 
-# Get variable name
+feature_id(f::InfoFeat)    = f.id
 variable_name(f::InfoFeat) = f.var
-# Get feature type
-feature_type(f::InfoFeat) = f.feats
-# Get window number
+feature_type(f::InfoFeat)  = f.feat
 window_number(f::InfoFeat) = f.nwin
+
+"""
+    Score <: AbstractScore
+
+A struct representing the score of an individual feature in feature selection.
+
+# Fields
+- `id :: Int` : The unique identifier of the feature that this score belongs to
+- `score :: Float64` : The numerical score value indicating feature importance/relevance
+
+# Constructors
+```julia
+Score(id::Int, score::Float64)
+"""
+struct Score <: AbstractScore
+    id    :: Int
+    score :: Float64
+end
+
+# Value access methods
+Base.getproperty(sc::Score, s::Symbol) = getfield(sc, s)
+Base.propertynames(::Score)            = (:id, :score)
+
+score_id(s::Score)  = s.id
+score_val(s::Score) = s.score
+
+"""
+    GroupScore <: AbstractScore
+
+A struct representing the score of a group of features in grouped feature selection.
+
+# Fields
+- `grp :: Tuple{Vararg{Symbol}}` : Tuple of symbols identifying the feature group
+- `score :: Float64` : Numerical score value indicating the group's importance/relevance
+
+# Constructors
+```julia
+GroupScore(grp::Tuple{Vararg{Symbol}}, score::Float64)
+"""
+struct GroupScore <: AbstractScore
+    grp   :: Tuple{Vararg{Symbol}}
+    score :: Float64
+end
+
+# Value access methods
+Base.getproperty(sc::GroupScore, s::Symbol) = getfield(sc, s)
+Base.propertynames(::GroupScore)            = (:id, :score)
+
+score_id(s::GroupScore)  = s.id
+score_val(s::GroupScore) = s.score
 
 # ---------------------------------------------------------------------------- #
 #                            functions definitions                             #

@@ -13,6 +13,7 @@ end
 println("Julia version: ", VERSION)
 
 test_suites = [
+    ("Test features", ["modules/features.jl", ]),
     ("Prepare Dataset", ["modules/prepare_dataset.jl", ]),
 
 ]

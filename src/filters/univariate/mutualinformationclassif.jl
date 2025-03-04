@@ -14,7 +14,16 @@ function score(
     y::AbstractVector{<:Class},
     selector::MutualInformationClassif
 )::Vector{Float64}
-    scores = fs.mutual_info_classif(Matrix(X), y)
+    scores = mutual_info_classif(Matrix(X), y)
+    return scores
+end
+
+function score(
+    X::AbstractMatrix,
+    y::AbstractVector{<:Class},
+    selector::MutualInformationClassif
+)::Vector{Float64}
+    scores = mutual_info_classif(Matrix(X), y)
     return scores
 end
 

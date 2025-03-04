@@ -4,24 +4,18 @@ module SoleFeatures
 using SoleBase
 using MultiData
 using StatsBase, Catch22
-using CategoricalArrays, DataFrames
+
+using SpecialFunctions  # For digamma function
+using NearestNeighbors  # For KDTree and knn
+using SparseArrays, CategoricalArrays, DataFrames
 using Random
+
+using Base.Threads: @threads
+
 
 include("interface.jl")
 export AbstractFilterBased
 include("utils/utils.jl")
-
-# filters
-include("filters/limiter.jl")
-export AbstractLimiter
-export PercentageLimiter
-include("filters/interface.jl")
-
-include("filters/univariate/identityfilter.jl")
-include("filters/univariate/mutualinformationclassif.jl")
-export MutualInformationClassifRanking
-include("filters/univariate/variancefilter.jl")
-export VarianceRanking, VarianceThreshold
 
 include("utils/features_set.jl")
 export mode_5, mode_10, embedding_dist, acf_timescale, acf_first_min, ami2, trev, outlier_timing_pos
@@ -30,10 +24,22 @@ export stretch_high, entropy_pairs, rs_range, dfa, low_freq_power, centroid_freq
 export base_set, catch9, catch22_set, complete_set
 
 include("dataset/interface.jl")
-export Feature
-
+export Feature, Score, GroupScore
 include("dataset/prepare_dataset.jl")
 export feature_selection_preprocess
+
+# filters
+include("filters/limiter.jl")
+export AbstractLimiter
+export PercentageLimiter
+include("filters/interface.jl")
+
+include("filters/univariate/identityfilter.jl")
+include("filters/mutual_info.jl")
+include("filters/univariate/mutualinformationclassif.jl")
+export MutualInformationClassifRanking
+include("filters/univariate/variancefilter.jl")
+export VarianceRanking, VarianceThreshold
 
 # using SoleData
 # using Reexport

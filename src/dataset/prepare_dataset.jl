@@ -388,29 +388,42 @@ function feature_selection_preprocess(
     X::DataFrame;
     vnames::VarNames=nothing,
     features::FeatNames=nothing,
-    nwindows::Union{Int, Nothing}=nothing
+    type::Union{Base.Callable, Nothing}=nothing,
+    nwindows::Union{Int, Nothing}=nothing,
+    relative_overlap::Union{AbstractFloat, Nothing}=nothing
 )
     # check parameters
     isnothing(vnames) && (vnames = names(X))
     isnothing(features) && (features = DEFAULT_FE.features)
     treatment = :aggregate
     _ = _check_dimensions(X)
+
+    if !isnothing(type)
+        type ∈ keys(WIN_PARAMS) || throw(ArgumentError("Invalid window type."))
+    end
     if !isnothing(nwindows)
         nwindows > 0 || throw(ArgumentError("Number of windows must be positive."))
     end
-    winparams = isnothing(nwindows) ? DEFAULT_FE_WINPARAMS : merge(DEFAULT_FE_WINPARAMS, (nwindows = nwindows,))
+    if !isnothing(relative_overlap)
+        relative_overlap ≥ 0 || throw(ArgumentError("Overlap must non negative."))
+    end
+    
+    winparams = begin
+        base_params = isnothing(type) ? DEFAULT_FE_WINPARAMS : merge(DEFAULT_FE_WINPARAMS, (type = type,))
+        base_params = isnothing(nwindows) ? DEFAULT_FE_WINPARAMS : merge(DEFAULT_FE_WINPARAMS, (nwindows = nwindows,))
+        isnothing(relative_overlap) ? base_params : merge(base_params, (relative_overlap = relative_overlap,))
+    end
 
-    # Xinfo = [v => InfoFeat[f, Symbol(v), i]
-    #     for f in features for v in vnames
-    #     for i in 1:length(nwindows)]
+    @show winparams
 
-    #     # Replace the Xinfo creation with:
-    Xinfo = [
-        (f, v, i) => InfoFeat(Symbol(f), v, i)
-        for f in features 
-        for v in vnames 
-        for i in 1:nwindows
-    ]
+    total_features = length(features) * length(vnames) * nwindows
+    Xinfo = Vector{InfoFeat}(undef, total_features)
+    idx = 1
+
+    for f in features, v in vnames, n in 1:nwindows
+        Xinfo[idx] = InfoFeat(idx, v, Symbol(f), n)
+        idx += 1
+    end
 
     _treatment(X, vnames, treatment, features, winparams), Xinfo
 end

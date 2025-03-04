@@ -50,6 +50,10 @@ function limit(scores::AbstractVector{<:Real}, tl::ThresholdLimiter)
     return findall(ordf(tl)(threshold(tl)), scores)
 end
 
+function limit(scores::AbstractVector{GroupScore}, tl::ThresholdLimiter)
+    return limit([s.score for s in scores], tl)
+end
+
 # ---------------------------------------------------------------------------- #
 #                              ranking limiter                                 #
 # ---------------------------------------------------------------------------- #
@@ -72,6 +76,10 @@ rev(rl::RankingLimiter) = rl.rev
 
 function limit(scores::AbstractVector{<:Real}, rl::RankingLimiter)
     return sortperm(scores; rev=rev(rl))[1:nbest(rl)]
+end
+
+function limit(scores::AbstractVector{GroupScore}, rl::RankingLimiter)
+    return limit([s.score for s in scores], rl)
 end
 
 # ---------------------------------------------------------------------------- #
@@ -109,6 +117,10 @@ function limit(scores::AbstractVector, ml::MajorityLimiter)
     return findall(accepted .≥ bounds)
 end
 
+function limit(scores::AbstractVector{GroupScore}, ml::MajorityLimiter)
+    return limit([s.score for s in scores], ml)
+end
+
 # ---------------------------------------------------------------------------- #
 #                               atleast limiter                                #
 # ---------------------------------------------------------------------------- #
@@ -140,6 +152,10 @@ end
 function limit(scores::AbstractVector, al::AtLeastLimiter)
     accepted = length.([limit(score, al.limiter) for score in scores])
     return findall(accepted .≥ al.atleast)
+end
+
+function limit(scores::AbstractVector{GroupScore}, al::AtLeastLimiter)
+    return limit([s.score for s in scores], al)
 end
 
 # ---------------------------------------------------------------------------- #
@@ -179,4 +195,8 @@ rev(pl::PercentageLimiter) = pl.rev
 function limit(scores::AbstractVector{<:Real}, l::PercentageLimiter)
     len = Int(ceil(length(scores) * perc(l)))
     return sortperm(scores; rev = rev(l))[1:len]
+end
+
+function limit(scores::AbstractVector{GroupScore}, l::PercentageLimiter)
+    return limit([s.score for s in scores], l)
 end

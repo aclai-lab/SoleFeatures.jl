@@ -23,7 +23,7 @@ function minmax_normalize!(
 end
 
 function minmax_normalize!(
-    df::AbstractDataFrame;
+    X::AbstractMatrix;
     min_quantile::Real = 0.0,
     max_quantile::Real = 1.0,
     col_quantile::Bool = true,
@@ -35,7 +35,7 @@ function minmax_normalize!(
     max_quantile <= min_quantile &&
         throw(DomainError("max_quantile must be greater then min_quantile"))
 
-    icols = eachcol(df)
+    icols = eachcol(X)
 
     if (!col_quantile)
         # look for quantile in entire dataset
@@ -49,7 +49,14 @@ function minmax_normalize!(
         max = StatsBase.quantile.(itcol, max_quantile)
     end
     minmax_normalize!.(icols, min, max)
-    return df
+    return X
+end
+
+function minmax_normalize!(
+    df::AbstractDataFrame;
+    kwargs...
+)
+    minmax_normalize!(Matrix(df); kwargs...)
 end
 
 function minmax_normalize!(

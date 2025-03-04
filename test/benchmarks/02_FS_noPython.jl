@@ -130,6 +130,7 @@ function group_names(
 
     # get unique group names
     ixs = sort([aggrby...])
+    @show unique([sn[ixs] for sn in splitted_names])
     return unique([sn[ixs] for sn in splitted_names])
 end
 function group_names(X::AbstractDataFrame, args...; kwargs...)
@@ -171,7 +172,7 @@ function group_indices_by_column_names(
     groups_separator::AbstractString = _SEPARATOR
 )::Vector{Vector{Int}}
     g_names = group_names(Xnames, aggrby; groups_separator = groups_separator)
-
+@show g_names
     ixs = sort([aggrby...])
     res = [findall(Xname -> _is_part_of_the_group(cur_g_name, Xname, ixs; groups_separator = groups_separator), Xnames)
             for cur_g_name in g_names]
@@ -224,12 +225,13 @@ function _fsgroup(
     group_before_score::Union{Val{true},Val{false}} = Val(true),
 )::Tuple{Vector{Int},Vector{Vector{Int}},Vector{<:Real},Vector{Vector{<:Real}}}
     g_indices = group_indices_by_column_names(X, aggrby; groups_separator = groups_separator)
-
+@show g_indices
     scores = []
     groups_score = Vector(undef, length(g_indices))
     if group_before_score isa Val{true}
         # === group and then evaluate score internally to each group ===
         for (i, cur_g_indices) in enumerate(g_indices)
+            @show cur_g_indices
             s = isnothing(y) || SoleFeatures.is_unsupervised(selector) ?
                 SoleFeatures.score(X[:,cur_g_indices], selector) :
                 SoleFeatures.score(X[:,cur_g_indices], y, selector)
@@ -483,6 +485,8 @@ function feature_selection(
         Float64.(@scache_if !isnothing(ced) "dse" ced _extr(X, extract_tuples))
     end
 
+    newX = Xdf
+
     # groups_separator = "@@@"
     if groups_separator != _SEPARATOR
         rename!(x -> replace(x, _SEPARATOR => groups_separator), newX)
@@ -551,7 +555,7 @@ function feature_selection(
                 old_sort = sortperm(vcat(g_indices...))
                 vcat(vcat(grouped_variable_scores...)[old_sort]...), vcat(g_indices[sel_g_indices]...), g_indices
             end
-
+@show idxes
         sort!(idxes)
 
         push!(fs_mid_results, (
@@ -821,7 +825,7 @@ end
 # load a time-series dataset
 df, y = SoleData.load_arff_dataset("NATOPS")
 
-ws = [FixedNumMovingWindows(6, 0.05)...]
+ws = [FixedNumMovingWindows(3, 0.05)...]
 ms = [minimum, maximum, mean]
 fs_methods = [
 	( # STEP 1: unsupervised variance-based filter
@@ -832,17 +836,16 @@ fs_methods = [
 		selector = PyMutualInformationClassif(SoleFeatures.IdentityLimiter()),
 		limiter = SoleFeatures.PercentageLimiter(0.01),
 	),
-	( # STEP 3: group results by variable
-		selector = SoleFeatures.IdentityFilter(),
-		limiter = SoleFeatures.IdentityLimiter(),
-	),
+	# ( # STEP 3: group results by variable
+	# 	selector = SoleFeatures.IdentityFilter(),
+	# 	limiter = SoleFeatures.IdentityLimiter(),
+	# ),
 ]
 
 # prepare dataset for feature selection
-Xdf = @test_nowarn SoleFeatures.feature_selection_preprocess(df; features=ms, nwindows=6)
+Xdf, _ = @test_nowarn SoleFeatures.feature_selection_preprocess(df; features=ms, nwindows=3)
 
 @info "FEATURE SELECTION"
-using BenchmarkTools
-@btime X, fs_mid_results = feature_selection(df, y, ex_windows = ws, ex_measures = ms, fs_methods = fs_methods, normalize = true)
+X, fs_mid_results = feature_selection(df, y, ex_windows = ws, ex_measures = ms, fs_methods = fs_methods, normalize = false);
 
 # 386.344 ms (8995551 allocations: 530.71 MiB)

@@ -17,6 +17,13 @@ function score(
     return var.(eachcol(X))
 end
 
+function score(
+    X::AbstractMatrix,
+    selector::VarianceFilter
+)
+    return var.(eachcol(X))
+end
+
 # Ranking
 VarianceRanking(nbest) = VarianceFilter(RankingLimiter(nbest, true))
 # Threshold
