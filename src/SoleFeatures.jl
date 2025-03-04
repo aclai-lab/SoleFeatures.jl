@@ -5,6 +5,9 @@ using SoleBase
 using MultiData
 using StatsBase, Catch22
 
+using Reexport
+@reexport using SoleBase: movingwindow, wholewindow, splitwindow, adaptivewindow
+
 using SpecialFunctions  # For digamma function
 using NearestNeighbors  # For KDTree and knn
 using SparseArrays, CategoricalArrays, DataFrames

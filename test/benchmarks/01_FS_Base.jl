@@ -459,7 +459,8 @@ function feature_selection(
 
     cache_extracted_dataset::Union{Nothing,AbstractString} = nothing,
     return_mid_results::Union{Val{true},Val{false}} = Val(true),
-)::Union{DataFrame,Tuple{DataFrame,FSMidResults}}
+# )::Union{DataFrame,Tuple{DataFrame,FSMidResults}}
+)
 
     # ==================== PREPARE INPUTS ====================
 
@@ -577,7 +578,7 @@ function feature_selection(
 
     if isa(return_mid_results, Val{true})
 
-        return newX[:,dataset_col_slice], (extraction_column_names = extraction_column_names, fs_mid_results = fs_mid_results)
+        return newX, newX[:,dataset_col_slice], (extraction_column_names = extraction_column_names, fs_mid_results = fs_mid_results)
 
     else
         return newX[:,dataset_col_slice]
@@ -825,7 +826,8 @@ end
 # load a time-series dataset
 df, y = SoleData.load_arff_dataset("NATOPS")
 
-ws = [FixedNumMovingWindows(6, 0.05)...]
+# ws = [FixedNumMovingWindows(6, 0.05)...]
+ws = [CenteredMovingWindow(1)...]
 ms = [minimum, maximum, mean]
 
 fs_methods = [
@@ -843,12 +845,12 @@ fs_methods = [
 	),
 ]
 
-# prepare dataset for feature selection
-Xdf, Xinfo = @test_nowarn SoleFeatures.feature_selection_preprocess(df; features=ms, nwindows=6)
-
 @info "FEATURE SELECTION"
 
-X, fs_mid_results = feature_selection(df, y, ex_windows = ws, ex_measures = ms, fs_methods = fs_methods, normalize = true)
+# X, fs_mid_results = feature_selection(df, y, ex_windows = ws, ex_measures = ms, fs_methods = fs_methods, normalize = true)
+
+b = feature_selection(df, y, ex_windows = ws, ex_measures = ms, fs_methods = fs_methods, normalize = true)
+
 # using BenchmarkTools
 # @btime X, fs_mid_results = feature_selection(df, y, ex_windows = ws, ex_measures = ms, fs_methods = fs_methods, normalize = true)
 

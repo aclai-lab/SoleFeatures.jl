@@ -106,7 +106,7 @@ function _treatment(
     # Fill DataFrame
     for row in eachrow(X)
         row_intervals = winparams.type(maximum(length.(collect(row))); _wparams...)
-        # interval_dif is used in case we encounter a row with less intervals than the maximum
+        # interval_diff is used in case we encounter a row with less intervals than the maximum
         interval_diff = length(n_intervals) - length(row_intervals)
 
         if treatment == :aggregate
@@ -348,41 +348,58 @@ end
 """
     feature_selection_preprocess(
         X::DataFrame;
-        vnames::Union{Vector{String}, Vector{Symbol}, Nothing}=nothing,
-        features::Union{Vector{<:Base.Callable}, Nothing}=nothing,
-        nwindows::Union{Int, Nothing}=nothing
-    ) -> DataFrame
+        vnames::VarNames=nothing,
+        features::FeatNames=nothing,
+        type::Union{Base.Callable, Nothing}=nothing,
+        nwindows::Union{Int, Nothing}=nothing,
+        relative_overlap::Union{AbstractFloat, Nothing}=nothing
+    ) -> Tuple{DataFrame, Vector{InfoFeat}}
 
-Process a DataFrame for feature selection by converting its columns into Feature objects.
+Preprocess a dataset for feature selection by transforming the input DataFrame
+into a feature-extracted representation and creating corresponding metadata.
 
 # Arguments
-- `X::DataFrame`: Input DataFrame containing time series data
-- `vnames::Union{Vector{String}, Vector{Symbol}, Nothing}=nothing`: Names for the variables. 
-   If nothing, uses DataFrame column names
-- `features::Union{Vector{<:Base.Callable}, Nothing}=nothing`: Feature extraction functions. 
-   If nothing, uses DEFAULT_FE.features
-- `nwindows::Union{Int, Nothing}=nothing`: Number of windows for time series segmentation. 
-   If nothing, uses DEFAULT_FE_WINPARAMS
+- `X::DataFrame`: Input data to process. Can contain numeric columns or vector-valued columns.
+- `vnames::VarNames=nothing`: Names of columns to process. If `nothing`, uses all columns in `X`.
+- `features::FeatNames=nothing`: Feature extraction functions to apply. If `nothing`, uses 
+  `DEFAULT_FE.features`.
+- `type::Union{Base.Callable, Nothing}=nothing`: Window type function that must be a key in 
+  `WIN_PARAMS`. Determines how data is windowed.
+- `nwindows::Union{Int, Nothing}=nothing`: Number of windows for feature extraction. Must be 
+  positive if provided. Automatically set to 1 if `type=wholewindow` and not explicitly provided.
+- `relative_overlap::Union{AbstractFloat, Nothing}=nothing`: Overlap between consecutive windows.
+  Must be non-negative if provided.
 
 # Returns
-- `DataFrame`: A DataFrame where each element is a Feature object containing:
-  - value: extracted feature value
-  - var: variable name
-  - feats: feature extraction function used
-  - nwin: window number
+- `Tuple{DataFrame, Vector{InfoFeat}}`: A tuple containing:
+  1. A processed DataFrame with features extracted according to specified parameters
+  2. A vector of `InfoFeat` objects containing metadata for each extracted feature
 
-# Example
+# Throws
+- `ArgumentError`: If `type` is not in `WIN_PARAMS`, `nwindows` is not positive, 
+  or `relative_overlap` is negative.
+- `DimensionMismatch`: If elements have inconsistent dimensions (via `_check_dimensions`).
+
+# Examples
 ```julia
-# Basic usage with default parameters
-df = DataFrame(a = [rand(10) for _ in 1:5])
-result = feature_selection_preprocess(df)
+# Basic usage with defaults
+X_processed, Xinfo = feature_selection_preprocess(df)
 
-# Custom features and windows
-df = DataFrame(a = [rand(10) for _ in 1:5])
-result = feature_selection_preprocess(df,
-    features = [mean, std],
-    nwindows = 3
-)
+# Specify feature extraction functions
+X_processed, Xinfo = feature_selection_preprocess(df, 
+                                                 features=[minimum, maximum, mean])
+
+# Specify windowing parameters
+X_processed, Xinfo = feature_selection_preprocess(df, 
+                                                 nwindows=5, 
+                                                 relative_overlap=0.2)
+
+# Combine parameters for more control
+X_processed, Xinfo = feature_selection_preprocess(df,
+                                                 vnames=["sensor1", "sensor2"],
+                                                 features=[std, skewness],
+                                                 type=slidingwindow,
+                                                 nwindows=3)
 """
 function feature_selection_preprocess(
     X::DataFrame;
@@ -392,36 +409,36 @@ function feature_selection_preprocess(
     nwindows::Union{Int, Nothing}=nothing,
     relative_overlap::Union{AbstractFloat, Nothing}=nothing
 )
-    # check parameters
+    # validate parameters
     isnothing(vnames) && (vnames = names(X))
     isnothing(features) && (features = DEFAULT_FE.features)
     treatment = :aggregate
-    _ = _check_dimensions(X)
-
-    if !isnothing(type)
-        type ∈ keys(WIN_PARAMS) || throw(ArgumentError("Invalid window type."))
-    end
-    if !isnothing(nwindows)
-        nwindows > 0 || throw(ArgumentError("Number of windows must be positive."))
-    end
-    if !isnothing(relative_overlap)
-        relative_overlap ≥ 0 || throw(ArgumentError("Overlap must non negative."))
-    end
+    _ = _check_dimensions(X) # TODO multidimensions
+    !isnothing(type) && type ∉ FE_AVAIL_WINS && throw(ArgumentError("Invalid window type."))
+    !isnothing(nwindows) && nwindows ≤ 0 && throw(ArgumentError("Number of windows must be positive."))
+    !isnothing(relative_overlap) && relative_overlap < 0 && throw(ArgumentError("Overlap must be non-negative."))
     
-    winparams = begin
-        base_params = isnothing(type) ? DEFAULT_FE_WINPARAMS : merge(DEFAULT_FE_WINPARAMS, (type = type,))
-        base_params = isnothing(nwindows) ? DEFAULT_FE_WINPARAMS : merge(DEFAULT_FE_WINPARAMS, (nwindows = nwindows,))
-        isnothing(relative_overlap) ? base_params : merge(base_params, (relative_overlap = relative_overlap,))
-    end
+    # build winparams
+    winparams = merge(DEFAULT_WIN_PARAMS[type], (type = type,))
+    !isnothing(nwindows) && haskey(winparams, :nwindows) && (winparams = merge(winparams, (nwindows = nwindows,)))
+    !isnothing(relative_overlap) && haskey(winparams, :relative_overlap) && (winparams = merge(winparams, (relative_overlap = relative_overlap,)))
 
-    total_features = length(features) * length(vnames) * nwindows
-    Xinfo = Vector{InfoFeat}(undef, total_features)
-    idx = 1
+    # set nwindows = 1 if type is wholewindow
+    isnothing(nwindows) && !isnothing(type) && type == wholewindow && (nwindows = 1)
 
-    for f in features, v in vnames, n in 1:nwindows
-        Xinfo[idx] = InfoFeat(idx, v, Symbol(f), n)
-        idx += 1
-    end
+    # create Xinfo
+    nf, nv, nw = length(features), length(vnames), nwindows
+    Xinfo = [
+        InfoFeat(
+            (f_idx-1) * nv * nw + (v_idx-1) * nw + w_idx, 
+            vnames[v_idx],
+            Symbol(features[f_idx]), 
+            w_idx
+        )
+        for f_idx in 1:nf 
+        for v_idx in 1:nv 
+        for w_idx in 1:nw
+    ]
 
     _treatment(X, vnames, treatment, features, winparams), Xinfo
 end

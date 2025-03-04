@@ -621,7 +621,7 @@ function feature_selection(
 
     # questo serve solo per generare grafici
     # fs_mid_results = NamedTuple{(:score,:indices,:name2score,:group_aggr_func,:group_indices,:aggrby)}[]
-    fs_mid_results = NamedTuple{(:indices,:group_aggr_func,:group_indices,:aggrby)}[]
+    fs_mid_results = NamedTuple{(:score, :indices,:group_aggr_func,:group_indices,:aggrby)}[]
 
     for (fsm, gfs_params) in zip(fs_methods, aggrby)
         current_dataset_col_slice = 1:size(X, 2)
@@ -631,15 +631,14 @@ function feature_selection(
             current_dataset_col_slice = current_dataset_col_slice[fs_mid_results[i].indices]
         end
 
-        currX = @view X[:,current_dataset_col_slice]
-        currXinfo = @view Xinfo[current_dataset_col_slice]
+        currX = X[:,current_dataset_col_slice]
+        currXinfo = Xinfo[current_dataset_col_slice]
 
         dataset_param = isnothing(y_coded) || SoleFeatures.is_unsupervised(fsm.selector) ? 
             (currX, currXinfo) : 
             (currX, y_coded, currXinfo)
 
-        # score, idxes, g_indices =
-        idxes, scores, g_indices =
+        idxes, score, g_indices =
             if isnothing(gfs_params)
                 # perform normal feature selection
                 _fs(dataset_param..., fsm...)..., nothing
@@ -661,9 +660,8 @@ function feature_selection(
         sort!(idxes)
 
         push!(fs_mid_results, (
-            # score = score,
+            score = score,
             indices = idxes,
-            # name2score = Dict{String,Number}(names(currX) .=> score),
             group_aggr_func = isnothing(gfs_params) ? nothing : gfs_params.aggregatef,
             group_indices = g_indices,
             aggrby = isnothing(gfs_params) ? nothing : gfs_params.aggrby
@@ -676,13 +674,12 @@ function feature_selection(
     end
 
     if isa(return_mid_results, Val{true})
-
-        return X[:,dataset_col_slice], (extraction_column_names = Xinfo[dataset_col_slice], fs_mid_results = fs_mid_results)
-
+        return X, X[:,dataset_col_slice], (extraction_column_names = Xinfo[dataset_col_slice], fs_mid_results = fs_mid_results)
     else
         return X[:,dataset_col_slice]
     end
 end
+feature_selection(X::AbstractDataFrame, args...; kwargs...) = feature_selection(Matrix(X), args...; kwargs...)
 
 """
 TODO: docs
@@ -942,13 +939,13 @@ fs_methods = [
 ]
 
 # prepare dataset for feature selection
-Xdf, Xinfo = @test_nowarn SoleFeatures.feature_selection_preprocess(df; features=ms, type=SoleFeatures.adaptivewindow, nwindows=6, relative_overlap=0.2)
+# Xdf, Xinfo = @test_nowarn SoleFeatures.feature_selection_preprocess(df; features=ms, type=adaptivewindow, nwindows=6, relative_overlap=0.05)
+Xdf, Xinfo = @test_nowarn SoleFeatures.feature_selection_preprocess(df; features=ms, type=wholewindow)
 
 @info "FEATURE SELECTION"
 
 using BenchmarkTools
 
-Xm = Matrix(Xdf)
-feature_selection(Xm, y, Xinfo, fs_methods = fs_methods, norm = false)
+a = feature_selection(Xdf, y, Xinfo, fs_methods = fs_methods, norm = false)
 
 # 3.212 ms (52923 allocations: 4.37 MiB)
