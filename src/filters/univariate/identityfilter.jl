@@ -13,32 +13,12 @@ end
 is_supervised(::AbstractIdentityFilter) = true
 is_unsupervised(::AbstractIdentityFilter) = true
 
-function score(
-    X::AbstractDataFrame,
-    y::AbstractVector{<:Union{String, Symbol}},
-    selector::IdentityFilter
-)
+function score(X::AbstractMatrix, y::AbstractVector{<:Class}, selector::IdentityFilter)
     return score(X, selector)
 end
+score(Xdf::AbstractDataFrame, y::AbstractVector{<:Class}, selector::IdentityFilter) = score(Matrix(Xdf), y, selector)
 
-function score(
-    X::AbstractMatrix,
-    y::AbstractVector{<:Union{String, Symbol}},
-    selector::IdentityFilter
-)
-    return score(X, selector)
-end
-
-function score(
-    X::AbstractDataFrame,
-    selector::IdentityFilter
-)
-    return fill(1.0, ncol(X))
-end
-
-function score(
-    X::AbstractMatrix,
-    selector::IdentityFilter
-)
+function score(X::AbstractMatrix, selector::IdentityFilter)
     return fill(1.0, size(X, 2))
 end
+score(Xdf::AbstractDataFrame, selector::IdentityFilter) = score(Matrix(Xdf), selector)

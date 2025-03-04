@@ -837,10 +837,10 @@ fs_methods = [
 		selector = PyMutualInformationClassif(SoleFeatures.IdentityLimiter()),
 		limiter = SoleFeatures.PercentageLimiter(0.01),
 	),
-	# ( # STEP 3: group results by variable
-	# 	selector = SoleFeatures.IdentityFilter(),
-	# 	limiter = SoleFeatures.IdentityLimiter(),
-	# ),
+	( # STEP 3: group results by variable
+		selector = SoleFeatures.IdentityFilter(),
+		limiter = SoleFeatures.IdentityLimiter(),
+	),
 ]
 
 # prepare dataset for feature selection

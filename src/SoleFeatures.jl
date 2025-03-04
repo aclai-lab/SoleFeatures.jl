@@ -15,6 +15,7 @@ using Base.Threads: @threads
 
 include("interface.jl")
 export AbstractFilterBased
+export Class
 include("utils/utils.jl")
 
 include("utils/features_set.jl")

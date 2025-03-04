@@ -249,15 +249,14 @@ References
        Data Sets". PLoS ONE 9(2), 2014.
 """
 function _estimate_mi(
-    Xdf::AbstractMatrix,
-    y::AbstractVector{<:SoleFeatures.Class};
+    X::AbstractMatrix,
+    y::AbstractVector{<:Class};
     discrete_mode::Union{AbstractArray, Nothing}=nothing,
     discrete_target::Bool=false,
     n_neighbors::Int=3,
     n_jobs::Union{Int, Nothing}=nothing,
     rng::AbstractRNG=Random.GLOBAL_RNG,
 )
-    X = Matrix(Xdf)
     n_samples, n_features = size(X)
 
     # Handle discrete_features parameter
@@ -346,58 +345,21 @@ and Ross (2014).
   PLoS ONE 9(2), 2014.
 """
 function mutual_info_classif(
-    X, 
-    y; 
-    discrete_features="auto", 
-    n_neighbors=3, 
-    copy=true, 
-    random_state=nothing,
-    n_jobs=nothing
-)
-    # Check that target is suitable for classification
-    check_classification_targets(y)
-    
+    X::AbstractMatrix, 
+    y::AbstractVector{<:Class}; 
+    discrete_mode::Union{AbstractArray, Nothing}=nothing,
+    n_neighbors::Int=3, 
+    n_jobs=nothing,
+    rng::AbstractRNG=Random.GLOBAL_RNG,
+)    
     # Call _estimate_mi with discrete_target=true
     return _estimate_mi(
         X,
         y;
-        # discrete_features=discrete_features,
+        discrete_mode,
         discrete_target=true,
-        # n_neighbors=n_neighbors,
-        # copy=copy,
-        # random_state=random_state,
-        # n_jobs=n_jobs
+        n_neighbors,
+        n_jobs,
+        rng
     )
 end
-
-"""
-    check_classification_targets(y)
-
-Ensure that target y is of a non-regression type.
-"""
-function check_classification_targets(y)
-    # For Julia, we can simplify this check 
-    if eltype(y) <: AbstractFloat
-        @warn "The target y looks like a regression target, but mutual_info_classif is for classification. Consider using mutual_info_regression for regression tasks."
-    end
-    
-    # For SoleFeatures integration, check if it's a vector of Class type
-    if eltype(y) <: SoleFeatures.Class
-        # Target is of the expected type
-        return
-    end
-    
-    # Other checks could be added here
-    return
-end
-
-# # load a time-series dataset
-# df, yc = SoleData.load_arff_dataset("NATOPS")
-# Xdf, X_info = @test_nowarn SoleFeatures.feature_selection_preprocess(df; features=[mean, std], nwindows=6)
-# y = @. CategoricalArrays.levelcode(yc)
-
-# a = mutual_info_classif(Xdf, y)
-
-# using PyCall
-# fs = pyimport_conda("sklearn.feature_selection", "scikit-learn")
-# b = fs.mutual_info_classif(Matrix(Xdf), y)

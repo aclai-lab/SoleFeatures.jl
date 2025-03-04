@@ -9,23 +9,10 @@ end
 is_supervised(::AbstractMutualInformationClassif) = true
 is_unsupervised(::AbstractMutualInformationClassif) = false
 
-function score(
-    X::AbstractDataFrame,
-    y::AbstractVector{<:Class},
-    selector::MutualInformationClassif
-)::Vector{Float64}
-    scores = mutual_info_classif(Matrix(X), y)
-    return scores
+function score(X::AbstractMatrix, y::AbstractVector{<:Class}, selector::MutualInformationClassif)
+    return mutual_info_classif(X, y)
 end
-
-function score(
-    X::AbstractMatrix,
-    y::AbstractVector{<:Class},
-    selector::MutualInformationClassif
-)::Vector{Float64}
-    scores = mutual_info_classif(Matrix(X), y)
-    return scores
-end
+score(Xdf::AbstractDataFrame, y::AbstractVector{<:Class}, selector::MutualInformationClassif) = score(Matrix(Xdf), y, selector)
 
 # Ranking
 MutualInformationClassifRanking(nbest) = MutualInformationClassif(RankingLimiter(nbest, true))

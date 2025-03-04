@@ -942,14 +942,13 @@ fs_methods = [
 ]
 
 # prepare dataset for feature selection
-Xdf, Xinfo = @test_nowarn SoleFeatures.feature_selection_preprocess(df; features=ms, type=SoleFeatures.adaptivewindow, nwindows=6, relative_overlap=0.05)
+Xdf, Xinfo = @test_nowarn SoleFeatures.feature_selection_preprocess(df; features=ms, type=SoleFeatures.adaptivewindow, nwindows=6, relative_overlap=0.2)
 
 @info "FEATURE SELECTION"
 
 using BenchmarkTools
-@btime begin
-    Xm = Matrix(Xdf)
-    feature_selection(Xm, y, Xinfo, fs_methods = fs_methods, norm = false)
-end
+
+Xm = Matrix(Xdf)
+feature_selection(Xm, y, Xinfo, fs_methods = fs_methods, norm = false)
 
 # 3.212 ms (52923 allocations: 4.37 MiB)
