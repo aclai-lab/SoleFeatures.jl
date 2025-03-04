@@ -130,7 +130,6 @@ function group_names(
 
     # get unique group names
     ixs = sort([aggrby...])
-    @show unique([sn[ixs] for sn in splitted_names])
     return unique([sn[ixs] for sn in splitted_names])
 end
 function group_names(X::AbstractDataFrame, args...; kwargs...)
@@ -172,7 +171,6 @@ function group_indices_by_column_names(
     groups_separator::AbstractString = _SEPARATOR
 )::Vector{Vector{Int}}
     g_names = group_names(Xnames, aggrby; groups_separator = groups_separator)
-@show g_names
     ixs = sort([aggrby...])
     res = [findall(Xname -> _is_part_of_the_group(cur_g_name, Xname, ixs; groups_separator = groups_separator), Xnames)
             for cur_g_name in g_names]
@@ -225,13 +223,11 @@ function _fsgroup(
     group_before_score::Union{Val{true},Val{false}} = Val(true),
 )::Tuple{Vector{Int},Vector{Vector{Int}},Vector{<:Real},Vector{Vector{<:Real}}}
     g_indices = group_indices_by_column_names(X, aggrby; groups_separator = groups_separator)
-@show g_indices
     scores = []
     groups_score = Vector(undef, length(g_indices))
     if group_before_score isa Val{true}
         # === group and then evaluate score internally to each group ===
         for (i, cur_g_indices) in enumerate(g_indices)
-            @show cur_g_indices
             s = isnothing(y) || SoleFeatures.is_unsupervised(selector) ?
                 SoleFeatures.score(X[:,cur_g_indices], selector) :
                 SoleFeatures.score(X[:,cur_g_indices], y, selector)
@@ -555,7 +551,7 @@ function feature_selection(
                 old_sort = sortperm(vcat(g_indices...))
                 vcat(vcat(grouped_variable_scores...)[old_sort]...), vcat(g_indices[sel_g_indices]...), g_indices
             end
-@show idxes
+
         sort!(idxes)
 
         push!(fs_mid_results, (

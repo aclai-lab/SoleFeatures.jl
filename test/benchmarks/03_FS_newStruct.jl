@@ -654,7 +654,7 @@ function feature_selection(
                 # find indices to re-sort the scores of all variables to their
                 # original position in dataset columns
                 old_sort = sortperm(vcat(g_indices...))
-                
+
                 vcat(g_indices[sel_g_indices]...), vcat(vcat(grouped_variable_scores...)[old_sort]...), g_indices
             end
 
@@ -672,18 +672,16 @@ function feature_selection(
 
     dataset_col_slice = 1:size(X, 2)
     for i in 1:length(fs_mid_results)
-        # @show fs_mid_results[i].indices
         dataset_col_slice = dataset_col_slice[fs_mid_results[i].indices]
     end
 
-    # if isa(return_mid_results, Val{true})
+    if isa(return_mid_results, Val{true})
 
-    #     return X[:,dataset_col_slice], (extraction_column_names = extraction_column_names, fs_mid_results = fs_mid_results)
+        return X[:,dataset_col_slice], (extraction_column_names = Xinfo[dataset_col_slice], fs_mid_results = fs_mid_results)
 
-    # else
-        # return X[:,dataset_col_slice]
-    # end
-    return X
+    else
+        return X[:,dataset_col_slice]
+    end
 end
 
 """
@@ -937,10 +935,10 @@ fs_methods = [
 		selector = SoleFeatures.MutualInformationClassif(SoleFeatures.IdentityLimiter()),
 		limiter = SoleFeatures.PercentageLimiter(0.01),
 	),
-	# ( # STEP 3: group results by variable
-	# 	selector = SoleFeatures.IdentityFilter(),
-	# 	limiter = SoleFeatures.IdentityLimiter(),
-	# ),
+	( # STEP 3: group results by variable
+		selector = SoleFeatures.IdentityFilter(),
+		limiter = SoleFeatures.IdentityLimiter(),
+	),
 ]
 
 # prepare dataset for feature selection
@@ -948,5 +946,10 @@ Xdf, Xinfo = @test_nowarn SoleFeatures.feature_selection_preprocess(df; features
 
 @info "FEATURE SELECTION"
 
-Xm = Matrix(Xdf)
-a=feature_selection(Xm, y, Xinfo, fs_methods = fs_methods, norm = false)
+using BenchmarkTools
+@btime begin
+    Xm = Matrix(Xdf)
+    feature_selection(Xm, y, Xinfo, fs_methods = fs_methods, norm = false)
+end
+
+# 3.212 ms (52923 allocations: 4.37 MiB)

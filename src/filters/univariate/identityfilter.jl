@@ -22,8 +22,23 @@ function score(
 end
 
 function score(
+    X::AbstractMatrix,
+    y::AbstractVector{<:Union{String, Symbol}},
+    selector::IdentityFilter
+)
+    return score(X, selector)
+end
+
+function score(
     X::AbstractDataFrame,
     selector::IdentityFilter
 )
     return fill(1.0, ncol(X))
+end
+
+function score(
+    X::AbstractMatrix,
+    selector::IdentityFilter
+)
+    return fill(1.0, size(X, 2))
 end

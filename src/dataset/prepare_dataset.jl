@@ -414,8 +414,6 @@ function feature_selection_preprocess(
         isnothing(relative_overlap) ? base_params : merge(base_params, (relative_overlap = relative_overlap,))
     end
 
-    @show winparams
-
     total_features = length(features) * length(vnames) * nwindows
     Xinfo = Vector{InfoFeat}(undef, total_features)
     idx = 1

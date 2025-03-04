@@ -228,7 +228,7 @@ function _fsgroup(
     group_before_score::Union{Val{true},Val{false}} = Val(true),
 )::Tuple{Vector{Int},Vector{Vector{Int}},Vector{<:Real},Vector{Vector{<:Real}}}
     g_indices = group_indices_by_column_names(X, aggrby; groups_separator = groups_separator)
-@show g_indices
+
     scores = []
     groups_score = Vector(undef, length(g_indices))
     if group_before_score isa Val{true}
@@ -553,9 +553,6 @@ function feature_selection(
                 # find indices to re-sort the scores of all variables to their
                 #    original position in dataset columns
                 old_sort = sortperm(vcat(g_indices...))
-                @show vcat(vcat(grouped_variable_scores...)[old_sort]...)
-                @show vcat(g_indices[sel_g_indices]...)
-                @show g_indices
                 vcat(vcat(grouped_variable_scores...)[old_sort]...), vcat(g_indices[sel_g_indices]...), g_indices
             end
 
