@@ -558,26 +558,22 @@ function feature_selection_preprocess(
     X::DataFrame;
     vnames::VarNames=nothing,
     features::FeatNames=nothing,
-    type::Union{Base.Callable, Nothing}=nothing,
-    nwindows::Union{Int, Nothing}=nothing,
-    relative_overlap::Union{AbstractFloat, Nothing}=nothing
+    type::Base.Callable=adaptivewindow,
+    nwindows::Int=6,
+    relative_overlap::Real=0.05
 )
     # validate parameters
     isnothing(vnames) && (vnames = names(X))
     isnothing(features) && (features = DEFAULT_FE.features)
     treatment = :aggregate
     _ = _check_dimensions(X) # TODO multidimensions
-    !isnothing(type) && type ∉ FE_AVAIL_WINS && throw(ArgumentError("Invalid window type."))
-    !isnothing(nwindows) && nwindows ≤ 0 && throw(ArgumentError("Number of windows must be positive."))
-    !isnothing(relative_overlap) && relative_overlap < 0 && throw(ArgumentError("Overlap must be non-negative."))
+    type ∈ FE_AVAIL_WINS || throw(ArgumentError("Invalid window type."))
+    nwindows > 0 || throw(ArgumentError("Number of windows must be positive."))
+    relative_overlap ≥ 0 || throw(ArgumentError("Overlap must be non-negative."))
     
     # build winparams
-    winparams = merge(DEFAULT_WIN_PARAMS[type], (type = type,))
-    !isnothing(nwindows) && haskey(winparams, :nwindows) && (winparams = merge(winparams, (nwindows = nwindows,)))
-    !isnothing(relative_overlap) && haskey(winparams, :relative_overlap) && (winparams = merge(winparams, (relative_overlap = relative_overlap,)))
-
-    # set nwindows = 1 if type is wholewindow
-    isnothing(nwindows) && !isnothing(type) && type == wholewindow && (nwindows = 1)
+    # winparams = Dict($type => (nwindows, relative_overlap))
+    winparams = (type = type, nwindows = nwindows, relative_overlap = relative_overlap)
 
     # create Xinfo
     nf, nv, nw = length(features), length(vnames), nwindows

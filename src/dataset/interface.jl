@@ -42,11 +42,11 @@ const FeatNames = Union{Vector{<:Base.Callable}, Nothing}
 
 const DEFAULT_FE = (features = catch9,)
 
-const DEFAULT_WIN_PARAMS = Dict(
-    wholewindow    => (nwindows = 1,),
-    splitwindow    => (nwindows = 20,),
-    adaptivewindow => (nwindows = 20, relative_overlap = 0.5)
-)
+# const DEFAULT_WIN_PARAMS = Dict(
+#     wholewindow    => (nwindows = 1,),
+#     splitwindow    => (nwindows = 20,),
+#     adaptivewindow => (nwindows = 20, relative_overlap = 0.5)
+# )
 
 const AVAIL_WINS       = (movingwindow, wholewindow, splitwindow, adaptivewindow)
 const FE_AVAIL_WINS    = (wholewindow, splitwindow, adaptivewindow)

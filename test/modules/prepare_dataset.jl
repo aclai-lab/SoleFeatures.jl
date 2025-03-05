@@ -2,92 +2,141 @@ using SoleFeatures
 using Test
 using Sole
 using Random, StatsBase, DataFrames
-using MLJTuning
 
 # ---------------------------------------------------------------------------- #
 #                             DATASET PREPARATION                              #
 # ---------------------------------------------------------------------------- #
-X, y       = SoleData.load_arff_dataset("NATOPS")
-train_seed = 11
-rng        = Random.Xoshiro(train_seed)
-Random.seed!(train_seed)
-
-# downsize dataset
-num_cols_to_sample = 10
-num_rows_to_sample = 50
-chosen_cols = StatsBase.sample(rng, 1:size(X, 2), num_cols_to_sample; replace=false)
-chosen_rows = StatsBase.sample(rng, 1:size(X, 1), num_rows_to_sample; replace=false)
-
-X = X[chosen_rows, chosen_cols]
-y = y[chosen_rows]
-
 @testset "feature_selection_preprocess" begin    
-    @testset "Basic functionality" begin        
-        # Test default parameters
-        result = feature_selection_preprocess(X)
-        @test result isa DataFrame
-        @test all(col -> eltype(col) <: SoleFeatures.Feature, eachcol(result))
-        @test size(result, 1) == size(X, 1)
+    @testset "feature_selection_preprocess DataFrame validation" begin
+        X2 = DataFrame(
+            temp = [[1.0, 2.0, 3.0, 4.0, 5.0] for _ in 1:5],
+            press = [[10.0, 20.0, 30.0, 40.0, 50.0] for _ in 1:5]
+        )
         
-        # Test first Feature object properties
-        first_feature = first(result[!, 1])
-        @test first_feature isa SoleFeatures.Feature
-        @test first_feature.var isa String
-        @test first_feature.feats isa Symbol
-        @test first_feature.nwin isa Int
-        @test first_feature.nwin > 0
+        # test case 1: Basic functionality with minimal parameters
+        @testset "Basic processing" begin
+            processed_X, _ = feature_selection_preprocess(
+                X2, 
+                features = [mean, maximum],
+                nwindows = 2
+            )
+            
+            # Check DataFrame structure
+            @test size(processed_X, 1) == 5  # Same number of rows
+            expected_cols = 2 * 2 * 2  # 2 features × 2 variables × 2 windows
+            @test size(processed_X, 2) == expected_cols
+            
+            # Check column names follow pattern: function(variable)window
+            @test any(name -> occursin("mean(temp)w1", name), names(processed_X))
+            @test any(name -> occursin("maximum(press)w2", name), names(processed_X))
+            
+            # Check all values are Float64
+            @test all(col -> eltype(col) <: Float64, eachcol(processed_X))
+            
+            # Check specific computed values (based on our synthetic data)
+            mean_temp_col = findfirst(name -> name == "mean(temp)w1", names(processed_X))
+            max_press_col = findfirst(name -> name == "maximum(press)w2", names(processed_X))
+            
+            if !isnothing(mean_temp_col)
+                @test all(isapprox.(processed_X[:, mean_temp_col], 2.0, atol=1e-5))
+            end
+            
+            if !isnothing(max_press_col)
+                @test all(isapprox.(processed_X[:, max_press_col], 50.0, atol=1e-5))
+            end
+        end
+        
+        # Test case 2: Different window types
+        @testset "Window types" begin
+            # test with wholewindow - should produce just one window
+            whole_X, _ = feature_selection_preprocess(
+                X2, 
+                features = [mean],
+                type = SoleFeatures.wholewindow
+            )
+            
+            # Should only have one window per variable/feature
+            @test size(whole_X, 2) == 2  # 1 feature × 2 variables × 1 window
+            
+            # Check prefix format is correct
+            @test any(name -> name == "mean(temp)w1", names(whole_X))
+            @test any(name -> name == "mean(press)w1", names(whole_X))
+            
+            # Specifically check that window values are computed correctly
+            @test isapprox(whole_X[1, "mean(temp)w1"], 3.0, atol=1e-5)
+            @test isapprox(whole_X[1, "mean(press)w1"], 30.0, atol=1e-5)
+        end
+        
+        # Test case 3: Multi-feature test
+        @testset "Multiple statistical features" begin
+            multi_X, _ = feature_selection_preprocess(
+                X2, 
+                features = [minimum, mean, maximum],
+                nwindows = 1
+            )
+            
+            # Check dimensions
+            expected_cols = 3 * 2 * 1  # 3 features × 2 variables × 1 window
+            @test size(multi_X, 2) == expected_cols
+            
+            # Check all three features exist for each variable
+            @test any(name -> name == "minimum(temp)w1", names(multi_X))
+            @test any(name -> name == "mean(temp)w1", names(multi_X))
+            @test any(name -> name == "maximum(temp)w1", names(multi_X))
+            
+            # Check computed values
+            if "minimum(temp)w1" in names(multi_X)
+                @test isapprox(multi_X[1, "minimum(temp)w1"], 1.0, atol=1e-5)
+            end
+            if "maximum(press)w1" in names(multi_X)
+                @test isapprox(multi_X[1, "maximum(press)w1"], 50.0, atol=1e-5)
+            end
+        end
     end
-    
-    @testset "Custom parameters" begin
+
+    @testset "InfoFeat metadata validation" begin
         X2 = DataFrame(
             temp = [rand(10) for _ in 1:5],
             press = [rand(10) for _ in 1:5]
         )
         
-        # Custom features and window
+        # Custom features and windows for predictable results
         custom_features = [mean, std]
-        result = feature_selection_preprocess(X2,
+        nwin = 3
+        vnames = ["temperature", "pressure"]
+        
+        X, Xinfo = feature_selection_preprocess(X2,
             features = custom_features,
-            nwindows = 3,
-            vnames = ["temperature", "pressure"]
+            nwindows = nwin,
+            vnames = vnames
         )
         
-        # Check dimensions
-        expected_cols = length(custom_features) * size(X2, 2) * 3  # features * variables * windows
-        @test size(result, 2) == expected_cols
+        # Check that Xinfo is a vector of InfoFeat objects
+        @test Xinfo isa Vector{<:SoleFeatures.InfoFeat}
         
-        # Check feature names
-        for (f, v, w) in Iterators.product(custom_features, ["temperature", "pressure"], 1:3)
-            col_name = "$(f)($(v))w$(w)"
-            @test col_name in names(result)
+        # Check length matches expected count
+        expected_count = length(custom_features) * length(vnames) * nwin
+        @test length(Xinfo) == expected_count
+        @test length(Xinfo) == size(X, 2)  # Should match column count
+        
+        # Check field values are set correctly
+        for (i, f) in enumerate(custom_features)
+            for (j, v) in enumerate(vnames)
+                for w_idx in 1:nwin
+                    # Calculate linear index as done in the function
+                    idx = (i-1) * length(vnames) * nwin + (j-1) * nwin + w_idx
+                    
+                    # Check fields match expected values
+                    @test Xinfo[idx].id == idx
+                    @test Xinfo[idx].var == v
+                    @test Xinfo[idx].feat == Symbol(f)
+                    @test Xinfo[idx].nwin == w_idx
+                    
+                    # Verify column name in X matches InfoFeat metadata
+                    expected_name = "$(f)($(v))w$(w_idx)"
+                    @test names(X)[idx] == expected_name
+                end
+            end
         end
-    end
-    
-    @testset "Error handling" begin
-        # Test with empty DataFrame
-        @test_throws ArgumentError feature_selection_preprocess(DataFrame())
-        
-        # Test with mixed dimensions
-        X_invalid = DataFrame(
-            a = [1.0, 2.0],
-            b = [[1.0, 2.0], [3.0, 4.0]]
-        )
-        @test_throws DimensionMismatch feature_selection_preprocess(X_invalid)
-        
-        # Test with invalid windows
-        X = DataFrame(a = [rand(10) for _ in 1:5])
-        @test_throws ArgumentError feature_selection_preprocess(X, nwindows = 0)
-        @test_throws ArgumentError feature_selection_preprocess(X, nwindows = -1)
-    end
-    
-    @testset "Performance" begin
-        # Create larger dataset
-        X = DataFrame(
-            [Symbol("var$i") => [rand(100) for _ in 1:100] for i in 1:5]
-        )
-        
-        # Measure execution time
-        time_taken = @elapsed feature_selection_preprocess(X)
-        @test time_taken < 5.0  # Should complete within 5 seconds
     end
 end

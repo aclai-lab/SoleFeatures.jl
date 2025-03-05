@@ -2,7 +2,6 @@ using SoleFeatures
 using Test
 using Sole
 using Random, StatsBase, DataFrames
-using MLJTuning
 
 # ---------------------------------------------------------------------------- #
 #                             DATASET PREPARATION                              #
@@ -23,7 +22,7 @@ y = y[chosen_rows]
 
 ms = [minimum, maximum, mean]
 
-Xdf, Xinfo = @test_nowarn SoleFeatures.feature_selection_preprocess(X; features=ms, nwindows=6)
+Xdf, Xinfo = @test_nowarn SoleFeatures.feature_selection_preprocess(X; features=ms, type=adaptivewindow, nwindows=6, relative_overlap=0.2)
 
 @testset "Correct values for feature names" begin   
     @testset "minimum(Y[Wrist l])w1" begin
