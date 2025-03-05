@@ -21,11 +21,6 @@ Abstract type for feature struct
 """
 abstract type AbstractFeature end
 
-"""
-Abstract type for score struct
-"""
-abstract type AbstractScore end
-
 # ---------------------------------------------------------------------------- #
 #                                    types                                     #
 # ---------------------------------------------------------------------------- #
@@ -34,7 +29,7 @@ const VarNames  = Union{Vector{String}, Vector{Symbol}, Nothing}
 const FeatNames = Union{Vector{<:Base.Callable}, Nothing}
 
 # ---------------------------------------------------------------------------- #
-#                                    dataset                                   #
+#                                data structures                               #
 # ---------------------------------------------------------------------------- #
 # const DEFAULT_PREPROC = (
 #     train_ratio = 0.8,
@@ -45,9 +40,8 @@ const FeatNames = Union{Vector{<:Base.Callable}, Nothing}
 #     rng         = TaskLocalRNG()
 # )
 
-const DEFAULT_FE = (
-    features = catch9,
-)
+const DEFAULT_FE = (features = catch9,)
+
 const DEFAULT_WIN_PARAMS = Dict(
     wholewindow    => (nwindows = 1,),
     splitwindow    => (nwindows = 20,),
@@ -299,56 +293,6 @@ feature_id(f::InfoFeat)    = f.id
 variable_name(f::InfoFeat) = f.var
 feature_type(f::InfoFeat)  = f.feat
 window_number(f::InfoFeat) = f.nwin
-
-"""
-    Score <: AbstractScore
-
-A struct representing the score of an individual feature in feature selection.
-
-# Fields
-- `id :: Int` : The unique identifier of the feature that this score belongs to
-- `score :: Float64` : The numerical score value indicating feature importance/relevance
-
-# Constructors
-```julia
-Score(id::Int, score::Float64)
-"""
-struct Score <: AbstractScore
-    id    :: Int
-    score :: Float64
-end
-
-# Value access methods
-Base.getproperty(sc::Score, s::Symbol) = getfield(sc, s)
-Base.propertynames(::Score)            = (:id, :score)
-
-score_id(s::Score)  = s.id
-score_val(s::Score) = s.score
-
-"""
-    GroupScore <: AbstractScore
-
-A struct representing the score of a group of features in grouped feature selection.
-
-# Fields
-- `grp :: Tuple{Vararg{Symbol}}` : Tuple of symbols identifying the feature group
-- `score :: Float64` : Numerical score value indicating the group's importance/relevance
-
-# Constructors
-```julia
-GroupScore(grp::Tuple{Vararg{Symbol}}, score::Float64)
-"""
-struct GroupScore <: AbstractScore
-    grp   :: Tuple{Vararg{Symbol}}
-    score :: Float64
-end
-
-# Value access methods
-Base.getproperty(sc::GroupScore, s::Symbol) = getfield(sc, s)
-Base.propertynames(::GroupScore)            = (:id, :score)
-
-score_id(s::GroupScore)  = s.id
-score_val(s::GroupScore) = s.score
 
 # ---------------------------------------------------------------------------- #
 #                            functions definitions                             #

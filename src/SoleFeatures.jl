@@ -15,20 +15,23 @@ using Random
 
 using Base.Threads: @threads
 
-
-include("interface.jl")
-export AbstractFilterBased
-export Class
-include("utils/utils.jl")
-
 include("utils/features_set.jl")
 export mode_5, mode_10, embedding_dist, acf_timescale, acf_first_min, ami2, trev, outlier_timing_pos
 export outlier_timing_neg, whiten_timescale, forecast_error, ami_timescale, high_fluctuation, stretch_decreasing
 export stretch_high, entropy_pairs, rs_range, dfa, low_freq_power, centroid_freq, transition_variance, periodicity
 export base_set, catch9, catch22_set, complete_set
 
+# interfaces
+include("interface.jl")
+export AbstractFilterBased
+export Class
 include("dataset/interface.jl")
-export Feature, Score, GroupScore
+export Feature
+include("selection/interface.jl")
+export Score, GroupScore
+
+include("utils/utils.jl")
+
 include("dataset/prepare_dataset.jl")
 export feature_selection_preprocess
 
@@ -44,6 +47,8 @@ include("filters/univariate/mutualinformationclassif.jl")
 export MutualInformationClassifRanking
 include("filters/univariate/variancefilter.jl")
 export VarianceRanking, VarianceThreshold
+
+include("selection/fselection.jl")
 
 # using SoleData
 # using Reexport

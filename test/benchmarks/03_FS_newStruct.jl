@@ -16,26 +16,26 @@ using MLBase
 using NaturalSort
 using CategoricalArrays
 
-include("/home/paso/Documents/Aclai/Sole/SoleFeatures.jl/src/filters/mutual_info.jl")
+# include("/home/paso/Documents/Aclai/Sole/SoleFeatures.jl/src/filters/mutual_info.jl")
 
-struct PyMutualInformationClassif{T <: SoleFeatures.AbstractLimiter} <: SoleFeatures.AbstractMutualInformationClassif{T}
-    limiter::T
-end
+# struct PyMutualInformationClassif{T <: SoleFeatures.AbstractLimiter} <: SoleFeatures.AbstractMutualInformationClassif{T}
+#     limiter::T
+# end
 
-SoleFeatures.is_supervised(::PyMutualInformationClassif) = true
-SoleFeatures.is_unsupervised(::PyMutualInformationClassif) = false
+# SoleFeatures.is_supervised(::PyMutualInformationClassif) = true
+# SoleFeatures.is_unsupervised(::PyMutualInformationClassif) = false
 
-function SoleFeatures.score(
-    X::AbstractDataFrame,
-    y::AbstractVector{<:Integer},
-    selector::PyMutualInformationClassif{<:SoleFeatures.AbstractLimiter}
-)::Vector{Float64}
-    scores = mutual_info_classif(X, y)
-    return Float64.(scores)
-end
+# function SoleFeatures.score(
+#     X::AbstractDataFrame,
+#     y::AbstractVector{<:Integer},
+#     selector::PyMutualInformationClassif{<:SoleFeatures.AbstractLimiter}
+# )::Vector{Float64}
+#     scores = mutual_info_classif(X, y)
+#     return Float64.(scores)
+# end
 
-# Ranking
-PyMutualInformationClassifRanking(nbest) = PyMutualInformationClassif(RankingLimiter(nbest, true))
+# # Ranking
+# PyMutualInformationClassifRanking(nbest) = PyMutualInformationClassif(RankingLimiter(nbest, true))
 
 Base.nameof(f::SuperFeature) = getname(f) # wrap for Catch22
 
@@ -76,45 +76,45 @@ const ABT = Union{NamedTuple{(:aggrby,:aggregatef,:group_before_score)}, Nothing
 # SoleFeatures.is_unsupervised(::Any) = false
 # is_unsupervised = SoleFeatures.is_unsupervised
 
-"""
-    _fs(X, [y,] selector, limiter)
+# """
+#     _fs(X, [y,] selector, limiter)
 
-Perform a feature selection using `selector` limiting the variables selected
-using `limiter`. `X` is the dataset as `AbstractDataFrame`.
+# Perform a feature selection using `selector` limiting the variables selected
+# using `limiter`. `X` is the dataset as `AbstractDataFrame`.
 
-If a supervised selector is passed the `y` parameter is needed: an `AbstractVector`
-of labels.
-"""
-function _fs(
-    X::AbstractMatrix,
-    y::Union{AbstractVector,Nothing},
-    Xinfo::AbstractVector{<:SoleFeatures.InfoFeat},
-    selector::SoleFeatures.AbstractFeaturesSelector,
-    limiter::SoleFeatures.AbstractLimiter
-)::Tuple{Vector{Int},Vector{SoleFeatures.Score}}
-    scores = isnothing(y) || SoleFeatures.is_unsupervised(selector) ?
-        SoleFeatures.score(X, selector) :
-        SoleFeatures.score(X, y, selector)
-    # limit è il metodo per fare i tagli
-    idxes = SoleFeatures.limit(scores, limiter)
+# If a supervised selector is passed the `y` parameter is needed: an `AbstractVector`
+# of labels.
+# """
+# function _fs(
+#     X::AbstractMatrix,
+#     y::Union{AbstractVector,Nothing},
+#     Xinfo::AbstractVector{<:SoleFeatures.InfoFeat},
+#     selector::SoleFeatures.AbstractFeaturesSelector,
+#     limiter::SoleFeatures.AbstractLimiter
+# )::Tuple{Vector{Int},Vector{SoleFeatures.Score}}
+#     scores = isnothing(y) || SoleFeatures.is_unsupervised(selector) ?
+#         SoleFeatures.score(X, selector) :
+#         SoleFeatures.score(X, y, selector)
+#     # limit è il metodo per fare i tagli
+#     idxes = SoleFeatures.limit(scores, limiter)
 
-    # Store scores directly in the Xinfo objects
-    # for (i, score) in enumerate(scores)
-    #     setfield!(Xinfo[i], score_target, score)
-    # end
+#     # Store scores directly in the Xinfo objects
+#     # for (i, score) in enumerate(scores)
+#     #     setfield!(Xinfo[i], score_target, score)
+#     # end
 
-    # return score, idxes
-    return idxes, [SoleFeatures.Score(i.id, score) for (i, score) in zip(Xinfo, scores)]
-end
+#     # return score, idxes
+#     return idxes, [SoleFeatures.Score(i.id, score) for (i, score) in zip(Xinfo, scores)]
+# end
 
-function _fs(
-    X::AbstractMatrix,
-    Xinfo::AbstractVector{<:SoleFeatures.InfoFeat},
-    selector::SoleFeatures.AbstractFeaturesSelector,
-    limiter::SoleFeatures.AbstractLimiter
-)::Tuple{Vector{Int},Vector{SoleFeatures.Score}}
-    return _fs(X, nothing, Xinfo, selector, limiter)
-end
+# function _fs(
+#     X::AbstractMatrix,
+#     Xinfo::AbstractVector{<:SoleFeatures.InfoFeat},
+#     selector::SoleFeatures.AbstractFeaturesSelector,
+#     limiter::SoleFeatures.AbstractLimiter
+# )::Tuple{Vector{Int},Vector{SoleFeatures.Score}}
+#     return _fs(X, nothing, Xinfo, selector, limiter)
+# end
 
 """
     group_names(X, aggrby; groups_separator = "@@@")
@@ -182,33 +182,33 @@ function _is_part_of_the_group(
     )
 end
 
-function group_id_by_aggrby(
-    Xinfo::AbstractVector{<:SoleFeatures.InfoFeat},
-    aggrby::Tuple{Vararg{Symbol}}
-)::Vector{Vector{Int}}
-    g_names = group_names(Xinfo, aggrby)
+# function group_id_by_aggrby(
+#     Xinfo::AbstractVector{<:SoleFeatures.InfoFeat},
+#     aggrby::Tuple{Vararg{Symbol}}
+# )::Vector{Vector{Int}}
+#     g_names = group_names(Xinfo, aggrby)
 
-    # ixs = sort([aggrby...])
-    # res = [findall(Xname -> _is_part_of_the_group(cur_g_name, Xname, ixs; groups_separator = groups_separator), Xnames)
-    #         for cur_g_name in g_names]
+#     # ixs = sort([aggrby...])
+#     # res = [findall(Xname -> _is_part_of_the_group(cur_g_name, Xname, ixs; groups_separator = groups_separator), Xnames)
+#     #         for cur_g_name in g_names]
 
-    # Get all unique combinations of values for the specified fields
-    value_combinations = unique([
-        Tuple(getfield(info, field) for field in aggrby)
-        for info in Xinfo
-    ])
-    # For each unique combination, find all indices with matching values
-    ixs = [
-        findall(i -> Tuple(getfield(Xinfo[i], field) for field in aggrby) == combination, 
-                1:length(Xinfo))
-        for combination in value_combinations
-    ]
+#     # Get all unique combinations of values for the specified fields
+#     value_combinations = unique([
+#         Tuple(getfield(info, field) for field in aggrby)
+#         for info in Xinfo
+#     ])
+#     # For each unique combination, find all indices with matching values
+#     ixs = [
+#         findall(i -> Tuple(getfield(Xinfo[i], field) for field in aggrby) == combination, 
+#                 1:length(Xinfo))
+#         for combination in value_combinations
+#     ]
 
-    # @assert !any(isempty.(res)) "Some of the groups are empty!"
-    any(isempty.(ixs)) && throw(ErrorException("Some of the groups are empty!"))
-    # return res
-    return ixs
-end
+#     # @assert !any(isempty.(res)) "Some of the groups are empty!"
+#     any(isempty.(ixs)) && throw(ErrorException("Some of the groups are empty!"))
+#     # return res
+#     return ixs
+# end
 
 # Xinfo = "Y[Hand tip r]", :minimum, 3), "Y[Hand tip r]", :minimum, 4), SoleFeatures.InfoFeat{String}(2, "Y[Hand tip l]", :maximum, 2), SoleFeatures.InfoFeat{String}(2, "Y[Hand tip l]", :maximum, 3), SoleFeatures.InfoFeat{String}(2, "Y[Hand tip l]", :maximum, 4), SoleFeatures.InfoFeat{String}(2, "Y[Hand tip l]", :maximum, 5), SoleFeatures.InfoFeat{String}(5, "Y[Hand tip r]", :maximum, 2), SoleFeatures.InfoFeat{String}(20, "Y[Thumb l]", :maximum, 3), SoleFeatures.InfoFeat{String}(20, "Y[Thumb l]", :maximum, 4), SoleFeatures.InfoFeat{String}(2, "Y[Hand tip l]", :mean, 3), SoleFeatures.InfoFeat{String}(2, "Y[Hand tip l]", :mean, 4)]
 # Xnames = ["Z[Hand tip l]@@@W2(6,0.05)@@@minimum", "X[Hand tip r]@@@W2(6,0.05)@@@minimum", "Y[Elbow l]@@@W1(6,0.05)@@@maximum", "Z[Elbow l]@@@W1(6,0.05)@@@maximum", "X[Elbow r]@@@W1(6,0.05)@@@maximum", "Y[Elbow r]@@@W1(6,0.05)@@@maximum", "Y[Hand tip l]@@@W2(6,0.05)@@@maximum", "Z[Thumb l]@@@W5(6,0.05)@@@maximum", "X[Thumb r]@@@W5(6,0.05)@@@maximum", "Z[Elbow l]@@@W1(6,0.05)@@@mean", "X[Elbow r]@@@W1(6,0.05)@@@mean"]
@@ -230,98 +230,98 @@ function group_by_column_names(
     return [(@view X[:,idxs]) for idxs in group_indices_by_column_names(X, aggrby; groups_separator = groups_separator)]
 end
 
-"""
-Perform feature selection on groups
+# """
+# Perform feature selection on groups
 
-## PARAMS
+# ## PARAMS
 
-- `X`: the dataset in the form of `AbstractDataFrame`;
-- `y`: the labels if the dataset is supervised; if the passed `selector` is supervised it has to be different from `nothing`;
-- `selector`: the feature selection algorithm of type `AbstractFeaturesSelector`;
-- `limiter`: the policy used to select the features to of type `AbstractLimiter`;
-- `aggrby`: it is a tuple describing the portion of the column name to use to determine groups;
-- `groups_separator`: the substring used to split the `DataFrame` names; default value is `"@@@"`.
-- `aggregatef`: use this function to aggregate results from groups; default value is `identity`;
-- `group_before_score`: it the passed `AbstractFeaturesSelector` is multivariate it can lead to
-    different results to calculate scores after or before grouping variables by `aggrby` parameter.
+# - `X`: the dataset in the form of `AbstractDataFrame`;
+# - `y`: the labels if the dataset is supervised; if the passed `selector` is supervised it has to be different from `nothing`;
+# - `selector`: the feature selection algorithm of type `AbstractFeaturesSelector`;
+# - `limiter`: the policy used to select the features to of type `AbstractLimiter`;
+# - `aggrby`: it is a tuple describing the portion of the column name to use to determine groups;
+# - `groups_separator`: the substring used to split the `DataFrame` names; default value is `"@@@"`.
+# - `aggregatef`: use this function to aggregate results from groups; default value is `identity`;
+# - `group_before_score`: it the passed `AbstractFeaturesSelector` is multivariate it can lead to
+#     different results to calculate scores after or before grouping variables by `aggrby` parameter.
 
-## RETURN
+# ## RETURN
 
-- sel_idxes::Vector{Int},
-- group_scores::Vector Aggregated score for each group, if aggregatef is identity function than group_scores will be equal to scores
-- scores:::Vector Not aggregated scores for each group
+# - sel_idxes::Vector{Int},
+# - group_scores::Vector Aggregated score for each group, if aggregatef is identity function than group_scores will be equal to scores
+# - scores:::Vector Not aggregated scores for each group
 
-# TODO: expand documentation
-"""
-function _fsgroup(
-    X::AbstractMatrix,
-    y::Union{AbstractVector,Nothing},
-    Xinfo::AbstractVector{<:SoleFeatures.InfoFeat},
-    selector::SoleFeatures.AbstractFeaturesSelector,
-    limiter::SoleFeatures.AbstractLimiter,
-    aggrby::Tuple{Vararg{Symbol}};
-    aggregatef::Function = mean,
-    group_before_score::Union{Val{true},Val{false}} = Val(true),
-# )::Tuple{Vector{Int},Vector{Vector{Int}},Vector{<:Real},Vector{Vector{<:Real}}}
-)::Tuple{Vector{Int},Vector{Vector{Int}},Vector{SoleFeatures.GroupScore},Vector{Vector{<:Real}}}
-    g_indices = group_id_by_aggrby(Xinfo, aggrby)
+# # TODO: expand documentation
+# """
+# function _fsgroup(
+#     X::AbstractMatrix,
+#     y::Union{AbstractVector,Nothing},
+#     Xinfo::AbstractVector{<:SoleFeatures.InfoFeat},
+#     selector::SoleFeatures.AbstractFeaturesSelector,
+#     limiter::SoleFeatures.AbstractLimiter,
+#     aggrby::Tuple{Vararg{Symbol}};
+#     aggregatef::Function = mean,
+#     group_before_score::Union{Val{true},Val{false}} = Val(true),
+# # )::Tuple{Vector{Int},Vector{Vector{Int}},Vector{<:Real},Vector{Vector{<:Real}}}
+# )::Tuple{Vector{Int},Vector{Vector{Int}},Vector{SoleFeatures.GroupScore},Vector{Vector{<:Real}}}
+#     g_indices = group_id_by_aggrby(Xinfo, aggrby)
 
-    scores = []
-    groups_score = SoleFeatures.GroupScore[]
-    # groups_score = Vector(undef, length(g_indices))
+#     scores = []
+#     groups_score = SoleFeatures.GroupScore[]
+#     # groups_score = Vector(undef, length(g_indices))
 
-    if group_before_score isa Val{true}
-        # === group and then evaluate score internally to each group ===
-        for (i, cur_g_indices) in enumerate(g_indices)
+#     if group_before_score isa Val{true}
+#         # === group and then evaluate score internally to each group ===
+#         for (i, cur_g_indices) in enumerate(g_indices)
 
-            s = isnothing(y) || SoleFeatures.is_unsupervised(selector) ?
-                SoleFeatures.score(X[:,cur_g_indices], selector) :
-                SoleFeatures.score(X[:,cur_g_indices], y, selector)
+#             s = isnothing(y) || SoleFeatures.is_unsupervised(selector) ?
+#                 SoleFeatures.score(X[:,cur_g_indices], selector) :
+#                 SoleFeatures.score(X[:,cur_g_indices], y, selector)
 
-            push!(scores, s) # save scores of variables of current group
-            grp = Tuple(Symbol.(collect(getfield(first(Xinfo[cur_g_indices]), a) for a in aggrby)))
-            push!(groups_score, SoleFeatures.GroupScore(grp, aggregatef(s))) # save scores of variables of current group
-            # groups_score[i] = aggregatef(s) # save aggregated group score
-        end
-    else
-        # === calculate scores for all variables and then group ===
-        allscores = isnothing(y) || SoleFeatures.is_unsupervised(selector) ?
-            SoleFeatures.score(X, selector) :
-            SoleFeatures.score(X, y, selector)
+#             push!(scores, s) # save scores of variables of current group
+#             grp = Tuple(Symbol.(collect(getfield(first(Xinfo[cur_g_indices]), a) for a in aggrby)))
+#             push!(groups_score, SoleFeatures.GroupScore(grp, aggregatef(s))) # save scores of variables of current group
+#             # groups_score[i] = aggregatef(s) # save aggregated group score
+#         end
+#     else
+#         # === calculate scores for all variables and then group ===
+#         allscores = isnothing(y) || SoleFeatures.is_unsupervised(selector) ?
+#             SoleFeatures.score(X, selector) :
+#             SoleFeatures.score(X, y, selector)
 
-        for (i, cur_g_indices) in enumerate(g_indices)
-            push!(scores, allscores[cur_g_indices]) # save scores of variables of current group
-            grp = Tuple(Symbol.(collect(getfield(first(Xinfo[cur_g_indices]), a) for a in aggrby)))
-            push!(groups_score, SoleFeatures.GroupScore(grp, aggregatef(allscores[cur_g_indices])))
-            # groups_score[i] = aggregatef(allscores[cur_g_indices]) # save aggregated group score
-        end
-    end
+#         for (i, cur_g_indices) in enumerate(g_indices)
+#             push!(scores, allscores[cur_g_indices]) # save scores of variables of current group
+#             grp = Tuple(Symbol.(collect(getfield(first(Xinfo[cur_g_indices]), a) for a in aggrby)))
+#             push!(groups_score, SoleFeatures.GroupScore(grp, aggregatef(allscores[cur_g_indices])))
+#             # groups_score[i] = aggregatef(allscores[cur_g_indices]) # save aggregated group score
+#         end
+#     end
 
-    # convert groups_score from Vector{Any} type to Vector{Type of first element} type
-    groups_score = convert.(typeof(groups_score[1]), groups_score)
+#     # convert groups_score from Vector{Any} type to Vector{Type of first element} type
+#     groups_score = convert.(typeof(groups_score[1]), groups_score)
 
-    # # apply limiter on groups
-    sel_idxes = SoleFeatures.limit(groups_score, limiter)
+#     # # apply limiter on groups
+#     sel_idxes = SoleFeatures.limit(groups_score, limiter)
 
-    # first element: index of the selected groups
-    # second element: indices of variables for each group
-    # third element: score of each group
-    # fourth element: score of each variable grouped
-    # return sel_idxes, g_indices, groups_score, scores
-    return sel_idxes, g_indices, groups_score, scores
-end
+#     # first element: index of the selected groups
+#     # second element: indices of variables for each group
+#     # third element: score of each group
+#     # fourth element: score of each variable grouped
+#     # return sel_idxes, g_indices, groups_score, scores
+#     return sel_idxes, g_indices, groups_score, scores
+# end
 
-function _fsgroup(
-    X::AbstractMatrix,
-    Xinfo::AbstractVector{<:SoleFeatures.InfoFeat},
-    selector::SoleFeatures.AbstractFeaturesSelector,
-    limiter::SoleFeatures.AbstractLimiter,
-    aggrby::Tuple{Vararg{Symbol}};
-    kwargs...
-# )::Tuple{Vector{Int},Vector{Vector{Int}},Vector{<:Real},Vector{Vector{<:Real}}}
-)::Tuple{Vector{Int},Vector{Vector{Int}},Vector{SoleFeatures.GroupScore},Vector{Vector{<:Real}}}
-    return _fsgroup(X, nothing, Xinfo, selector, limiter, aggrby; kwargs...)
-end
+# function _fsgroup(
+#     X::AbstractMatrix,
+#     Xinfo::AbstractVector{<:SoleFeatures.InfoFeat},
+#     selector::SoleFeatures.AbstractFeaturesSelector,
+#     limiter::SoleFeatures.AbstractLimiter,
+#     aggrby::Tuple{Vararg{Symbol}};
+#     kwargs...
+# # )::Tuple{Vector{Int},Vector{Vector{Int}},Vector{<:Real},Vector{Vector{<:Real}}}
+# )::Tuple{Vector{Int},Vector{Vector{Int}},Vector{SoleFeatures.GroupScore},Vector{Vector{<:Real}}}
+#     return _fsgroup(X, nothing, Xinfo, selector, limiter, aggrby; kwargs...)
+# end
 
 """
     validate_features(X, y = nothing; method = :pvalue)
@@ -530,7 +530,7 @@ function feature_selection(
     aggrby::Union{ABT,AbstractVector{<:ABT}} = (
         aggrby = (:var,),
         aggregatef = length, # NOTE: or mean, minimum, maximum to aggregate scores instead of just counting number of selected features for each group
-        group_before_score = Val(true),
+        group_before_score = true,
     ),
 
     fs_methods::AbstractVector{<:NamedTuple{(:selector, :limiter)}} = [
@@ -641,10 +641,10 @@ function feature_selection(
         idxes, score, g_indices =
             if isnothing(gfs_params)
                 # perform normal feature selection
-                _fs(dataset_param..., fsm...)..., nothing
+                SoleFeatures._fs(dataset_param..., fsm...)..., nothing
             else
                 # perform aggregated feature selection
-                sel_g_indices, g_indices, g_scores, grouped_variable_scores = _fsgroup(
+                sel_g_indices, g_scores, g_indices, grouped_variable_scores = SoleFeatures._fsgroup(
                     dataset_param..., fsm..., gfs_params.aggrby;
                     aggregatef = gfs_params.aggregatef,
                     group_before_score = gfs_params.group_before_score
@@ -946,6 +946,6 @@ Xdf, Xinfo = @test_nowarn SoleFeatures.feature_selection_preprocess(df; features
 
 using BenchmarkTools
 
-@btime a = feature_selection(Xdf, y, Xinfo, fs_methods = fs_methods, norm = false)
+a = feature_selection(Xdf, y, Xinfo, fs_methods = fs_methods, norm = false)
 
 # 3.189 ms (52904 allocations: 5.54 MiB)
