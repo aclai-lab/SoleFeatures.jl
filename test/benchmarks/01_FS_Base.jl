@@ -826,8 +826,8 @@ end
 # load a time-series dataset
 df, y = SoleData.load_arff_dataset("NATOPS")
 
-# ws = [FixedNumMovingWindows(6, 0.05)...]
-ws = [CenteredMovingWindow(1)...]
+ws = [FixedNumMovingWindows(6, 0.05)...]
+# ws = [CenteredMovingWindow(1)...]
 ms = [minimum, maximum, mean]
 
 fs_methods = [
