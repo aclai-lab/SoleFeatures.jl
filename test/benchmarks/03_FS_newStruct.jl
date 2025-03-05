@@ -492,194 +492,194 @@ end
     }}}
 }
 
-"""
-TODO: documentation
+# """
+# TODO: documentation
 
-# Feature Selection with Aggregation Control
+# # Feature Selection with Aggregation Control
 
-## Overview
-The `feature_selection` function allows precise control over how feature aggregation
-is applied during the multi-step feature selection process.
+# ## Overview
+# The `feature_selection` function allows precise control over how feature aggregation
+# is applied during the multi-step feature selection process.
 
-## Aggregation Parameter (`aggrby`)
-The `aggrby` parameter can be provided in two ways:
+# ## Aggregation Parameter (`aggrby`)
+# The `aggrby` parameter can be provided in two ways:
 
-1. **Single NamedTuple**: When provided as a single NamedTuple (not a vector), 
-   aggregation is only applied during the final step of feature selection.
-   The function automatically creates a vector where:
-   - All positions except the last contain `nothing`
-   - The last position contains the provided aggregation parameters
+# 1. **Single NamedTuple**: When provided as a single NamedTuple (not a vector), 
+#    aggregation is only applied during the final step of feature selection.
+#    The function automatically creates a vector where:
+#    - All positions except the last contain `nothing`
+#    - The last position contains the provided aggregation parameters
 
-2. **Vector of NamedTuples**: When provided as a vector, each element specifies 
-   the aggregation behavior for the corresponding step in `fs_methods`.
-"""
-function feature_selection(
-    X::AbstractMatrix{T},
-    y::Union{Nothing,AbstractVector},
-    Xinfo::Vector{<:SoleFeatures.InfoFeat};
+# 2. **Vector of NamedTuples**: When provided as a vector, each element specifies 
+#    the aggregation behavior for the corresponding step in `fs_methods`.
+# """
+# function feature_selection(
+#     X::AbstractMatrix{T},
+#     y::Union{Nothing,AbstractVector},
+#     Xinfo::Vector{<:SoleFeatures.InfoFeat};
 
-    # groups_separator::AbstractString = _SEPARATOR,
+#     # groups_separator::AbstractString = _SEPARATOR,
 
-    # ex_windows::AbstractVector = [ FixedNumMovingWindows(5, 0.05)... ],
-    # ex_measures::AbstractVector{Union{Function, SuperFeature}} = [minimum, maximum, mean],
+#     # ex_windows::AbstractVector = [ FixedNumMovingWindows(5, 0.05)... ],
+#     # ex_measures::AbstractVector{Union{Function, SuperFeature}} = [minimum, maximum, mean],
 
-    # cosa vuoi fare al dataset, crea la tripla var, win, feats
-    # extract_tuples::AbstractVector = vec(collect(Iterators.product(names(X), ex_windows, ex_measures))),
+#     # cosa vuoi fare al dataset, crea la tripla var, win, feats
+#     # extract_tuples::AbstractVector = vec(collect(Iterators.product(names(X), ex_windows, ex_measures))),
 
-    # tipo di aggregazione che si vuole alla fine
-    aggrby::Union{ABT,AbstractVector{<:ABT}} = (
-        aggrby = (:var,),
-        aggregatef = length, # NOTE: or mean, minimum, maximum to aggregate scores instead of just counting number of selected features for each group
-        group_before_score = true,
-    ),
+#     # tipo di aggregazione che si vuole alla fine
+#     aggrby::Union{ABT,AbstractVector{<:ABT}} = (
+#         aggrby = (:var,),
+#         aggregatef = length, # NOTE: or mean, minimum, maximum to aggregate scores instead of just counting number of selected features for each group
+#         group_before_score = true,
+#     ),
 
-    fs_methods::AbstractVector{<:NamedTuple{(:selector, :limiter)}} = [
-        ( # STEP 1: unsupervised variance-based filter
-            selector = SoleFeatures.VarianceFilter(SoleFeatures.IdentityLimiter()),
-            limiter = PercentageLimiter(0.5),
-        ),
-        ( # STEP 2: supervised Mutual Information filter
-            selector = SoleFeatures.MutualInformationClassif(SoleFeatures.IdentityLimiter()),
-            limiter = PercentageLimiter(0.1),
-        ),
-        ( # STEP 3: group results by variable
-            selector = IdentityFilter(),
-            limiter = SoleFeatures.IdentityLimiter(),
-        ),
-    ],
+#     fs_methods::AbstractVector{<:NamedTuple{(:selector, :limiter)}} = [
+#         ( # STEP 1: unsupervised variance-based filter
+#             selector = SoleFeatures.VarianceFilter(SoleFeatures.IdentityLimiter()),
+#             limiter = PercentageLimiter(0.5),
+#         ),
+#         ( # STEP 2: supervised Mutual Information filter
+#             selector = SoleFeatures.MutualInformationClassif(SoleFeatures.IdentityLimiter()),
+#             limiter = PercentageLimiter(0.1),
+#         ),
+#         ( # STEP 3: group results by variable
+#             selector = IdentityFilter(),
+#             limiter = SoleFeatures.IdentityLimiter(),
+#         ),
+#     ],
 
-    # fix_special_floats::Bool = false,
-    # fix_special_floats_kwargs::NamedTuple = NamedTuple(),
-    norm::Bool = false,
-    normalize_kwargs::NamedTuple = NamedTuple(),
+#     # fix_special_floats::Bool = false,
+#     # fix_special_floats_kwargs::NamedTuple = NamedTuple(),
+#     norm::Bool = false,
+#     normalize_kwargs::NamedTuple = NamedTuple(),
 
-    cache_extracted_dataset::Union{Nothing,AbstractString} = nothing,
-    return_mid_results::Union{Val{true},Val{false}} = Val(true),
-# )::Union{DataFrame,Tuple{DataFrame,FSMidResults}} where {T<:Number}
-) where {T<:Number}
+#     cache_extracted_dataset::Union{Nothing,AbstractString} = nothing,
+#     return_mid_results::Union{Val{true},Val{false}} = Val(true),
+# # )::Union{DataFrame,Tuple{DataFrame,FSMidResults}} where {T<:Number}
+# ) where {T<:Number}
 
-    # ==================== PREPARE INPUTS ====================
+#     # ==================== PREPARE INPUTS ====================
 
-    if !(aggrby isa AbstractVector)
-        # when aggrby is not a Vector assume that the user want to perform aggregation
-        #    only during the last step of feature selection TODO: document this properly!!!
-        aggrby = push!(Union{Nothing,NamedTuple}[fill(nothing, max(length(fs_methods)-1, 0))...], aggrby)
-    end
+#     if !(aggrby isa AbstractVector)
+#         # when aggrby is not a Vector assume that the user want to perform aggregation
+#         #    only during the last step of feature selection TODO: document this properly!!!
+#         aggrby = push!(Union{Nothing,NamedTuple}[fill(nothing, max(length(fs_methods)-1, 0))...], aggrby)
+#     end
 
-    # ==================== PREPARE LABELS ====================
+#     # ==================== PREPARE LABELS ====================
 
-    y_coded = @. CategoricalArrays.levelcode(y)
+#     y_coded = @. CategoricalArrays.levelcode(y)
 
-    # ================== DATASET EXTRACTION ==================
+#     # ================== DATASET EXTRACTION ==================
 
-    # QUI inizia feature selection
-    # extract new dataset
-    # newX = begin
-    #     local ced
-    #     local _extr
-    #     ced = cache_extracted_dataset
-    #     _extr = extract
-    #     # TODO: this Float64 is a strong assumption!
-    #     Float64.(@scache_if !isnothing(ced) "dse" ced _extr(X, extract_tuples))
-    # end
+#     # QUI inizia feature selection
+#     # extract new dataset
+#     # newX = begin
+#     #     local ced
+#     #     local _extr
+#     #     ced = cache_extracted_dataset
+#     #     _extr = extract
+#     #     # TODO: this Float64 is a strong assumption!
+#     #     Float64.(@scache_if !isnothing(ced) "dse" ced _extr(X, extract_tuples))
+#     # end
 
-    # # groups_separator = "@@@"
-    # if groups_separator != _SEPARATOR
-    #     rename!(x -> replace(x, _SEPARATOR => groups_separator), newX)
-    # end
-    # extraction_column_names = names(newX)
+#     # # groups_separator = "@@@"
+#     # if groups_separator != _SEPARATOR
+#     #     rename!(x -> replace(x, _SEPARATOR => groups_separator), newX)
+#     # end
+#     # extraction_column_names = names(newX)
 
 
-    # =================== SPECIAL FLOAT FIX ===================
+#     # =================== SPECIAL FLOAT FIX ===================
 
-    # if fix_special_floats
-    #     @warn "DANGER!!! It is really discouraged to call this function " *
-    #         "`fix_special_floats` set to `true`"
-    #     fix_special_floats_kwargs = merge(fix_special_floats_kwargs, (remove_too_nan_instance = false,))
-    #     _fix_nan_inf_dataset!(newX, y; fix_special_floats_kwargs...)
-    #     # FIXME: this function could alter the length o `y` and create
-    #     #          heavy inconsistencies!!! (this is why I forced
-    #     #          `remove_too_nan_instance` to false)
-    # end
+#     # if fix_special_floats
+#     #     @warn "DANGER!!! It is really discouraged to call this function " *
+#     #         "`fix_special_floats` set to `true`"
+#     #     fix_special_floats_kwargs = merge(fix_special_floats_kwargs, (remove_too_nan_instance = false,))
+#     #     _fix_nan_inf_dataset!(newX, y; fix_special_floats_kwargs...)
+#     #     # FIXME: this function could alter the length o `y` and create
+#     #     #          heavy inconsistencies!!! (this is why I forced
+#     #     #          `remove_too_nan_instance` to false)
+#     # end
 
-    # ================== DATASET NORMALIZATION ==================
+#     # ================== DATASET NORMALIZATION ==================
 
-    norm && _normalize_dataset!(X, Xinfo; normalize_kwargs...)
+#     norm && _normalize_dataset!(X, Xinfo; normalize_kwargs...)
 
-    # =================== NO FEATURE SELECTION ==================
+#     # =================== NO FEATURE SELECTION ==================
 
-    # # if no feature selector was passed we can assume the user just wanted to extract features from dataset
-    # if length(fs_methods) == 0
-    #     if isa(return_mid_results, Val{true})
-    #         return X, NamedTuple()
-    #     else
-    #         return X
-    #     end
-    # end
+#     # # if no feature selector was passed we can assume the user just wanted to extract features from dataset
+#     # if length(fs_methods) == 0
+#     #     if isa(return_mid_results, Val{true})
+#     #         return X, NamedTuple()
+#     #     else
+#     #         return X
+#     #     end
+#     # end
 
-    # ===================== FEATURE SELECTION ===================
+#     # ===================== FEATURE SELECTION ===================
 
-    # questo serve solo per generare grafici
-    # fs_mid_results = NamedTuple{(:score,:indices,:name2score,:group_aggr_func,:group_indices,:aggrby)}[]
-    fs_mid_results = NamedTuple{(:score, :indices,:group_aggr_func,:group_indices,:aggrby)}[]
+#     # questo serve solo per generare grafici
+#     # fs_mid_results = NamedTuple{(:score,:indices,:name2score,:group_aggr_func,:group_indices,:aggrby)}[]
+#     fs_mid_results = NamedTuple{(:score, :indices,:group_aggr_func,:group_indices,:aggrby)}[]
 
-    for (fsm, gfs_params) in zip(fs_methods, aggrby)
-        current_dataset_col_slice = 1:size(X, 2)
+#     for (fsm, gfs_params) in zip(fs_methods, aggrby)
+#         current_dataset_col_slice = 1:size(X, 2)
 
-         # pick survived columns only
-        for i in 1:length(fs_mid_results)
-            current_dataset_col_slice = current_dataset_col_slice[fs_mid_results[i].indices]
-        end
+#          # pick survived columns only
+#         for i in 1:length(fs_mid_results)
+#             current_dataset_col_slice = current_dataset_col_slice[fs_mid_results[i].indices]
+#         end
 
-        currX = X[:,current_dataset_col_slice]
-        currXinfo = Xinfo[current_dataset_col_slice]
+#         currX = X[:,current_dataset_col_slice]
+#         currXinfo = Xinfo[current_dataset_col_slice]
 
-        dataset_param = isnothing(y_coded) || SoleFeatures.is_unsupervised(fsm.selector) ? 
-            (currX, currXinfo) : 
-            (currX, y_coded, currXinfo)
+#         dataset_param = isnothing(y_coded) || SoleFeatures.is_unsupervised(fsm.selector) ? 
+#             (currX, currXinfo) : 
+#             (currX, y_coded, currXinfo)
 
-        idxes, score, g_indices =
-            if isnothing(gfs_params)
-                # perform normal feature selection
-                SoleFeatures._fs(dataset_param..., fsm...)..., nothing
-            else
-                # perform aggregated feature selection
-                sel_g_indices, g_scores, g_indices, grouped_variable_scores = SoleFeatures._fsgroup(
-                    dataset_param..., fsm..., gfs_params.aggrby;
-                    aggregatef = gfs_params.aggregatef,
-                    group_before_score = gfs_params.group_before_score
-                )
+#         idxes, score, g_indices =
+#             if isnothing(gfs_params)
+#                 # perform normal feature selection
+#                 SoleFeatures._fs(dataset_param..., fsm...)..., nothing
+#             else
+#                 # perform aggregated feature selection
+#                 sel_g_indices, g_scores, g_indices, grouped_variable_scores = SoleFeatures._fsgroup(
+#                     dataset_param..., fsm..., gfs_params.aggrby;
+#                     aggregatef = gfs_params.aggregatef,
+#                     group_before_score = gfs_params.group_before_score
+#                 )
 
-                # find indices to re-sort the scores of all variables to their
-                # original position in dataset columns
-                old_sort = sortperm(vcat(g_indices...))
+#                 # find indices to re-sort the scores of all variables to their
+#                 # original position in dataset columns
+#                 old_sort = sortperm(vcat(g_indices...))
 
-                vcat(g_indices[sel_g_indices]...), vcat(vcat(grouped_variable_scores...)[old_sort]...), g_indices
-            end
+#                 vcat(g_indices[sel_g_indices]...), vcat(vcat(grouped_variable_scores...)[old_sort]...), g_indices
+#             end
 
-        sort!(idxes)
+#         sort!(idxes)
 
-        push!(fs_mid_results, (
-            score = score,
-            indices = idxes,
-            group_aggr_func = isnothing(gfs_params) ? nothing : gfs_params.aggregatef,
-            group_indices = g_indices,
-            aggrby = isnothing(gfs_params) ? nothing : gfs_params.aggrby
-        ))
-    end
+#         push!(fs_mid_results, (
+#             score = score,
+#             indices = idxes,
+#             group_aggr_func = isnothing(gfs_params) ? nothing : gfs_params.aggregatef,
+#             group_indices = g_indices,
+#             aggrby = isnothing(gfs_params) ? nothing : gfs_params.aggrby
+#         ))
+#     end
 
-    dataset_col_slice = 1:size(X, 2)
-    for i in 1:length(fs_mid_results)
-        dataset_col_slice = dataset_col_slice[fs_mid_results[i].indices]
-    end
+#     dataset_col_slice = 1:size(X, 2)
+#     for i in 1:length(fs_mid_results)
+#         dataset_col_slice = dataset_col_slice[fs_mid_results[i].indices]
+#     end
 
-    if isa(return_mid_results, Val{true})
-        return X, X[:,dataset_col_slice], (extraction_column_names = Xinfo[dataset_col_slice], fs_mid_results = fs_mid_results)
-    else
-        return X[:,dataset_col_slice]
-    end
-end
-feature_selection(X::AbstractDataFrame, args...; kwargs...) = feature_selection(Matrix(X), args...; kwargs...)
+#     if isa(return_mid_results, Val{true})
+#         return X, X[:,dataset_col_slice], (extraction_column_names = Xinfo[dataset_col_slice], fs_mid_results = fs_mid_results)
+#     else
+#         return X[:,dataset_col_slice]
+#     end
+# end
+# feature_selection(X::AbstractDataFrame, args...; kwargs...) = feature_selection(Matrix(X), args...; kwargs...)
 
 """
 TODO: docs
@@ -919,6 +919,7 @@ end
 # ---------------------------------------------------------------------------- #
 #                                      debug                                   #
 # ---------------------------------------------------------------------------- #
+using SoleData, SoleFeatures
 # load a time-series dataset
 df, y = SoleData.load_arff_dataset("NATOPS")
 
@@ -938,14 +939,15 @@ fs_methods = [
 	),
 ]
 
-# prepare dataset for feature selection
-Xdf, Xinfo = @test_nowarn SoleFeatures.feature_selection_preprocess(df; features=ms, type=adaptivewindow, nwindows=6, relative_overlap=0.05)
-# Xdf, Xinfo = @test_nowarn SoleFeatures.feature_selection_preprocess(df; features=ms, type=wholewindow)
+# # prepare dataset for feature selection
+# Xdf, Xinfo = @test_nowarn SoleFeatures.feature_selection_preprocess(df; features=ms, type=adaptivewindow, nwindows=6, relative_overlap=0.05)
+# # Xdf, Xinfo = @test_nowarn SoleFeatures.feature_selection_preprocess(df; features=ms, type=wholewindow)
 
-@info "FEATURE SELECTION"
+# @info "FEATURE SELECTION"
 
-using BenchmarkTools
+# using BenchmarkTools
 
-a = feature_selection(Xdf, y, Xinfo, fs_methods = fs_methods, norm = false)
+Xdf, Xinfo = SoleFeatures.feature_selection_preprocess(df; features=ms, type=adaptivewindow, nwindows=6, relative_overlap=0.05)
+a = SoleFeatures.feature_selection(Xdf, y, Xinfo; fs_methods = fs_methods, norm = true)
 
 # 3.189 ms (52904 allocations: 5.54 MiB)

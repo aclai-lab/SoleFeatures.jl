@@ -49,6 +49,7 @@ include("filters/univariate/variancefilter.jl")
 export VarianceRanking, VarianceThreshold
 
 include("selection/fselection.jl")
+export feature_selection
 
 # using SoleData
 # using Reexport

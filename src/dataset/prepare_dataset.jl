@@ -185,7 +185,7 @@ function _features_groupby(
 )::Vector{Vector{Int}}
     res = Dict{Any, Vector{Int}}()
     for (i, g) in enumerate(Xinfo)
-        key = Tuple(getproperty(g, field) for field in group)
+        key = Tuple(getproperty(g, field) for field in aggrby)
         push!(get!(res, key, Int[]), i)
     end
     return collect(values(res))  # Return the grouped indices

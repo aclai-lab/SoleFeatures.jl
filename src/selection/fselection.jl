@@ -161,3 +161,134 @@ function _fsgroup(
 end
 
 _fsgroup(Xdf::AbstractDataFrame, args...) = _fsgroup(Matrix(Xdf), args...)
+
+# ---------------------------------------------------------------------------- #
+#                      main feature selection function                         #
+# ---------------------------------------------------------------------------- #
+"""
+TODO: documentation
+
+# Feature Selection with Aggregation Control
+
+## Overview
+The `feature_selection` function allows precise control over how feature aggregation
+is applied during the multi-step feature selection process.
+
+## Aggregation Parameter (`aggrby`)
+The `aggrby` parameter can be provided in two ways:
+
+1. **Single NamedTuple**: When provided as a single NamedTuple (not a vector), 
+   aggregation is only applied during the final step of feature selection.
+   The function automatically creates a vector where:
+   - All positions except the last contain `nothing`
+   - The last position contains the provided aggregation parameters
+
+2. **Vector of NamedTuples**: When provided as a vector, each element specifies 
+   the aggregation behavior for the corresponding step in `fs_methods`.
+"""
+function feature_selection(
+    X::AbstractMatrix{T},
+    y::Union{AbstractVector{<:Class}, Nothing},
+    Xinfo::Vector{<:InfoFeat};
+
+    aggrby::Union{ABT,AbstractVector{<:ABT}} = (
+        aggrby = (:var,),
+        aggregatef = length, # NOTE: or mean, minimum, maximum to aggregate scores instead of just counting number of selected features for each group
+        group_before_score = true,
+    ),
+
+    fs_methods::AbstractVector{<:NamedTuple{(:selector, :limiter)}} = [
+        ( # STEP 1: unsupervised variance-based filter
+            selector = SoleFeatures.VarianceFilter(SoleFeatures.IdentityLimiter()),
+            limiter = PercentageLimiter(0.5),
+        ),
+        ( # STEP 2: supervised Mutual Information filter
+            selector = SoleFeatures.MutualInformationClassif(SoleFeatures.IdentityLimiter()),
+            limiter = PercentageLimiter(0.1),
+        ),
+        ( # STEP 3: group results by variable
+            selector = IdentityFilter(),
+            limiter = SoleFeatures.IdentityLimiter(),
+        ),
+    ],
+
+    norm::Bool = false,
+    normalize_kwargs::NamedTuple = NamedTuple(),
+
+    cache_extracted_dataset::Union{Nothing,AbstractString} = nothing,
+    return_mid_results::Union{Val{true},Val{false}} = Val(true),
+# )::Union{DataFrame,Tuple{DataFrame,FSMidResults}} where {T<:Number}
+) where {T<:Number}
+    # prepare aggregation parameters
+    if !(aggrby isa AbstractVector)
+        # when aggrby is not a Vector assume that the user want to perform aggregation
+        #    only during the last step of feature selection TODO: document this properly!!!
+        aggrby = push!(Union{Nothing,NamedTuple}[fill(nothing, max(length(fs_methods)-1, 0))...], aggrby)
+    end
+
+    # prepare labels
+    y_coded = @. CategoricalArrays.levelcode(y)
+
+    # dataset normalization
+    norm && _normalize_dataset(X, Xinfo; normalize_kwargs...)
+
+    # feature selection
+    fs_mid_results = NamedTuple{(:score, :indices,:group_aggr_func,:group_indices,:aggrby)}[]
+
+    for (fsm, gfs_params) in zip(fs_methods, aggrby)
+        current_dataset_col_slice = 1:size(X, 2)
+
+         # pick survived columns only
+        for i in 1:length(fs_mid_results)
+            current_dataset_col_slice = current_dataset_col_slice[fs_mid_results[i].indices]
+        end
+
+        currX = X[:,current_dataset_col_slice]
+        currXinfo = Xinfo[current_dataset_col_slice]
+
+        dataset_param = isnothing(y_coded) || SoleFeatures.is_unsupervised(fsm.selector) ? 
+            (currX, currXinfo) : 
+            (currX, y_coded, currXinfo)
+
+        idxes, score, g_indices =
+            if isnothing(gfs_params)
+                # perform normal feature selection
+                SoleFeatures._fs(dataset_param..., fsm...)..., nothing
+            else
+                # perform aggregated feature selection
+                sel_g_indices, g_scores, g_indices, grouped_variable_scores = SoleFeatures._fsgroup(
+                    dataset_param..., fsm..., gfs_params.aggrby;
+                    aggregatef = gfs_params.aggregatef,
+                    group_before_score = gfs_params.group_before_score
+                )
+
+                # find indices to re-sort the scores of all variables to their
+                # original position in dataset columns
+                old_sort = sortperm(vcat(g_indices...))
+
+                vcat(g_indices[sel_g_indices]...), vcat(vcat(grouped_variable_scores...)[old_sort]...), g_indices
+            end
+
+        sort!(idxes)
+
+        push!(fs_mid_results, (
+            score = score,
+            indices = idxes,
+            group_aggr_func = isnothing(gfs_params) ? nothing : gfs_params.aggregatef,
+            group_indices = g_indices,
+            aggrby = isnothing(gfs_params) ? nothing : gfs_params.aggrby
+        ))
+    end
+
+    dataset_col_slice = 1:size(X, 2)
+    for i in 1:length(fs_mid_results)
+        dataset_col_slice = dataset_col_slice[fs_mid_results[i].indices]
+    end
+
+    if isa(return_mid_results, Val{true})
+        return X, X[:,dataset_col_slice], (extraction_column_names = Xinfo[dataset_col_slice], fs_mid_results = fs_mid_results)
+    else
+        return X[:,dataset_col_slice]
+    end
+end
+feature_selection(Xdf::AbstractDataFrame, args...; kwargs...) = feature_selection(Matrix(Xdf), args...; kwargs...)
