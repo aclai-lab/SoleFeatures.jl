@@ -437,53 +437,53 @@ end
 #     return collect(values(res))  # Return the grouped indices
 # end
 
-"""
-    _normalize_dataset!(
-        X::AbstractMatrix{T},
-        Xinfo::Vector{<:SoleFeatures.InfoFeat};
-        min_quantile::AbstractFloat=0.00,
-        max_quantile::AbstractFloat=1.00,
-        group::Tuple{Vararg{Symbol}}=(:nwin, :feat),
-    ) where {T<:Number}
+# """
+#     _normalize_dataset!(
+#         X::AbstractMatrix{T},
+#         Xinfo::Vector{<:SoleFeatures.InfoFeat};
+#         min_quantile::AbstractFloat=0.00,
+#         max_quantile::AbstractFloat=1.00,
+#         group::Tuple{Vararg{Symbol}}=(:nwin, :feat),
+#     ) where {T<:Number}
 
-Normalize the dataset matrix `X` by applying min-max normalization to groups of features.
+# Normalize the dataset matrix `X` by applying min-max normalization to groups of features.
 
-## Parameters
-- `X`: The input matrix to be normalized in-place
-- `Xinfo`: A vector of feature information objects that contain metadata about each feature
-- `min_quantile`: The quantile to use as the minimum value (default: 0.00)
-  - When set to 0.00, uses the absolute minimum value
-  - Higher values (e.g., 0.05) ignore lower outliers by using the specified quantile instead
-- `max_quantile`: The quantile to use as the maximum value (default: 1.00)
-  - When set to 1.00, uses the absolute maximum value
-  - Lower values (e.g., 0.95) ignore upper outliers by using the specified quantile instead
-- `group`: A tuple of symbols representing fields in the `InfoFeat` objects to group by (default: (:nwin, :feat))
-  - Features with the same values for these fields will be normalized together
-  - For example, with the default (:nwin, :feat), features from the same window and of the same type
-    will be normalized as a group, preserving their relative scale
+# ## Parameters
+# - `X`: The input matrix to be normalized in-place
+# - `Xinfo`: A vector of feature information objects that contain metadata about each feature
+# - `min_quantile`: The quantile to use as the minimum value (default: 0.00)
+#   - When set to 0.00, uses the absolute minimum value
+#   - Higher values (e.g., 0.05) ignore lower outliers by using the specified quantile instead
+# - `max_quantile`: The quantile to use as the maximum value (default: 1.00)
+#   - When set to 1.00, uses the absolute maximum value
+#   - Lower values (e.g., 0.95) ignore upper outliers by using the specified quantile instead
+# - `group`: A tuple of symbols representing fields in the `InfoFeat` objects to group by (default: (:nwin, :feat))
+#   - Features with the same values for these fields will be normalized together
+#   - For example, with the default (:nwin, :feat), features from the same window and of the same type
+#     will be normalized as a group, preserving their relative scale
 
-## Details
-The function performs group-wise normalization, which is essential when working with features that 
-should maintain their relative scales. For example, when working with time series data, different 
-measures (min, max, mean) applied to the same window should be normalized together to preserve 
-their relationships.
-"""
-function _normalize_dataset!(
-    X::AbstractMatrix{T},
-    Xinfo::Vector{<:SoleFeatures.InfoFeat};
-    min_quantile::AbstractFloat=0.00,
-    max_quantile::AbstractFloat=1.00,
-    group::Tuple{Vararg{Symbol}}=(:nwin, :feat),
-) where {T<:Number}
-    for g in _features_groupby(Xinfo, group)
-        SoleFeatures.minmax_normalize!(
-            view(X, :, g);
-            min_quantile = min_quantile,
-            max_quantile = max_quantile,
-            col_quantile = false
-        )
-    end
-end
+# ## Details
+# The function performs group-wise normalization, which is essential when working with features that 
+# should maintain their relative scales. For example, when working with time series data, different 
+# measures (min, max, mean) applied to the same window should be normalized together to preserve 
+# their relationships.
+# """
+# function _normalize_dataset!(
+#     X::AbstractMatrix{T},
+#     Xinfo::Vector{<:SoleFeatures.InfoFeat};
+#     min_quantile::AbstractFloat=0.00,
+#     max_quantile::AbstractFloat=1.00,
+#     group::Tuple{Vararg{Symbol}}=(:nwin, :feat),
+# ) where {T<:Number}
+#     for g in _features_groupby(Xinfo, group)
+#         SoleFeatures.minmax_normalize!(
+#             view(X, :, g);
+#             min_quantile = min_quantile,
+#             max_quantile = max_quantile,
+#             col_quantile = false
+#         )
+#     end
+# end
 
 @safeconst FSMidResults =  NamedTuple{
     (:extraction_column_names,:fs_mid_results),
