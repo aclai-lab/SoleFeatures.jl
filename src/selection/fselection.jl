@@ -199,26 +199,23 @@ function feature_selection(
 
     fs_methods::AbstractVector{<:NamedTuple{(:selector, :limiter)}} = [
         ( # STEP 1: unsupervised variance-based filter
-            selector = SoleFeatures.VarianceFilter(SoleFeatures.IdentityLimiter()),
-            limiter = PercentageLimiter(0.5),
+            selector = VarianceFilter(SoleFeatures.IdentityLimiter()),
+            limiter = PercentageLimiter(0.1),
         ),
         ( # STEP 2: supervised Mutual Information filter
-            selector = SoleFeatures.MutualInformationClassif(SoleFeatures.IdentityLimiter()),
+            selector = MutualInformationClassif(SoleFeatures.IdentityLimiter()),
             limiter = PercentageLimiter(0.1),
         ),
         ( # STEP 3: group results by variable
             selector = IdentityFilter(),
-            limiter = SoleFeatures.IdentityLimiter(),
+            limiter = IdentityLimiter(),
         ),
     ],
 
     norm::Bool = false,
-    normalize_kwargs::NamedTuple = NamedTuple(),
-
-    cache_extracted_dataset::Union{Nothing,AbstractString} = nothing,
-    return_mid_results::Union{Val{true},Val{false}} = Val(true),
-# )::Union{DataFrame,Tuple{DataFrame,FSMidResults}} where {T<:Number}
-) where {T<:Number}
+    normalize_kwargs::NamedTuple = NamedTuple()
+)::Tuple{DataFrame, Vector{InfoFeat}, Vector{NamedTuple}} where {T<:Number}
+# ) where {T<:Number}
     # prepare aggregation parameters
     if !(aggrby isa AbstractVector)
         # when aggrby is not a Vector assume that the user want to perform aggregation
@@ -238,9 +235,9 @@ function feature_selection(
     for (fsm, gfs_params) in zip(fs_methods, aggrby)
         current_dataset_col_slice = 1:size(X, 2)
 
-         # pick survived columns only
-        for i in 1:length(fs_mid_results)
-            current_dataset_col_slice = current_dataset_col_slice[fs_mid_results[i].indices]
+        # pick survived columns only
+        for f in fs_mid_results
+            current_dataset_col_slice = current_dataset_col_slice[f.indices]
         end
 
         currX = X[:,current_dataset_col_slice]
@@ -279,16 +276,20 @@ function feature_selection(
             aggrby = isnothing(gfs_params) ? nothing : gfs_params.aggrby
         ))
     end
-
+    
     dataset_col_slice = 1:size(X, 2)
-    for i in 1:length(fs_mid_results)
-        dataset_col_slice = dataset_col_slice[fs_mid_results[i].indices]
+
+    for f in fs_mid_results
+        dataset_col_slice = dataset_col_slice[f.indices]
     end
 
-    if isa(return_mid_results, Val{true})
-        return X, X[:,dataset_col_slice], (extraction_column_names = Xinfo[dataset_col_slice], fs_mid_results = fs_mid_results)
-    else
-        return X[:,dataset_col_slice]
-    end
+    namecols = [string(Xinfo[d].feat) * "(" * Xinfo[d].var * ")w" * string(Xinfo[d].nwin) for d in dataset_col_slice]
+
+    return DataFrame(X[:,dataset_col_slice], namecols), Xinfo[dataset_col_slice], fs_mid_results
 end
-feature_selection(Xdf::AbstractDataFrame, args...; kwargs...) = feature_selection(Matrix(Xdf), args...; kwargs...)
+
+feature_selection(
+    Xdf::AbstractDataFrame, 
+    args...; 
+    kwargs...
+)::Tuple{DataFrame, Vector{InfoFeat}, Vector{NamedTuple}} = feature_selection(Matrix(Xdf), args...; kwargs...)

@@ -37,16 +37,18 @@ export feature_selection_preprocess
 
 # filters
 include("filters/limiter.jl")
-export AbstractLimiter
 export PercentageLimiter
 include("filters/interface.jl")
 
 include("filters/univariate/identityfilter.jl")
+export IdentityFilter, IdentityLimiter
 include("filters/mutual_info.jl")
 include("filters/univariate/mutualinformationclassif.jl")
-export MutualInformationClassifRanking
+export MutualInformationClassif, MutualInformationClassifRanking
+include("filters/univariate/pearsoncorfilter.jl")
+export PearsonCorFilter, PearsonCorRanking
 include("filters/univariate/variancefilter.jl")
-export VarianceRanking, VarianceThreshold
+export VarianceFilter, VarianceRanking, VarianceThreshold
 
 include("selection/fselection.jl")
 export feature_selection
