@@ -303,7 +303,8 @@ function _treatment(
                 ]...)
             )
         elseif treatment == :reducesize
-            f = haskey(_wparams, :reducefunc) ? _wparams.reducefunc : mean
+            # TODO this must be implemented: not only mean
+            f = haskey(winparams.params, :reducefunc) ? winparams.params.reducefunc : mean
             push!(valid_X, [
                 vcat([f(col[r]) for r in row_intervals],
                     # if interval_diff is positive, fill the rest with NaN
