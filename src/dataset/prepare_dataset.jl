@@ -38,6 +38,37 @@ function _check_dimensions(X::DataFrame)
     return ref_dims
 end
 
+"""
+    find_max_length(X::DataFrame) -> Tuple{Vararg{Int}}
+
+Find the maximum dimensions of elements in a DataFrame.
+
+# Arguments
+- `X::DataFrame`: A DataFrame containing scalar values or array-like elements
+
+# Returns
+- `Tuple{Vararg{Int}}`: A tuple of maximum sizes along each dimension:
+  - For scalar values: Returns `(1,)` 
+  - For vector elements: Returns `(max_length,)`, where `max_length` is the maximum vector length
+  - For n-dimensional arrays: Returns a tuple with maximum size in each dimension
+"""
+function find_max_length(X::DataFrame)
+    isempty(X) && return 0
+    
+    # check the type of the first element to determine DataFrame structure
+    first_element = first(skipmissing(first(eachcol(X))))
+    
+    if first_element isa Number
+        return (1,)
+    else
+        ndims_val = ndims(first_element)
+        # for each dimension, find the maximum size
+        ntuple(ndims_val) do dim
+            mapreduce(col -> maximum(x -> size(x, dim), col), max, eachcol(X); init=0)
+        end
+    end
+end
+
 # ---------------------------------------------------------------------------- #
 #                              min/max normalize                               #
 # ---------------------------------------------------------------------------- #
@@ -225,17 +256,19 @@ function _treatment(
     vnames::VarNames,
     treatment::Symbol,
     features::FeatNames,
-    winparams::NamedTuple
+    winparams::WinParams
 )
-    # check parameters
-    haskey(winparams, :type) || throw(ArgumentError("winparams must contain a type, $(keys(WIN_PARAMS))"))
-    haskey(WIN_PARAMS, winparams.type) || throw(ArgumentError("winparams.type must be one of: $(keys(WIN_PARAMS))"))
+    # working with audio files, we need to consider audio of different lenghts.
+    # if we use a windowing strategy, like moving window, we keep those different lenghts,
+    # and this is a problem. 
+    # we propose to find the maximum lenght in timeseries dataset and use it as reference,
+    # then, if we find shorter timeseries, we fill the rest with NaN values.
+    # This method is only related to timeseries data.
+    max_interval = first(find_max_length(X))
+    # TODO remove 'first' when we move to n dimensional
+    n_intervals = winparams.type(max_interval; winparams.params...)
 
-    max_interval = maximum(length.(eachrow(X)))
-    _wparams = NamedTuple(k => v for (k,v) in pairs(winparams) if k != :type)
-    n_intervals = winparams.type(max_interval; _wparams...)
-
-    # Initialize DataFrame
+    # initialize DataFrame
     valid_X = begin
         if treatment == :aggregate        # propositional
             if n_intervals == 1
@@ -256,9 +289,9 @@ function _treatment(
         end
     end
 
-    # Fill DataFrame
+    # fill DataFrame
     for row in eachrow(X)
-        row_intervals = winparams.type(maximum(length.(collect(row))); _wparams...)
+        row_intervals = winparams.type(maximum(length.(collect(row))); winparams.params...)
         # interval_diff is used in case we encounter a row with less intervals than the maximum
         interval_diff = length(n_intervals) - length(row_intervals)
 

@@ -39,6 +39,10 @@ const FeatNames = Union{Vector{<:Base.Callable}, Nothing}
 #     nfolds      = 6,
 #     rng         = TaskLocalRNG()
 # )
+struct WinParams
+    type         :: Base.Callable
+    params       :: NamedTuple
+end
 
 const DEFAULT_FE = (features = catch9,)
 
