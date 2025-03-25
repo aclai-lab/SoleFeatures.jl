@@ -52,7 +52,7 @@ Find the maximum dimensions of elements in a DataFrame.
   - For vector elements: Returns `(max_length,)`, where `max_length` is the maximum vector length
   - For n-dimensional arrays: Returns a tuple with maximum size in each dimension
 """
-function find_max_length(X::DataFrame)
+function find_max_length(X::AbstractMatrix)
     isempty(X) && return 0
     
     # check the type of the first element to determine DataFrame structure
@@ -251,71 +251,153 @@ parameters defined in `winparams`.
 # Throws
 - `ArgumentError`: If `winparams` does not contain a valid `type`.
 """
+# function _treatment(
+#     X::AbstractMatrix,
+#     vnames::VarNames,
+#     treatment::Symbol,
+#     features::FeatNames,
+#     winparams::WinParams
+# )
+#     # working with audio files, we need to consider audio of different lengths.
+#     max_interval = first(find_max_length(X))
+#     # TODO remove 'first' when we move to n dimensional
+#     n_intervals = winparams.type(max_interval; winparams.params...)
+
+#     # initialize DataFrame
+#     valid_X = begin
+#         if treatment == :aggregate        # propositional
+#             if n_intervals == 1
+#                 DataFrame([v => Float64[]
+#                             for v in [string(f, "(", v, ")")
+#                                 for f in features for v in vnames]]
+#                 )
+#             else
+#                 DataFrame([v => Float64[]
+#                             for v in [string(f, "(", v, ")w", i)
+#                                 for f in features for v in vnames
+#                                 for i in 1:length(n_intervals)]]
+#                 )
+#             end
+
+#         elseif treatment == :reducesize   # modal
+#             DataFrame([name => Vector{Float64}[] for name in vnames])
+#         end
+#     end
+
+#     # fill DataFrame
+#     for row in eachrow(X)
+#         row_intervals = winparams.type(maximum(length.(collect(row))); winparams.params...)
+#         # interval_diff is used in case we encounter a row with less intervals than the maximum
+#         interval_diff = length(n_intervals) - length(row_intervals)
+
+#         if treatment == :aggregate
+#             push!(valid_X, vcat([
+#                 vcat([f(col[r]) for r in row_intervals],
+#                     # if interval_diff is positive, fill the rest with NaN
+#                     fill(NaN, interval_diff)) for col in row, f in features
+#                 ]...)
+#             )
+#         elseif treatment == :reducesize
+#             # TODO this must be implemented: not only mean
+#             f = haskey(winparams.params, :reducefunc) ? winparams.params.reducefunc : mean
+#             push!(valid_X, [
+#                 vcat([f(col[r]) for r in row_intervals],
+#                     # if interval_diff is positive, fill the rest with NaN
+#                     fill(NaN, interval_diff)) for col in row
+#                 ]
+#             )
+#         end
+#     end
+
+#     return valid_X
+# end
+
 function _treatment(
-    X::DataFrame,
+    X::AbstractMatrix{T},
     vnames::VarNames,
     treatment::Symbol,
     features::FeatNames,
     winparams::WinParams
-)
-    # working with audio files, we need to consider audio of different lenghts.
-    # if we use a windowing strategy, like moving window, we keep those different lenghts,
-    # and this is a problem. 
-    # we propose to find the maximum lenght in timeseries dataset and use it as reference,
-    # then, if we find shorter timeseries, we fill the rest with NaN values.
-    # This method is only related to timeseries data.
+) where T
+    # working with audio files, we need to consider audio of different lengths.
     max_interval = first(find_max_length(X))
-    # TODO remove 'first' when we move to n dimensional
     n_intervals = winparams.type(max_interval; winparams.params...)
 
-    # initialize DataFrame
-    valid_X = begin
-        if treatment == :aggregate        # propositional
-            if n_intervals == 1
-                DataFrame([v => Float64[]
-                            for v in [string(f, "(", v, ")")
-                                for f in features for v in vnames]]
-                )
-            else
-                DataFrame([v => Float64[]
-                            for v in [string(f, "(", v, ")w", i)
-                                for f in features for v in vnames
-                                for i in 1:length(n_intervals)]]
-                )
-            end
-
-        elseif treatment == :reducesize   # modal
-            DataFrame([name => Vector{Float64}[] for name in vnames])
-        end
-    end
-
-    # fill DataFrame
-    for row in eachrow(X)
-        row_intervals = winparams.type(maximum(length.(collect(row))); winparams.params...)
-        # interval_diff is used in case we encounter a row with less intervals than the maximum
-        interval_diff = length(n_intervals) - length(row_intervals)
-
-        if treatment == :aggregate
-            push!(valid_X, vcat([
-                vcat([f(col[r]) for r in row_intervals],
-                    # if interval_diff is positive, fill the rest with NaN
-                    fill(NaN, interval_diff)) for col in row, f in features
+    # define column names and prepare data structure based on treatment type
+    if treatment == :aggregate        # propositional
+        if n_intervals == 1
+            col_names = [string(f, "(", v, ")") for f in features for v in vnames]
+            
+            n_rows = size(X, 1)
+            n_cols = length(col_names)
+            result_matrix = Matrix{eltype(T)}(undef, n_rows, n_cols)
+            
+            # fill matrix
+            for (row_idx, row) in enumerate(eachrow(X))
+                row_intervals = winparams.type(maximum(length.(collect(row))); winparams.params...)
+                interval_diff = length(n_intervals) - length(row_intervals)
+                
+                # calculate feature values for this row
+                feature_values = vcat([
+                    vcat([f(col[r]) for r in row_intervals],
+                         fill(NaN, interval_diff)) for col in row, f in features
                 ]...)
-            )
-        elseif treatment == :reducesize
-            # TODO this must be implemented: not only mean
+                
+                result_matrix[row_idx, :] = feature_values
+            end
+        else
+            # define column names with features names and window indices
+            col_names = [string(f, "(", v, ")w", i) 
+                         for f in features 
+                         for v in vnames 
+                         for i in 1:length(n_intervals)]
+            
+            n_rows = size(X, 1)
+            n_cols = length(col_names)
+            result_matrix = Matrix{eltype(T)}(undef, n_rows, n_cols)
+            
+            # fill matrix
+            for (row_idx, row) in enumerate(eachrow(X))
+                row_intervals = winparams.type(maximum(length.(collect(row))); winparams.params...)
+                interval_diff = length(n_intervals) - length(row_intervals)
+                
+                # calculate feature values for this row
+                feature_values = vcat([
+                    vcat([f(col[r]) for r in row_intervals],
+                         fill(NaN, interval_diff)) for col in row, f in features
+                ]...)
+
+                result_matrix[row_idx, :] = feature_values
+            end
+        end
+    elseif treatment == :reducesize   # modal
+        col_names = vnames
+        
+        n_rows = size(X, 1)
+        n_cols = length(col_names)
+        result_matrix = Matrix{T}(undef, n_rows, n_cols)
+        
+        for (row_idx, row) in enumerate(eachrow(X))
+            row_intervals = winparams.type(maximum(length.(collect(row))); winparams.params...)
+            interval_diff = length(n_intervals) - length(row_intervals)
+            
+            # the reduction function (default to mean if not specified)
             f = haskey(winparams.params, :reducefunc) ? winparams.params.reducefunc : mean
-            push!(valid_X, [
+            
+            # calculate reduced values for this row
+            reduced_data = [
                 vcat([f(col[r]) for r in row_intervals],
-                    # if interval_diff is positive, fill the rest with NaN
-                    fill(NaN, interval_diff)) for col in row
-                ]
-            )
+                     fill(NaN, interval_diff)) for col in row
+            ]
+            
+            result_matrix[row_idx, :] = reduced_data
         end
     end
 
-    return valid_X
+    return result_matrix, col_names
 end
+
+_treatment(df::DataFrame, args...) = _treatment(Matrix(df), args...)
 
 # # ---------------------------------------------------------------------------- #
 # #                                 partitioning                                 #
@@ -497,7 +579,7 @@ end
 # function prepare_dataset(
 #     X::AbstractDataFrame,
 #     y::AbstractVector,
-#     model::AbstractModelSet
+#     model::AbstractModelSetup
 # )
 #     # check if it's needed also validation set
 #     # validation = haskey(VALIDATION, model.type) && getproperty(model.params, VALIDATION[model.type][1]) != VALIDATION[model.type][2]

@@ -69,8 +69,8 @@ const WIN_PARAMS = Dict(
 #     DatasetInfo{F<:Base.Callable, R<:Real, I<:Integer, RNG<:AbstractRNG} <: AbstractDatasetConfig
 
 # An immutable struct containing dataset configuration and metadata.
-# It is included in ModelConfig and Dataset structs,
-# In a ModelConfig object, it is reachable through the `ds.info` field. 
+# It is included in Modelset and Dataset structs,
+# In a Modelset object, it is reachable through the `ds.info` field. 
 
 # # Fields
 # - `algo::Symbol`:
