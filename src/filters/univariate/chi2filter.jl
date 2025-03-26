@@ -1,18 +1,19 @@
+# ---------------------------------------------------------------------------- #
+#                                chi2 filter                                   #
+# ---------------------------------------------------------------------------- #
 struct Chi2Filter{T<:AbstractLimiter} <: AbstractChi2Filter{T}
     limiter::T
     # parameters
 end
 
-# ========================================================================================
-# TRAITS
-
 is_supervised(::AbstractChi2Filter) = true
+is_unsupervised(::AbstractChi2Filter) = false
 
 # ========================================================================================
 # SCORE
 
 function score(
-    X::AbstractDataFrame,
+    X::AbstractMatrix,
     y::AbstractVector{<:Class},
     selector::Chi2Filter
 )::Vector{Float64}
@@ -29,9 +30,10 @@ function score(
     end
     return scores
 end
+score(Xdf::AbstractDataFrame, y::AbstractVector{<:Class}, selector::Chi2Filter) = score(Matrix(Xdf), y, selector)
 
-# ========================================================================================
-# CUSTOM CONSTRUCTORS
-
-Chi2Threshold(; alpha = 0.05) = Chi2Filter(ThresholdLimiter(alpha, <=))
+# ---------------------------------------------------------------------------- #
+#                             custom constructors                              #
+# ---------------------------------------------------------------------------- #
+Chi2Threshold(; alpha = 0.05) = Chi2Filter(ThresholdLimiter(alpha, ≤))
 Chi2Ranking(nbest) =  Chi2Filter(RankingLimiter(nbest, false))

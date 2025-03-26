@@ -1,22 +1,34 @@
-# =========================================================================================
-# Univariate filters
+# ---------------------------------------------------------------------------- #
+#                             univariate filters                               #
+# ---------------------------------------------------------------------------- #
+abstract type AbstractUnivariateFilterBased{T<:AbstractLimiter} <: AbstractFilterBased end
 
-abstract type UnivariateFilterBased{T<:AbstractLimiter} <: AbstractFilterBased end
+abstract type AbstractVarianceFilter{T<:AbstractLimiter} <: AbstractUnivariateFilterBased{T} end
+abstract type AbstractRandomFilter{T<:AbstractLimiter} <: AbstractUnivariateFilterBased{T} end
+abstract type AbstractStatisticalFilter{T<:AbstractLimiter} <: AbstractUnivariateFilterBased{T} end
+abstract type AbstractChi2Filter{T<:AbstractLimiter} <: AbstractUnivariateFilterBased{T} end
+abstract type AbstractPearsonCorFilter{T<:AbstractLimiter} <: AbstractUnivariateFilterBased{T} end
+abstract type AbstractMutualInformationClassif{T<:AbstractLimiter} <: AbstractUnivariateFilterBased{T} end
+abstract type AbstractSupLaplacianScore{T<:AbstractLimiter} <: AbstractUnivariateFilterBased{T} end
+abstract type AbstractFisherScore{T<:AbstractLimiter} <: AbstractUnivariateFilterBased{T} end
+abstract type AbstractIdentityFilter{T<:AbstractLimiter} <: AbstractUnivariateFilterBased{T} end
 
-abstract type AbstractVarianceFilter{T<:AbstractLimiter} <: UnivariateFilterBased{T} end
-abstract type AbstractRandomFilter{T<:AbstractLimiter} <: UnivariateFilterBased{T} end
-abstract type AbstractStatisticalFilter{T<:AbstractLimiter} <: UnivariateFilterBased{T} end
-abstract type AbstractChi2Filter{T<:AbstractLimiter} <: UnivariateFilterBased{T} end
-abstract type AbstractPearsonCorFilter{T<:AbstractLimiter} <: UnivariateFilterBased{T} end
-abstract type AbstractMutualInformationClassif{T<:AbstractLimiter} <: UnivariateFilterBased{T} end
-abstract type AbstractSupLaplacianScore{T<:AbstractLimiter} <: UnivariateFilterBased{T} end
-abstract type AbstractFisherScore{T<:AbstractLimiter} <: UnivariateFilterBased{T} end
+is_univariate(::AbstractUnivariateFilterBased) = true
 
-is_univariate(::UnivariateFilterBased) = true
+# ---------------------------------------------------------------------------- #
+#                            multivariate filters                              #
+# ---------------------------------------------------------------------------- #
+abstract type AbstractMultivariateFilterBased <: AbstractFilterBased end
+abstract type AbstractCorrelationFilter <: AbstractMultivariateFilterBased end
 
+is_multivariate(::AbstractMultivariateFilterBased) = true
+
+# ---------------------------------------------------------------------------- #
+#                            functions definitions                             #
+# ---------------------------------------------------------------------------- #
 function score(
     X::AbstractDataFrame,
-    selector::UnivariateFilterBased{<:AbstractLimiter}
+    selector::AbstractUnivariateFilterBased{<:AbstractLimiter}
 )
     return error("`score` for unsupervised selectors not implemented " *
         "for type: $(typeof(selector))")
@@ -25,13 +37,13 @@ end
 function score(
     X::AbstractDataFrame,
     y::AbstractVector{<:Class},
-    selector::UnivariateFilterBased{<:AbstractLimiter}
+    selector::AbstractUnivariateFilterBased{<:AbstractLimiter}
 )
     return error("`score` for supervised selectors not implemented " *
         "for type: $(typeof(selector))")
 end
 
-function limiter(selector::UnivariateFilterBased)
+function limiter(selector::AbstractUnivariateFilterBased)
     !hasproperty(selector, :limiter) &&
         throw(ErrorException("`selector` struct not contain `limiter` field"))
     return selector.limiter
@@ -39,7 +51,7 @@ end
 
 function apply(
     X::AbstractDataFrame,
-    selector::UnivariateFilterBased
+    selector::AbstractUnivariateFilterBased
 )
     return limit(score(X, selector), limiter(selector))
 end
@@ -47,16 +59,7 @@ end
 function apply(
     X::AbstractDataFrame,
     y::AbstractVector{<:Class},
-    selector::UnivariateFilterBased
+    selector::AbstractUnivariateFilterBased
 )
     return limit(score(X, y, selector), limiter(selector))
 end
-
-# =========================================================================================
-# Multivariate filters
-
-abstract type MultivariateFilterBased <: AbstractFilterBased end
-
-abstract type AbstractCorrelationFilter <: MultivariateFilterBased end
-
-is_multivariate(::MultivariateFilterBased) = true

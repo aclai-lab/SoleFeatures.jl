@@ -1,29 +1,23 @@
+# ---------------------------------------------------------------------------- #
+#                              variance filter                                 #
+# ---------------------------------------------------------------------------- #
 struct VarianceFilter{T<:AbstractLimiter} <: AbstractVarianceFilter{T}
     limiter::T
-    # parameters
+    # TODO parameters
 end
 
-# ========================================================================================
-# TRAITS
-
+is_supervised(::AbstractVarianceFilter) = false
 is_unsupervised(::AbstractVarianceFilter) = true
 
-# ========================================================================================
-# SCORE
-
-function score(
-    X::AbstractDataFrame,
-    selector::VarianceFilter
-)
+function score(X::AbstractMatrix, selector::VarianceFilter)::Vector{Float64}
     # sum is scaled with n-1
-    return StatsBase.var.(eachcol(X))
+    # var(itr; corrected::Bool=true, mean=nothing[, dims])
+    return var.(eachcol(X))
 end
+score(Xdf::AbstractDataFrame, selector::VarianceFilter)::Vector{Float64} = score(Matrix(Xdf), selector)
 
-# ========================================================================================
-# CUSTOM CONSTRUCTORS
-
-# Ranking
+# ---------------------------------------------------------------------------- #
+#                             custom constructors                              #
+# ---------------------------------------------------------------------------- #
 VarianceRanking(nbest) = VarianceFilter(RankingLimiter(nbest, true))
-
-# Threshold
-VarianceThreshold(threshold) = VarianceFilter(ThresholdLimiter(threshold, >=))
+VarianceThreshold(threshold) = VarianceFilter(ThresholdLimiter(threshold, ≥))

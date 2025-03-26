@@ -1,41 +1,31 @@
+# ---------------------------------------------------------------------------- #
+#                            correlation filter                                #
+# ---------------------------------------------------------------------------- #
 struct CorrelationFilter <: AbstractCorrelationFilter
     corf::Function
     threshold::Real
 
     function CorrelationFilter(corf::Function, threshold::Real)
-        if (threshold < 0 || threshold > 1)
-            throw(DomainError("Threshold must be within 0 and 1"))
-        end
-        return new(corf, threshold)
+        (0 ≤ threshold ≤ 1) || throw(DomainError("Threshold must be within 0 and 1"))
+        new(corf, threshold)
     end
 end
-
-# ========================================================================================
-# ACCESSORS
 
 corf(selector::CorrelationFilter) = selector.corf
 threshold(selector::CorrelationFilter) = selector.threshold
 
-# ========================================================================================
-# TRAITS
-
+is_supervised(::AbstractCorrelationFilter) = flase
 is_unsupervised(::AbstractCorrelationFilter) = true
 
-# ========================================================================================
-# APPLY
-
-function apply(
-    X::AbstractDataFrame,
-    selector::CorrelationFilter
-)::Vector{Int}
-    mtrx = Matrix(X)
-    cormtrx = corf(selector)(mtrx)
+function apply(X::AbstractMatrix, selector::CorrelationFilter)::Vector{Int}
+    cormtrx = corf(selector)(X)
     return findcorrelation(cormtrx; threshold=threshold(selector))
 end
+apply(Xdf::AbstractDataFrame, selector::CorrelationFilter)::Vector{Int} = apply(Matrix(Xdf), selector)
 
-# ========================================================================================
-# UTILS
-
+# ---------------------------------------------------------------------------- #
+#                                     utils                                    #
+# ---------------------------------------------------------------------------- #
 """
     findcorrelation(cormtrx; threshold)
 """
