@@ -1,7 +1,7 @@
 name = "SoleFeatures"
 uuid = "3ceb4e54-d968-4e97-8c18-2deeb0d429fb"
 authors = ["Patrik Cavina", "Federico Manzella", "Giovanni Pagliarini"]
-version = "0.2.0"
+version = "0.2.1"
 
 [deps]
 Catch22 = "acdeb78f-3d39-4310-8fdf-6d75c17c6d5a"
