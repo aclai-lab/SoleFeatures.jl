@@ -1,4 +1,3 @@
-__precompile__()
 module SoleFeatures
 
 using StatsBase
