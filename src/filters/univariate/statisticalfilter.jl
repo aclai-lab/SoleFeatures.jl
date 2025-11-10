@@ -1,3 +1,6 @@
+# ---------------------------------------------------------------------------- #
+#                             statistical filter                               #
+# ---------------------------------------------------------------------------- #
 """
 Perform provided hypothesis test `htest` (from: https://github.com/JuliaStats/HypothesisTests.jl)
 on each variable.
@@ -11,23 +14,15 @@ struct StatisticalFilter{T<:AbstractLimiter} <: AbstractStatisticalFilter{T}
     versus::Symbol
 end
 
-# ========================================================================================
-# ACCESSORS
-
 htest(selector::StatisticalFilter) = selector.htest
 versus(selector::StatisticalFilter) = selector.versus
 
-# ========================================================================================
-# TRAITS
-
 is_supervised(::AbstractStatisticalFilter) = true
-
-# ========================================================================================
-# SCORE
+is_unsupervised(::AbstractStatisticalFilter) = false
 
 function score(
-    X::AbstractDataFrame,
-    y::AbstractVector{<:Class},
+    X::AbstractArray,
+    y::Vector{Int64},
     selector::StatisticalFilter
 )::DataFrame
     stattest = htest(selector)
@@ -45,10 +40,10 @@ function score(
     # the second the index, or indices, of the classes with which the first item is compared
     itr = Vector(vrs == :ovo ?
             collect(subsets(ic, 2)) :
-            [ [first(setdiff(ic, x)), x] for x in subsets(ic, nclass - 1) ]
+            [[first(setdiff(ic, x)), x] for x in subsets(ic, nclass - 1)]
     )
 
-    colnames = join.([ [classes[c], classes[vs]] for (c, vs) in itr ], "-vs-")
+    colnames = join.([[classes[c], classes[vs]] for (c, vs) in itr ], "-vs-")
     scores = DataFrame(colnames .=> [Float64[]])
     for cidx in 1:numcol
         pvals = []
@@ -65,42 +60,40 @@ function score(
     return scores
 end
 
-# ========================================================================================
-# CUSTOM LIMITER
-
+# ---------------------------------------------------------------------------- #
+#                               custom limiter                                 #
+# ---------------------------------------------------------------------------- #
 struct StatisticalLimiter{T<:AbstractLimiter} <: AbstractLimiter
     limiter::T
 end
 
-function limit(scores::DataFrame, sl::StatisticalLimiter)
+function limit(scores::AbstractMatrix, sl::StatisticalLimiter)
     return limit(collect.(collect(eachrow(scores))), sl.limiter)
 end
 
-# ========================================================================================
-# CUSTOM CONSTRUCTORS
-
-function StatisticalMajority(
+# ---------------------------------------------------------------------------- #
+#                             custom constructors                              #
+# ---------------------------------------------------------------------------- #
+function statistical_majority(
     htest::Any;
-    versus::Symbol = :ova,
-    significance::Real = 0.05,
-    rejectnullhp = true
+    versus::Symbol=:ova,
+    significance::Real=0.05,
+    rejectnullhp::Bool=true
 )
-    (significance < 0 || significance > 1) &&
-        throw(DomainError("significance must be within 0 and 1"))
-    rejectnull = rejectnullhp ? (<=) : (>)
+    (0 ≤ significance ≤ 1) || throw(DomainError("significance must be within 0 and 1"))
+    rejectnull = rejectnullhp ? (≤) : (>)
     sl = StatisticalLimiter(MajorityLimiter(ThresholdLimiter(significance, rejectnull)))
     return StatisticalFilter(sl, htest, versus)
 end
 
-function StatisticalAtLeastOnce(
+function statistical_atleastonce(
     htest::Any;
-    versus = :ova,
-    significance = 0.05,
-    rejectnullhp = true
+    versus::Symbol=:ova,
+    significance::Real=0.05,
+    rejectnullhp::Bool=true
 )
-    (significance < 0 || significance > 1) &&
-        throw(DomainError("significance must be within 0 and 1"))
-    rejectnull = rejectnullhp ? (<=) : (>)
+    (0 ≤ significance ≤ 1) || throw(DomainError("significance must be within 0 and 1"))
+    rejectnull = rejectnullhp ? (≤) : (>)
     sl = StatisticalLimiter(AtLeastLimiter(ThresholdLimiter(significance, rejectnull), 1))
     return StatisticalFilter(sl, htest, versus)
 end

@@ -5,7 +5,7 @@
 # alias: Variable, MovingWindows, Measure
 
 # TODO: change name in AbstractColumnDescriptor
-const AWMDescriptor = Tuple{Symbol,AbstractMovingWindowsIndex,Function}
+const AWMDescriptor = Tuple{Symbol,Experimental.AbstractMovingWindowsIndex,Function}
 
 # constants
 
@@ -31,7 +31,7 @@ end
 
 function build_awmds(
     vars::AbstractVector{Symbol},
-    mwies::AbstractVector{<:MovingWindowsIndex},
+    mwies::AbstractVector{<:Experimental.MovingWindowsIndex},
     measures::AbstractVector{<:Function}
 )::Vector{AWMDescriptor}
     return [ Iterators.product(vars, mwies, measures)... ]
@@ -39,7 +39,7 @@ end
 
 function build_awmds(
     vars::AbstractVector{Symbol},
-    mw::AbstractMovingWindows,
+    mw::Experimental.AbstractMovingWindows,
     measures::AbstractVector{<:Function}
 )::Vector{AWMDescriptor}
     return build_awmds(vars, [mw...], measures)
@@ -99,7 +99,7 @@ end
 function _buildcol(col::AbstractVector, awmd::AWMDescriptor)
     movwin = awmd[2]
     measuref = awmd[3]
-    return measuref.([ getwindow(row, movwin) for row in col ])
+    return measuref.([ Experimental.getwindow(row, movwin) for row in col ])
 end
 
 """

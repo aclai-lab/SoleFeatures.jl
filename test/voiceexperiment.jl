@@ -1,86 +1,97 @@
-using DataFrames
-using OrderedCollections
-using StatsBase
-using Revise
-using Serialization
+using Test
 using SoleFeatures
-using Catch22
 
-# include("/home/patrik/develop/aclai/features_selection/results-sole/src/arff_2_md.jl")
+using DataTreatments
+using StatsBase
 
-isdefined(Main, :Catch22) && (Base.nameof(f::SuperFeature) = getname(f)) # wrap for Catch22
+using SoleData.Artifacts
+# fill your Artifacts.toml file;
+# @test_nowarn fillartifacts()
 
-# ================== PREPARE DATASET ==================
-@info "PREPARE DATASET"
+# ---------------------------------------------------------------------------- #
+#                               Prepare Dataset                                #
+# ---------------------------------------------------------------------------- #
+@info "Prepare Dataset"
 
-# 28 variables 2 classes
-# X, y = arff_2_mfd_multivariate("/home/patrik/develop/aclai/features_selection/results-sole/datasets/FingerMovements_TRAIN.arff")
-# X = MultiData.modality(X, 1)
+natopsloader = NatopsLoader()
+X, y = Artifacts.load(natopsloader)
 
-# ================== PREPARE VARIABLES, WINDOWS, MEASURES ==================
-@info "PREPARE VARIABLES, WINDOWS, MEASURES"
+Xdt = DataTreatments.DataTreatment(
+    X, :aggregate;
+    vnames=names(X),
+    win=adaptivewindow(nwindows=3, overlap=0.25),
+    features=(DataTreatments.catch22..., minimum, maximum, StatsBase.mean)
+)
 
-# prepare awmds
-vars = Symbol.(names(X))
-fnmw = SoleFeatures.FixedNumMovingWindows(3, 0.25)
-measures = [catch22..., minimum, maximum, StatsBase.mean]
-awmds = SoleFeatures.build_awmds(vars, [ fnmw... ], measures);
+# ---------------------------------------------------------------------------- #
+#                                    Utils                                     #
+# ---------------------------------------------------------------------------- #
+@info "Utils"
 
-# ================== UTILS ==================
-@info "UTILS"
-
-lenvars = length(vars)
-lenwins = length(fnmw)
-lenmeasures = length(measures)
+lenvars = length(DataTreatments.get_vnames(Xdt))
+lenwins = DataTreatments.get_nwindows(Xdt)
+lenmeasures = length(DataTreatments.get_features(Xdt))
 lentot = lenvars * lenwins * lenmeasures
 println("# Variables: $(lenvars)")
 println("# Windows: $(lenwins)")
 println("# Measures: $(lenmeasures)")
 println("# Total features: $(lentot)")
 
-# ================== STEP 1: UNSUPERVISED FEATURE SELECTION ==================
-@info "STEP 1: UNSUPERVISED FEATURE SELECTION"
+@test lentot == size(Xdt.dataset, 2)
 
-# prepare selector for each group: grouping for (Variables, Measures) it will be 3 item (windows) in each group
-selector = VarianceRanking(lenwins)
+# ---------------------------------------------------------------------------- #
+#                              Feature Selection                               #
+# ---------------------------------------------------------------------------- #
+@info "Feature Selection"
 
-# prepare group by: in this case it will be 56 groups (Variables * Measures)
-groupbykey = [(SoleFeatures.GROUPBY_VARIABLES, SoleFeatures.GROUPBY_MEASURES)]
+fs = @test_nowarn SoleFeatures.feature_selection(Xdt, y)
 
-# prepare aggragate function to apply for each group
-aggregatef = StatsBase.mean
+# ---------------------------------------------------------------------------- #
+aggrby = (
+    aggrby = (:feat,),
+    # aggregatef = length, # NOTE: or mean, minimum, maximum to aggregate scores instead of just counting number of selected features for each group
+    aggregatef = var,
+    group_before_score = true,
+)
+fs_methods = [
+    ( # step 1: unsupervised variance-based filter
+        selector = PearsonCorFilter(IdentityLimiter()),
+        limiter = PercentageLimiter(0.75),
+    ),
+    ( # step 2: supervised Mutual Information filter
+        selector = MutualInformationClassif(IdentityLimiter()),
+        limiter = PercentageLimiter(0.75),
+    ),
+    ( # step 3: group results by variable
+        selector = IdentityFilter(),
+        limiter = IdentityLimiter(),
+    ),
+]
+norm::Bool = false
 
-# prepare limiter to retrive lentot/2 groups
-limiter = SoleFeatures.RankingLimiter(Int(ceil(lenvars*lenmeasures/2)), true)
+fs = @test_nowarn feature_selection(Xdt, y; aggrby, fs_methods, norm)
 
-# prepare norm function
-normf(X) = SoleFeatures.minmax_normalize(X; min_quantile=0.01, max_quantile=0.99, col_quantile=false) # TODO: change "col_quantile" in "mode" in something that accept symbol (:ALLVARIABLES, :BYVARIABLES)
+# ---------------------------------------------------------------------------- #
+aggrby = (
+    aggrby = (:nwin,),
+    # aggregatef = length, # NOTE: or mean, minimum, maximum to aggregate scores instead of just counting number of selected features for each group
+    aggregatef = mean,
+    group_before_score = true,
+)
+fs_methods = [
+    ( # step 1: unsupervised variance-based filter
+        selector = PearsonCorFilter(IdentityLimiter()),
+        limiter = PercentageLimiter(0.75),
+    ),
+    ( # step 2: supervised Mutual Information filter
+        selector = MutualInformationClassif(IdentityLimiter()),
+        limiter = PercentageLimiter(0.75),
+    ),
+    ( # step 3: group results by variable
+        selector = IdentityFilter(),
+        limiter = IdentityLimiter(),
+    ),
+]
+norm::Bool = true
 
-# get result
-awmds_res = SoleFeatures.evaluate(X, y, awmds, selector, groupbykey, aggregatef, limiter; normf=normf)
-println("Length: $(length(awmds_res)/lenwins)")
-
-# ================== STEP 2: SUPERVISED FEATURE SELECTION ==================
-@info "STEP 2: SUPERVISED FEATURE SELECTION"
-
-limiter = SoleFeatures.RankingLimiter(10, true)
-awmds_res = SoleFeatures.evaluate(X, y, awmds_res, selector, groupbykey, aggregatef, limiter; normf=normf, supervised=true)
-println("Length: $(length(awmds_res)/lenwins)")
-
-# ================== STEP 3: VALIDATION ==================
-@info "STEP 3: VALIDATION"
-
-# It is sufficient that two population split correctly
-statisticsfs = StatisticalThreshold(1)
-limiter = SoleFeatures.ThresholdLimiter(0.01, >=) # TODO: use eps instead of 0.01?
-awmds_check = SoleFeatures.evaluate(X, y, awmds_res, statisticsfs, groupbykey, aggregatef, limiter; normf=normf, supervised=true)
-
-# ================== OUTPUT ==================
-
-println("Tuple retrived from variance ranking: ")
-println(join(unique!(join.(deleteat!.(split.(SoleFeatures._awm2str.(awmds_res), "@@"), 2), "@@")), '\n'))
-println(length(awmds_res)/lenwins)
-
-println("Validation:")
-println(join(unique!(join.(deleteat!.(split.(SoleFeatures._awm2str.(awmds_check), "@@"), 2), "@@")), '\n'))
-println(length(awmds_check)/lenwins)
+fs = @test_nowarn feature_selection(Xdt, y; aggrby, fs_methods, norm)

@@ -156,7 +156,7 @@ julia> _group_by_class(df, y)
    2 │ [3]        [7]         S
 ```
 """
-function _group_by_class(df::AbstractDataFrame, y::AbstractVector{<:Class})
+function _group_by_class(df::AbstractDataFrame, y::AbstractVector{<:SoleData.SoleBase.CLabel})
     ndf = DataFrame()
     classes = unique(y)
     varsname = names(df)

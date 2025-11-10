@@ -23,11 +23,6 @@ Abstract supertype filter based selector.
 abstract type AbstractEmbeddedBased <: AbstractFeaturesSelector end
 
 # =========================================================================================
-# Types
-
-const Class = Union{String, Symbol, Real}
-
-# =========================================================================================
 # AbstractFeaturesSelector
 
 """
@@ -38,7 +33,7 @@ Return vector containing indicies of suitable variables from selector.
 
 ## ARGUMENTS
 - `X::AbstractDataFrame`: samples to evaluate
-- `y::AbstractVector{<:Class}`: target vector
+- `y::AbstractVector{<:SoleData.SoleBase.CLabel}`: target vector
 - `selector::AbstractFeaturesSelector`: applied selector
 """
 function apply(
@@ -50,7 +45,7 @@ end
 
 function apply(
     X::AbstractDataFrame,
-    y::AbstractVector{<:Class},
+    y::AbstractVector{<:SoleData.SoleBase.CLabel},
     selector::AbstractFeaturesSelector
 )
     return error("Supervised `apply` not implemented for: $(typeof(selector))")

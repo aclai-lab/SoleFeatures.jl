@@ -31,7 +31,7 @@ end
 
 function transform!(
     X::AbstractDataFrame,
-    y::AbstractVector{<:Class},
+    y::AbstractVector{<:SoleData.SoleBase.CLabel},
     selector::AbstractFeaturesSelector
 )
     return transform!(X, apply(X, y, selector))
@@ -82,7 +82,7 @@ True values indicate selected variable index
 # Arguments
 
 - `X::AbstractDataFrame`: samples to evaluate
-- `y::AbstractVector{<:Class}`: target vector
+- `y::AbstractVector{<:SoleData.SoleBase.CLabel}`: target vector
 - `selector::AbstractFeaturesSelector`: applied selector
 
 # Keywords
@@ -109,7 +109,7 @@ end
 
 function buildbitmask(
     X::AbstractDataFrame,
-    y::AbstractVector{<:Class},
+    y::AbstractVector{<:SoleData.SoleBase.CLabel},
     selector::AbstractFeaturesSelector
 )::BitVector
     idxes = apply(X, y, selector)
