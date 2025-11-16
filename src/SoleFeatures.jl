@@ -52,7 +52,7 @@ export CompoundStatisticalAtLeastOnce, CompoundStatisticalMajority
 include("filters/univariate/utils.jl")
 
 export Chi2Ranking, Chi2Threshold
-include("filters/univariate/chi2filter.jl")
+include("filters/univariate/chi2.jl")
 
 export CorrelationFilter
 include("filters/multivariate/correlationfilter.jl")
