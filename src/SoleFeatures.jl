@@ -36,7 +36,6 @@ include("core.jl")
 
 export bm2var
 include("utils/utils.jl")
-include("utils/normalize.jl")
 
 export Score, GroupScore
 include("selection/interface.jl")

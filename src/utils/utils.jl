@@ -1,78 +1,78 @@
-# TODO: minmax_normalize in MultiData
-"""
-Normalize passed DataFrame using min-max normalization.
-Return a new normalized DataFrame
-"""
-minmax_normalize(c, args...; kwars...) = minmax_normalize!(deepcopy(c), args...; kwars...)
+# # TODO: minmax_normalize in MultiData
+# """
+# Normalize passed DataFrame using min-max normalization.
+# Return a new normalized DataFrame
+# """
+# minmax_normalize(c, args...; kwars...) = minmax_normalize!(deepcopy(c), args...; kwars...)
 
-function minmax_normalize!(
-    md::MultiData.MultiDataset,
-    frame_index::Integer;
-    min_quantile::Real = 0.0,
-    max_quantile::Real = 1.0,
-    col_quantile::Bool = true,
-)
-    return minmax_normalize!(
-        MultiData.modality(md, frame_index);
-        min_quantile = min_quantile,
-        max_quantile = max_quantile,
-        col_quantile = col_quantile
-    )
-end
+# function minmax_normalize!(
+#     md::MultiData.MultiDataset,
+#     frame_index::Integer;
+#     min_quantile::Real = 0.0,
+#     max_quantile::Real = 1.0,
+#     col_quantile::Bool = true,
+# )
+#     return minmax_normalize!(
+#         MultiData.modality(md, frame_index);
+#         min_quantile = min_quantile,
+#         max_quantile = max_quantile,
+#         col_quantile = col_quantile
+#     )
+# end
 
-function minmax_normalize!(
-    df::AbstractDataFrame;
-    min_quantile::Real = 0.0,
-    max_quantile::Real = 1.0,
-    col_quantile::Bool = true,
-)
-    min_quantile < 0.0 &&
-        throw(DomainError(min_quantile, "min_quantile must be greater than or equal to 0"))
-    max_quantile > 1.0 &&
-        throw(DomainError(max_quantile, "max_quantile must be less than or equal to 1"))
-    max_quantile <= min_quantile &&
-        throw(DomainError("max_quantile must be greater then min_quantile"))
+# function minmax_normalize!(
+#     df::AbstractDataFrame;
+#     min_quantile::Real = 0.0,
+#     max_quantile::Real = 1.0,
+#     col_quantile::Bool = true,
+# )
+#     min_quantile < 0.0 &&
+#         throw(DomainError(min_quantile, "min_quantile must be greater than or equal to 0"))
+#     max_quantile > 1.0 &&
+#         throw(DomainError(max_quantile, "max_quantile must be less than or equal to 1"))
+#     max_quantile <= min_quantile &&
+#         throw(DomainError("max_quantile must be greater then min_quantile"))
 
-    icols = eachcol(df)
+#     icols = eachcol(df)
 
-    if (!col_quantile)
-        # look for quantile in entire dataset
-        itdf = Iterators.flatten(Iterators.flatten(icols))
-        min = StatsBase.quantile(itdf, min_quantile)
-        max = StatsBase.quantile(itdf, max_quantile)
-    else
-        # quantile for each column
-        itcol = Iterators.flatten.(icols)
-        min = StatsBase.quantile.(itcol, min_quantile)
-        max = StatsBase.quantile.(itcol, max_quantile)
-    end
-    minmax_normalize!.(icols, min, max)
-    return df
-end
+#     if (!col_quantile)
+#         # look for quantile in entire dataset
+#         itdf = Iterators.flatten(Iterators.flatten(icols))
+#         min = StatsBase.quantile(itdf, min_quantile)
+#         max = StatsBase.quantile(itdf, max_quantile)
+#     else
+#         # quantile for each column
+#         itcol = Iterators.flatten.(icols)
+#         min = StatsBase.quantile.(itcol, min_quantile)
+#         max = StatsBase.quantile.(itcol, max_quantile)
+#     end
+#     minmax_normalize!.(icols, min, max)
+#     return df
+# end
 
-function minmax_normalize!(
-    v::AbstractArray{<:AbstractArray{<:Real}},
-    min::Real,
-    max::Real
-)
-    return minmax_normalize!.(v, min, max)
-end
+# function minmax_normalize!(
+#     v::AbstractArray{<:AbstractArray{<:Real}},
+#     min::Real,
+#     max::Real
+# )
+#     return minmax_normalize!.(v, min, max)
+# end
 
-function minmax_normalize!(
-    v::AbstractArray{<:Real},
-    min::Real,
-    max::Real
-)
-    if (min == max)
-        return repeat([0.5], length(v))
-    end
-    min = float(min)
-    max = float(max)
-    max = 1 / (max - min)
-    rt = StatsBase.UnitRangeTransform(1, 1, true, [min], [max])
-    # This function doesn't accept Integer
-    return StatsBase.transform!(rt, v)
-end
+# function minmax_normalize!(
+#     v::AbstractArray{<:Real},
+#     min::Real,
+#     max::Real
+# )
+#     if (min == max)
+#         return repeat([0.5], length(v))
+#     end
+#     min = float(min)
+#     max = float(max)
+#     max = 1 / (max - min)
+#     rt = StatsBase.UnitRangeTransform(1, 1, true, [min], [max])
+#     # This function doesn't accept Integer
+#     return StatsBase.transform!(rt, v)
+# end
 
 """
     _mod_bm2mfd_bm(md, frame_index, frame_bm)
