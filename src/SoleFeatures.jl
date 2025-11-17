@@ -51,13 +51,16 @@ include("filters/interface.jl")
 export CompoundStatisticalAtLeastOnce, CompoundStatisticalMajority
 include("filters/univariate/utils.jl")
 
+export Chi2Filter, chi2
 export Chi2Ranking, Chi2Threshold
 include("filters/univariate/chi2.jl")
 
+export FisherScoreFilter, fisher_score
+export FisherScoreRanking, FisherScoreThreshold
+include("filters/univariate/fisherscore.jl")
+
 export CorrelationFilter
 include("filters/multivariate/correlationfilter.jl")
-
-include("filters/univariate/fisherscorefilter.jl")
 
 export IdentityFilter, IdentityLimiter
 include("filters/univariate/identityfilter.jl")
