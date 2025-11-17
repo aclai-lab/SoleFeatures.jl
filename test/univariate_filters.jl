@@ -1,0 +1,113 @@
+using Test
+using SoleFeatures
+
+using DataTreatments
+using SoleData: Artifacts
+
+# fill your Artifacts.toml file;
+Artifacts.fillartifacts()
+natopsloader = Artifacts.NatopsLoader()
+
+Xts, yts = Artifacts.load(natopsloader)
+
+# dataset with windowed features
+dt = DataTreatment(Xts, :aggregate; 
+                   win=(splitwindow(nwindows=3),),
+                   features=(mean, std, maximum))
+
+# normalize to have only positive values
+X_grouped = grouped_norm(dt.dataset, DataTreatments.minmax(); 
+                        featvec=get_vecfeatures(dt.featureid))
+
+X = [1 1 3; 0 1 5; 5 4 1; 6 6 2; 1 4 0; 0 0 0]
+y = [1, 1, 0, 0, 2, 2]
+
+@testset "Chi2Filter Tests" begin
+    @testset "chi2 function" begin
+        chi2stats, pvalues = SoleFeatures.chi2(X, y)
+        
+        @test length(chi2stats) == size(X, 2)
+        @test length(pvalues)   == size(X, 2)
+        @test all(chi2stats .>= 0)     # chi-squared stats are non-negative
+        @test all(0 .<= pvalues .<= 1) # p-values in [0, 1]
+        
+        @test chi2stats isa Vector{Float64}
+        @test pvalues   isa Vector{Float64}
+        
+        # test error on negative values
+        X_neg = copy(X)
+        X_neg[1, 1] = -1
+        @test_throws ArgumentError SoleFeatures.chi2(X_neg, y)
+    end
+    
+    @testset "Chi2Filter construction" begin
+        filter1 = Chi2Filter(IdentityLimiter())
+        @test filter1 isa Chi2Filter
+        @test filter1.limiter isa IdentityLimiter
+        
+        filter2 = Chi2Ranking(3)
+        @test filter2 isa Chi2Filter
+        @test filter2.limiter isa SoleFeatures.RankingLimiter
+        
+        filter3 = Chi2Threshold(alpha=0.05)
+        @test filter3 isa Chi2Filter
+        @test filter3.limiter isa SoleFeatures.ThresholdLimiter
+        
+        # test supervision properties
+        @test SoleFeatures.is_supervised(filter1)
+        @test !SoleFeatures.is_unsupervised(filter1)
+    end
+    
+    @testset "Chi2Filter scoring" begin
+        filter = Chi2Filter(IdentityLimiter())
+        pvalues = SoleFeatures.score(filter, X_grouped, yts)
+        
+        @test length(pvalues) == size(X_grouped, 2)
+        @test all(0 .<= pvalues .<= 1)
+        @test pvalues isa Vector{Float64}
+    end
+end
+
+@testset "FisherScoreFilter Tests" begin
+    @testset "Fisher score function" begin
+        indices, scores = SoleFeatures.fisher_score(X, y)
+        
+        @test length(indices) == size(X, 2)
+        @test length(scores)  == size(X, 2)
+        @test indices isa Vector{Int}
+        @test scores  isa Vector{Float64}
+        
+        # Indices should be a permutation
+        @test sort(indices) == 1:size(X, 2)
+        
+        # Scores should be sorted in ascending order
+        @test issorted(scores[indices], rev=false)
+    end
+    
+    @testset "FisherScoreFilter construction" begin
+        filter1 = FisherScoreFilter(IdentityLimiter())
+        @test filter1 isa FisherScoreFilter
+        @test filter1.limiter isa IdentityLimiter
+        
+        filter2 = FisherScoreRanking(3)
+        @test filter2 isa FisherScoreFilter
+        @test filter2.limiter isa SoleFeatures.RankingLimiter
+        
+        filter3 = FisherScoreThreshold(alpha=0.05)
+        @test filter3 isa FisherScoreFilter
+        @test filter3.limiter isa SoleFeatures.ThresholdLimiter
+        
+        # test supervision properties
+        @test  SoleFeatures.is_supervised(filter1)
+        @test !SoleFeatures.is_unsupervised(filter1)
+    end
+    
+    @testset "FisherScoreFilter scoring" begin
+        filter = FisherScoreFilter(IdentityLimiter())
+        scores = SoleFeatures.score(filter, dt.dataset, yts)
+        
+        @test length(scores) == size(dt.dataset, 2)
+        @test scores isa Vector{Float64}
+        @test all(isfinite.(scores))
+    end
+end

@@ -84,7 +84,7 @@ function _chi2(
     
     # compute p-values using chi-squared distribution
     df      = length(axes(observed, 1)) - 1
-    pvalues = ccdf.(Chisq(df), chi2stats)
+    pvalues = Distributions.ccdf.(Chisq(df), chi2stats)
     
     return chi2stats, pvalues
 end

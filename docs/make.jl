@@ -5,7 +5,7 @@ DocMeta.setdocmeta!(SoleFeatures, :DocTestSetup, :(using SoleFeatures); recursiv
 
 makedocs(;
     modules=[SoleFeatures],
-    authors="Eduard I. STAN, Giovanni PAGLIARINI",
+    authors="Patrik Cavina", "Federico Manzella", "Giovanni Pagliarini",
     repo="https://github.com/aclai-lab/SoleFeatures.jl/blob/{commit}{path}#{line}",
     sitename="SoleFeatures.jl",
     format=Documenter.HTML(;
@@ -14,7 +14,8 @@ makedocs(;
         assets=String[],
     ),
     pages=[
-        "Home" => "index.md",
+        "Home"              => "index.md",
+        "UnivariateFilters" => "univariate_filters.md"
     ],
 )
 

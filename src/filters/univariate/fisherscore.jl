@@ -111,7 +111,8 @@ function score(
     X::AbstractArray{T},
     y::AbstractVector
 )::Vector{Float64} where {T<:Real}
-    _, score = fisher_score(X, CategoricalArrays.levelcode.(y))
+    y isa AbstractVector{<:Int} || (y=CategoricalArrays.levelcode.(y))
+    _, score = fisher_score(X, y)
     return score
 end
 

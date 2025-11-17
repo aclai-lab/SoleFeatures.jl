@@ -8,6 +8,7 @@ using LinearAlgebra
 using HypothesisTests
 using IterTools
 using MLBase
+using Distributions
 
 using DataTreatments
 using SparseArrays
