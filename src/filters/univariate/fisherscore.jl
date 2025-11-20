@@ -13,15 +13,6 @@ separation capability.
 
 # Fields
 - `limiter::T`: Feature selection limiter controlling how many features to select
-
-# Example
-```julia
-using SoleFeatures
-# Create filter
-filter = FisherScoreFilter(TopK(10))
-# Apply to data
-selected_features = apply_filter(filter, X, y)
-```
 """
 struct FisherScoreFilter{T <: AbstractLimiter} <: AbstractFisherScore{T}
     limiter::T
@@ -37,7 +28,7 @@ FisherScoreThreshold(; alpha=0.05) = FisherScoreFilter(ThresholdLimiter(alpha, â
 # ---------------------------------------------------------------------------- #
 #                                fisher score                                  #
 # ---------------------------------------------------------------------------- #
-# this filter was tested against scikit learn
+# this filter was tested against scikit learn implementation
 
 """
     fisher_score(X::AbstractMatrix{T}, y::AbstractVector) -> Vector{Int}
@@ -59,7 +50,7 @@ by their discriminative power (best to worst).
   large variance value (1e4) to avoid numerical instability
 - Higher Fisher scores indicate features with better class separation
 
-# Examples
+# Example
 ```julia
 X = [1 1 3; 0 1 5; 5 4 1; 6 6 2; 1 4 0; 0 0 0]
 y = [1, 1, 0, 0, 2, 2]

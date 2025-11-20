@@ -14,8 +14,7 @@ using DataTreatments
 using SparseArrays
 using CategoricalArrays
 
-using SpecialFunctions  # For digamma function
-using NearestNeighbors  # For KDTree and knn
+using NearestNeighbors  # used by mutual information classifier filter
 
 # ---------------------------------------------------------------------------- #
 #                                  abstracts                                   #
@@ -59,16 +58,17 @@ export FisherScoreFilter, fisher_score
 export FisherScoreRanking, FisherScoreThreshold
 include("filters/univariate/fisherscore.jl")
 
-export CorrelationFilter
-include("filters/multivariate/correlationfilter.jl")
-
 export IdentityFilter, IdentityLimiter
 include("filters/univariate/identityfilter.jl")
 
-include("filters/mutual_info.jl")
-
-export MutualInformationClassif, MutualInformationClassifRanking
+export MutualInformationClassif, mutual_info_classifier
+export MutualInformationClassifRanking, MutualInformationClassifThreshold
 include("filters/univariate/mutualinformationclassif.jl")
+
+export CorrelationFilter
+include("filters/multivariate/correlationfilter.jl")
+
+include("filters/mutual_info.jl")
 
 export PearsonCorFilter, PearsonCorRanking
 include("filters/univariate/pearsoncorfilter.jl")

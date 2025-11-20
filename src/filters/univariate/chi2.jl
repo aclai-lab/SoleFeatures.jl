@@ -1,6 +1,15 @@
 # ---------------------------------------------------------------------------- #
 #                                filter struct                                 #
 # ---------------------------------------------------------------------------- #
+"""
+    Chi2Filter{T<:AbstractLimiter} <: AbstractChi2Filter{T}
+
+A supervised univariate feature selection filter that computes chi-squared (χ²) 
+statistics between non-negative features and categorical target classes.
+
+# Fields
+- `limiter::T`: A limiter to select top-k features (ranking) or threshold-based selection
+"""
 struct Chi2Filter{T<:AbstractLimiter} <: AbstractChi2Filter{T}
     limiter::T
     # parameters

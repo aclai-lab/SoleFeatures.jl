@@ -20,6 +20,7 @@ Univariate filters assess features individually without considering feature inte
 ```@docs
 Chi2Filter
 FisherScoreFilter
+MutualInformationClassif
 ```
 
 #### Core Functions
@@ -27,4 +28,5 @@ FisherScoreFilter
 ```@docs
 chi2
 fisher_score
+mutual_info_classifier
 ```
