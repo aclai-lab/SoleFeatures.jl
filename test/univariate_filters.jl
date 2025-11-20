@@ -2,6 +2,7 @@ using Test
 using SoleFeatures
 
 using DataTreatments
+using Random
 using SoleData: Artifacts
 
 # fill your Artifacts.toml file;
@@ -105,6 +106,42 @@ end
     @testset "FisherScoreFilter scoring" begin
         filter = FisherScoreFilter(IdentityLimiter())
         scores = SoleFeatures.score(filter, dt.dataset, yts)
+        
+        @test length(scores) == size(dt.dataset, 2)
+        @test scores isa Vector{Float64}
+        @test all(isfinite.(scores))
+    end
+end
+
+@testset "MutualInformationClassif Tests" begin
+    @testset "Mutual information classifier function" begin
+        scores = SoleFeatures.mutual_info_classifier(X, y)
+        
+        @test length(scores)  == size(X, 2)
+        @test scores  isa Vector{Float64}
+    end
+    
+    @testset "MutualInformationClassif construction" begin
+        filter1 = MutualInformationClassif(IdentityLimiter())
+        @test filter1 isa MutualInformationClassif
+        @test filter1.limiter isa IdentityLimiter
+        
+        filter2 = MutualInformationClassifRanking(3)
+        @test filter2 isa MutualInformationClassif
+        @test filter2.limiter isa SoleFeatures.RankingLimiter
+        
+        filter3 = MutualInformationClassifThreshold(alpha=0.05)
+        @test filter3 isa MutualInformationClassif
+        @test filter3.limiter isa SoleFeatures.ThresholdLimiter
+        
+        # test supervision properties
+        @test  SoleFeatures.is_supervised(filter1)
+        @test !SoleFeatures.is_unsupervised(filter1)
+    end
+    
+    @testset "MutualInformationClassif scoring" begin
+        filter = MutualInformationClassif(IdentityLimiter())
+        scores = SoleFeatures.score(filter, dt.dataset, yts; n_neighbors=2, rng=Random.Xoshiro(11))
         
         @test length(scores) == size(dt.dataset, 2)
         @test scores isa Vector{Float64}
