@@ -148,3 +148,42 @@ end
         @test all(isfinite.(scores))
     end
 end
+
+@testset "PearsonCorFilter Tests" begin
+    @testset "PearsonCorFilter construction" begin
+        filter1 = get_pearson_cor_identity()
+        @test filter1 isa PearsonCorFilter
+        @test filter1.limiter isa IdentityLimiter
+
+        filter2 = get_pearson_cor_threshold(0.5, >)
+        @test filter2 isa PearsonCorFilter
+        @test filter2.limiter isa SoleFeatures.ThresholdLimiter
+
+        filter3 = get_pearson_cor_ranking(3,false)
+        @test filter3 isa PearsonCorFilter
+        @test filter3.limiter isa SoleFeatures.RankingLimiter
+
+        filter4 = get_pearson_cor_ranking(3)
+        @test filter4 isa PearsonCorFilter
+        @test filter4.limiter isa SoleFeatures.RankingLimiter
+
+        filter5 = get_pearson_cor_percentage(0.9,false)
+        @test filter5 isa PearsonCorFilter
+        @test filter5.limiter isa SoleFeatures.PercentageLimiter
+
+        filter6 = get_pearson_cor_percentage(0.9)
+        @test filter6 isa PearsonCorFilter
+        @test filter6.limiter isa SoleFeatures.PercentageLimiter
+        
+        # test supervision properties
+        for filter in (filter1, filter2, filter3, filter4, filter5, filter6)
+            @test  SoleFeatures.is_supervised(filter)
+            @test !SoleFeatures.is_unsupervised(filter)
+        end
+    end
+
+    @testset "PearsonCorFilter scoring" begin
+        filter = PearsonCorFilter(IdentityLimiter())
+        scores = SoleFeatures.score(filter, X_grouped, y)
+    end
+end

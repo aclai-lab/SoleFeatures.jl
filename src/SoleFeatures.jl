@@ -70,7 +70,11 @@ include("filters/multivariate/correlationfilter.jl")
 
 include("filters/mutual_info.jl")
 
-export PearsonCorFilter, PearsonCorRanking
+export PearsonCorFilter
+export get_pearson_cor_identity
+export get_pearson_cor_threshold
+export get_pearson_cor_ranking
+export get_pearson_cor_percentage
 include("filters/univariate/pearsoncorfilter.jl")
 
 export RandomRanking
