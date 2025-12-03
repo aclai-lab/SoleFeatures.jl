@@ -1,6 +1,7 @@
 using Test
 using SoleFeatures
 
+using Statistics
 using DataTreatments
 using Random
 using SoleData: Artifacts
@@ -184,6 +185,10 @@ end
 
     @testset "PearsonCorFilter scoring" begin
         filter = PearsonCorFilter(IdentityLimiter())
-        scores = SoleFeatures.score(filter, X_grouped, y)
+        scores = SoleFeatures.score(filter, Float64.(X), y)
+
+        @test length(scores) == size(X, 2)
+        @test scores isa Vector{Float64}
+        @test all(isfinite.(scores))
     end
 end
