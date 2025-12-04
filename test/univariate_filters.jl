@@ -7,7 +7,7 @@ using Random
 using SoleData: Artifacts
 
 # fill your Artifacts.toml file;
-# Artifacts.fillartifacts()
+Artifacts.fillartifacts()
 natopsloader = Artifacts.NatopsLoader()
 
 Xts, yts = Artifacts.load(natopsloader)
@@ -114,6 +114,38 @@ end
     end
 end
 
+@testset "IdentityFilter Tests" begin
+    @testset "IdentityFilter construction" begin
+        filter = IdentityFilter()
+        @test filter isa IdentityFilter
+        @test filter.limiter isa IdentityLimiter
+        
+        # test properties
+        @test SoleFeatures.is_supervised(filter)
+        @test SoleFeatures.is_unsupervised(filter)
+    end
+
+    @testset "IdentityFilter scoring" begin
+        filter = IdentityFilter()
+
+        # supervised scoring
+        scores = SoleFeatures.score(filter, Float64.(X), y)
+
+        @test length(scores) == size(X, 2)
+        @test scores isa Vector{Float64}
+        @test all(isfinite.(scores))
+        @test all(scores .== 1.0)
+
+        # unsupervised scoring
+        scores = SoleFeatures.score(filter, Float64.(X))
+
+        @test length(scores) == size(X, 2)
+        @test scores isa Vector{Float64}
+        @test all(isfinite.(scores))
+        @test all(scores .== 1.0)
+    end
+end
+
 @testset "MutualInformationClassif Tests" begin
     @testset "Mutual information classifier function" begin
         scores = SoleFeatures.mutual_info_classifier(X, y)
@@ -176,7 +208,7 @@ end
         @test filter6 isa PearsonCorFilter
         @test filter6.limiter isa SoleFeatures.PercentageLimiter
         
-        # test supervision properties
+        # test properties
         for filter in (filter1, filter2, filter3, filter4, filter5, filter6)
             @test  SoleFeatures.is_supervised(filter)
             @test !SoleFeatures.is_unsupervised(filter)
@@ -235,7 +267,7 @@ end
         @test filter10 isa RandomFilter
         @test filter10.limiter isa SoleFeatures.PercentageLimiter
         
-        # test supervision properties
+        # test properties
         for filter in (filter1, filter2, filter3, filter4, filter5, filter6, 
             filter7, filter8, filter9, filter10
         )
