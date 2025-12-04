@@ -55,7 +55,7 @@ function score(
         throw(DomainError("Columns must be subtype of Real.\n
         The following column indices are not handable: $(uncalcidxes)"))
     end
-    scores = cor.(eachcol(X), [y])
+    scores = Statistics.cor.(eachcol(X), [y])
     return scores
 end
 

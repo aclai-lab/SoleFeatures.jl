@@ -285,3 +285,50 @@ end
         @test all(isfinite.(scores))
     end
 end
+
+@testset "VarianceFilter Tests" begin
+    @testset "VarianceFilter construction" begin
+        filter1 = get_variance_identity()
+        @test filter1 isa VarianceFilter
+        @test filter1.limiter isa IdentityLimiter
+
+        filter2 = get_variance_threshold(0.5)
+        @test filter2 isa VarianceFilter
+        @test filter2.limiter isa SoleFeatures.ThresholdLimiter
+
+        filter3 = get_variance_threshold(0.5, >)
+        @test filter3 isa VarianceFilter
+        @test filter3.limiter isa SoleFeatures.ThresholdLimiter
+
+        filter4 = get_variance_ranking(3)
+        @test filter4 isa VarianceFilter
+        @test filter4.limiter isa SoleFeatures.RankingLimiter
+        
+        filter5 = get_variance_ranking(3, false)
+        @test filter5 isa VarianceFilter
+        @test filter5.limiter isa SoleFeatures.RankingLimiter
+
+        filter6 = get_variance_percentage(0.9)
+        @test filter6 isa VarianceFilter
+        @test filter6.limiter isa SoleFeatures.PercentageLimiter
+
+        filter7 = get_variance_percentage(0.9,false)
+        @test filter7 isa VarianceFilter
+        @test filter7.limiter isa SoleFeatures.PercentageLimiter
+        
+        # test properties
+        for filter in (filter1, filter2, filter3, filter4, filter5, filter6, filter7)
+            @test !SoleFeatures.is_supervised(filter)
+            @test SoleFeatures.is_unsupervised(filter)
+        end
+    end
+
+    @testset "VarianceFilter scoring" begin
+        filter = VarianceFilter(IdentityLimiter())
+        scores = SoleFeatures.score(filter, Float64.(X))
+
+        @test length(scores) == size(X, 2)
+        @test scores isa Vector{Float64}
+        @test all(isfinite.(scores))
+    end
+end

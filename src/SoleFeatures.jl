@@ -9,6 +9,7 @@ using HypothesisTests
 using IterTools
 using MLBase
 using Distributions
+using Statistics
 
 using DataTreatments
 using SparseArrays
@@ -86,7 +87,9 @@ include("filters/univariate/statisticalfilter.jl")
 
 include("filters/univariate/suplapscorefiler.jl")
 
-export VarianceFilter, VarianceRanking, VarianceThreshold
+export VarianceFilter
+export get_variance_identity, get_variance_threshold
+export get_variance_ranking, get_variance_percentage
 include("filters/univariate/variancefilter.jl")
 
 # ---------------------------------------------------------------------------- #
