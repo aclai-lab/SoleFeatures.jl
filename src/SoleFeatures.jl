@@ -43,7 +43,8 @@ include("selection/interface.jl")
 # ---------------------------------------------------------------------------- #
 #                                   filters                                    #
 # ---------------------------------------------------------------------------- #
-export PercentageLimiter
+export IdentityLimiter, ThresholdLimiter, RankingLimiter
+export MajorityLimiter, AtLeastLimiter, PercentageLimiter
 include("filters/limiter.jl")
 include("filters/interface.jl")
 
@@ -58,7 +59,7 @@ export FisherScoreFilter, fisher_score
 export FisherScoreRanking, FisherScoreThreshold
 include("filters/univariate/fisherscore.jl")
 
-export IdentityFilter, IdentityLimiter
+export IdentityFilter
 include("filters/univariate/identityfilter.jl")
 
 export MutualInformationClassif, mutual_info_classifier
@@ -71,13 +72,13 @@ include("filters/multivariate/correlationfilter.jl")
 include("filters/mutual_info.jl")
 
 export PearsonCorFilter
-export get_pearson_cor_identity
-export get_pearson_cor_threshold
-export get_pearson_cor_ranking
-export get_pearson_cor_percentage
+export get_pearson_cor_identity, get_pearson_cor_threshold
+export get_pearson_cor_ranking, get_pearson_cor_percentage
 include("filters/univariate/pearsoncorfilter.jl")
 
-export RandomRanking
+export RandomFilter
+export get_random_identity, get_random_threshold
+export get_random_ranking, get_random_percentage
 include("filters/univariate/randomfilter.jl")
 
 export StatisticalFilter, StatisticalLimiter
