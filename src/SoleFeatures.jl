@@ -15,6 +15,7 @@ using SparseArrays
 using CategoricalArrays
 
 using NearestNeighbors  # used by mutual information classifier filter
+using OnlineStats       # used by mrmr filter
 
 # ---------------------------------------------------------------------------- #
 #                                  abstracts                                   #
@@ -61,14 +62,16 @@ include("filters/univariate/fisherscore.jl")
 export IdentityFilter, IdentityLimiter
 include("filters/univariate/identityfilter.jl")
 
+export MrMrFilter, mrmr_classif
+export f_statistic, kolmogorov_smirnov, random_forest
+include("filters/univariate/mrmr.jl")
+
 export MutualInformationClassif, mutual_info_classifier
 export MutualInformationClassifRanking, MutualInformationClassifThreshold
 include("filters/univariate/mutualinformationclassif.jl")
 
 export CorrelationFilter
 include("filters/multivariate/correlationfilter.jl")
-
-include("filters/mutual_info.jl")
 
 export PearsonCorFilter
 export get_pearson_cor_identity

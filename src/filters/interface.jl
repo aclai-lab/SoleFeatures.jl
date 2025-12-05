@@ -8,6 +8,7 @@ abstract type AbstractRandomFilter{T<:AbstractLimiter} <: AbstractUnivariateFilt
 abstract type AbstractStatisticalFilter{T<:AbstractLimiter} <: AbstractUnivariateFilterBased{T} end
 abstract type AbstractChi2Filter{T<:AbstractLimiter} <: AbstractUnivariateFilterBased{T} end
 abstract type AbstractPearsonCorFilter{T<:AbstractLimiter} <: AbstractUnivariateFilterBased{T} end
+abstract type AbstractMrMrFilter{T<:AbstractLimiter} <: AbstractUnivariateFilterBased{T} end
 abstract type AbstractMutualInformationClassif{T<:AbstractLimiter} <: AbstractUnivariateFilterBased{T} end
 abstract type AbstractSupLaplacianScore{T<:AbstractLimiter} <: AbstractUnivariateFilterBased{T} end
 abstract type AbstractFisherScore{T<:AbstractLimiter} <: AbstractUnivariateFilterBased{T} end
