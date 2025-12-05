@@ -29,14 +29,15 @@ end
 is_supervised(::AbstractMrMrFilter) = true
 is_unsupervised(::AbstractMrMrFilter) = false
 
-# ---------------------------------------------------------------------------- #
-#              minimum redundancy maximum relevance classifier                 #
-# ---------------------------------------------------------------------------- #
+
 # this filter was tested against python implementation, see notes above
 function random_forest() end
 
 function correlation end
 
+# ---------------------------------------------------------------------------- #
+#                                 f_statistic                                  #
+# ---------------------------------------------------------------------------- #
 function _f_statistic(x::AbstractVector{T}, y::AbstractVector)::T where {T<:Real}
     # One-way ANOVA F-statistic
     classes = unique(y)
@@ -76,6 +77,9 @@ end
 f_statistic()::Function = x, y -> _f_statistic(x, y)
 f_statistic(X::AbstractArray, y::AbstractVector) = _f_statistic(X, y)
 
+# ---------------------------------------------------------------------------- #
+#                              kolmogorov_smirnov                              #
+# ---------------------------------------------------------------------------- #
 function _kolmogorov_smirnov(x::AbstractVector{T}, y::AbstractVector;)::T where {T<:Real}
     classes = unique(y)
     scores  = T[]
@@ -113,6 +117,9 @@ kolmogorov_smirnov(X::AbstractArray, y::AbstractVector) = _kolmogorov_smirnov(X,
 # random_forest(;)::Function      = x -> _random_forest(x; )
 # correlation(;)::Function        = x -> _correlation(x; )
 
+# ---------------------------------------------------------------------------- #
+#              minimum redundancy maximum relevance classifier                 #
+# ---------------------------------------------------------------------------- #
 function _estimate_mrmr(
     X           :: AbstractArray{T}, 
     y           :: AbstractVector;
