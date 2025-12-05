@@ -15,7 +15,6 @@ using SparseArrays
 using CategoricalArrays
 
 using NearestNeighbors  # used by mutual information classifier filter
-using OnlineStats       # used by mrmr filter
 
 # ---------------------------------------------------------------------------- #
 #                                  abstracts                                   #

@@ -42,16 +42,19 @@ function _f_statistic(x::AbstractVector{T}, y::AbstractVector)::T where {T<:Real
     # One-way ANOVA F-statistic
     classes = unique(y)
     nclasses, n = length(classes), length(x)
-    
-    stats = Dict(g => Mean() for g in classes)
-    @inbounds for (xi, yi) in zip(x, y)
-        fit!(stats[yi], xi)
+
+    class_mean   = Vector{T}(undef, nclasses)
+    class_counts = Vector{Int64}(undef, nclasses)
+    @inbounds for (i, c) in enumerate(classes)
+        mask = y .== c
+        class_mean[i] = mean(@view x[mask])
+        class_counts[i] = sum(mask)
     end
     
     grand_mean = mean(x)
     
-    ss_between = sum(nobs(stats[c]) * (value(stats[c]) - grand_mean)^2 for c in classes)
-    ss_within = sum((xi - value(stats[yi]))^2 for (xi, yi) in zip(x, y))
+    ss_between = sum(class_counts[i] * (class_mean[i] - grand_mean)^2 for (i, c) in enumerate(classes))
+    ss_within = sum((xi - class_mean[yi])^2 for (xi, yi) in zip(x, y))
     
     ms_between = ss_between / (nclasses - 1)
     ms_within = ss_within / (n - nclasses)
