@@ -73,52 +73,49 @@ function _f_statistic(X::AbstractArray{T}, y::AbstractVector)::Vector{T}  where 
     return f_result
 end
 
-function _kolmogorov_smirnov(
-    X::AbstractArray{T},
-    y::AbstractVector;
-    alternative::Symbol=:two-sided',
-    method::Symbol=:auto
-) where {T<:Real}
-
-end
-
-    # Notes
-    # -----
-    # There are three options for the null and corresponding alternative
-    # hypothesis that can be selected using the `alternative` parameter.
-
-    # - `less`: The null hypothesis is that F(x) >= G(x) for all x; the
-    #   alternative is that F(x) < G(x) for at least one x. The statistic
-    #   is the magnitude of the minimum (most negative) difference between the
-    #   empirical distribution functions of the samples.
-
-    # - `greater`: The null hypothesis is that F(x) <= G(x) for all x; the
-    #   alternative is that F(x) > G(x) for at least one x. The statistic
-    #   is the maximum (most positive) difference between the empirical
-    #   distribution functions of the samples.
-
-    # - `two-sided`: The null hypothesis is that the two distributions are
-    #   identical, F(x)=G(x) for all x; the alternative is that they are not
-    #   identical. The statistic is the maximum absolute difference between the
-    #   empirical distribution functions of the samples.
-
-    # Note that the alternative hypotheses describe the *CDFs* of the
-    # underlying distributions, not the observed values of the data. For example,
-    # suppose x1 ~ F and x2 ~ G. If F(x) > G(x) for all x, the values in
-    # x1 tend to be less than those in x2.
-
 f_statistic()::Function = x, y -> _f_statistic(x, y)
 f_statistic(X::AbstractArray, y::AbstractVector) = _f_statistic(X, y)
 
-kolmogorov_smirnov(; kwargs...)::Function = x, y -> _kolmogorov_smirnov(x, y; kwargs...)
-kolmogorov_smirnov(X::AbstractArray, y::AbstractVector; kwargs...) = _kolmogorov_smirnov(X, y; kwargs...)
+function _kolmogorov_smirnov(x::AbstractVector{T}, y::AbstractVector;)::T where {T<:Real}
+    classes = unique(y)
+    scores  = T[]
+    
+    for c in classes
+        x_in_group  = x[y .== c]
+        x_out_group = x[y .!= c]
+        
+        if length(x_in_group) > 0 && length(x_out_group) > 0
+            ks_stat = HypothesisTests.ApproximateTwoSampleKSTest(x_in_group, x_out_group).δ
+            push!(scores, ks_stat)
+        end
+    end
+    
+    return isempty(scores) ? 0.0 : mean(scores)
+end
+
+function _kolmogorov_smirnov(X::AbstractArray{T}, y::AbstractVector)::Vector{T} where {T<:Real}
+    nclasses = size(X,2)
+    ks_result = Vector{T}(undef, nclasses)
+    if nclasses > 10
+        Threads.@threads for i in axes(X, 2)
+            ks_result[i] = _kolmogorov_smirnov(X[:,i], y)
+        end
+    else
+        for i in axes(X, 2)
+            ks_result[i] = _kolmogorov_smirnov(X[:,i], y)
+        end
+    end
+    return ks_result
+end
+
+kolmogorov_smirnov()::Function = x, y -> _kolmogorov_smirnov(x, y)
+kolmogorov_smirnov(X::AbstractArray, y::AbstractVector) = _kolmogorov_smirnov(X, y)
 # random_forest(;)::Function      = x -> _random_forest(x; )
 # correlation(;)::Function        = x -> _correlation(x; )
 
 function _estimate_mrmr(
     X           :: AbstractArray{T}, 
     y           :: AbstractVector;
-    k           :: Int64,
     relevance   :: Base.Callable,
     redundancy  :: Base.Callable,
     denominator :: Base.Callable
@@ -130,13 +127,12 @@ end
 function mrmr_classif(
     X           :: AbstractArray{T}, 
     y           :: AbstractVector;
-    k           :: Int64 =size(X, 2),
     relevance   :: Base.Callable=f_statistic, # f_statistic, kolmogorov_smirnov, random_forest
     redundancy  :: Base.Callable=correlation, # correlation
     denominator :: Base.Callable=mean         # mean, max
 # )::Vector{T} where {T<:Real}
 ) where {T<:Real}
-    return _estimate_mrmr(X, y; k, relevance, redundancy, denominator)
+    return _estimate_mrmr(X, y; relevance, redundancy, denominator)
 end
 mrmr_classif(X::AbstractArray{<:Real}, args...; kwargs...) = 
     mrmr_classif(Float64.(X), args...; kwargs...)
