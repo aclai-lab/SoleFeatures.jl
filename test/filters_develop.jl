@@ -7,7 +7,7 @@ X = Matrix(iris[:,1:end-1])
 y = iris[:,end]
 y = MLJ.levelcode.(y)
 
-mrmr_classif(X, y)
+mrmr_classif(X, y; relevance=random_forest)
 
 #####################################################################################
 using DataFrames

@@ -31,7 +31,6 @@ is_unsupervised(::AbstractMrMrFilter) = false
 
 
 # this filter was tested against python implementation, see notes above
-function random_forest() end
 
 function correlation end
 
@@ -117,7 +116,17 @@ end
 
 kolmogorov_smirnov()::Function = x, y -> _kolmogorov_smirnov(x, y)
 kolmogorov_smirnov(X::AbstractArray, y::AbstractVector) = _kolmogorov_smirnov(X, y)
-# random_forest(;)::Function      = x -> _random_forest(x; )
+
+# ---------------------------------------------------------------------------- #
+#                                 random_forest                                #
+# ---------------------------------------------------------------------------- #
+function _random_forest(X::AbstractArray{T}, y::AbstractVector;)::Vector{T} where {T<:Real}
+    forest = DecisionTree.build_forest(y, X, -1, 100, 0.7, 5; rng=0)
+    return DecisionTree.impurity_importance(forest)
+end
+
+random_forest()::Function = x, y -> _random_forest(x, y)
+random_forest(X::AbstractArray, y::AbstractVector) = _random_forest(X, y)
 # correlation(;)::Function        = x -> _correlation(x; )
 
 # ---------------------------------------------------------------------------- #
@@ -131,7 +140,9 @@ function _estimate_mrmr(
     denominator :: Base.Callable
 ) where {T<:Real}
     relevance_result = relevance(X, y)
+    relevance_dict = Dict(i => v for (i, v) in enumerate(relevance_result))
 
+    return sort(collect(relevance_dict), by=x->x[2], rev=true)
 end
 
 function mrmr_classif(
