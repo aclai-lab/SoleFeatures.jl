@@ -29,32 +29,6 @@ end
 is_supervised(::AbstractMrMrFilter) = true
 is_unsupervised(::AbstractMrMrFilter) = false
 
-
-function _correlation(X::AbstractMatrix{T}, target_idx::Int, feature_indices::Vector{Int}) where {T<:Real}
-    target = @view X[:, target_idx]
-    result = Dict{String,T}()
-    
-    for feat_idx in feature_indices
-        feature = @view X[:, feat_idx]
-        corr_val = Statistics.cor(feature, target)
-        result[string(feat_idx)] = isnan(corr_val) ? zero(T) : corr_val
-    end
-    
-    return result
-end
-
-function correlation(;
-    target_column,
-    features,
-    X::AbstractMatrix{T}
-) where {T<:Real}
-    target_idx = parse(Int, target_column)
-    feature_indices = [parse(Int, f) for f in features]
-    
-    return _correlation(X, target_idx, feature_indices)
-
-end
-
 # ---------------------------------------------------------------------------- #
 #                                 f_statistic                                  #
 # ---------------------------------------------------------------------------- #
@@ -63,19 +37,17 @@ function _f_statistic(x::AbstractVector{T}, y::AbstractVector)::T where {T<:Real
     classes = unique(y)
     nclasses, n = length(classes), length(x)
 
-    class_mean   = Vector{T}(undef, nclasses)
-    class_counts = Vector{Int64}(undef, nclasses)
+    class_sqr    = Vector{T}(undef, nclasses)
     @inbounds for (i, c) in enumerate(classes)
         mask = y .== c
-        class_mean[i] = mean(@view x[mask])
-        class_counts[i] = sum(mask)
+        class_sqr[i]    = sum(@view x[mask])^2 / sum(mask)
     end
-    
-    grand_mean = mean(x)
-    
-    ss_between = sum(class_counts[i] * (class_mean[i] - grand_mean)^2 for (i, c) in enumerate(classes))
-    ss_within = sum((xi - class_mean[yi])^2 for (xi, yi) in zip(x, y))
-    
+
+    grand_sqr  = sum(x)^2 / n
+
+    ss_between = sum(class_sqr[i] for i in 1:nclasses) - grand_sqr
+    ss_within  = sum(x.^2) - grand_sqr - ss_between
+
     ms_between = ss_between / (nclasses - 1)
     ms_within = ss_within / (n - nclasses)
     
@@ -166,11 +138,12 @@ function _estimate_mrmr(
         rel_select::BitVector,
         score_denominator::Vector{T},
     ) where T
-        score = rel_result[rel_select] ./ score_denominator[rel_select]
-        idx = argmax(rel_result)
-        rel_result[idx] = zero(T)
+        scores[rel_select] = rel_result[rel_select] ./ score_denominator[rel_select]
+        active_idxs = findall(rel_select)
+        idx_in_active = argmax(scores[rel_select])
+        idx = active_idxs[idx_in_active]
         rel_select[idx] = 0
-        scores[idx] = maximum(score)
+        push!(result, idx)
     end
 
     rel_result = relevance(X, y)
@@ -178,13 +151,14 @@ function _estimate_mrmr(
     scores = zeros(T, nfeats)
     rel_select = BitVector(ones(Bool, nfeats))
     score_denominator = ones(T, nfeats)
+    result = Int64[]
 
     for _ in 1:nfeats
         select_feature!(scores, rel_result, rel_select, score_denominator)
         score_denominator[rel_select] = denominator(abs.(redundancy(X[:,rel_select], X[:,.!rel_select])), dims=2)
     end
 
-    return scores
+    return result
 end
 
 function mrmr_classif(
