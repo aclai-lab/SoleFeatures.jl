@@ -1,0 +1,12 @@
+total sulfur dioxide
+density
+volatile acidity
+sulphates
+chlorides
+fixed acidity
+free sulfur dioxide
+pH
+residual sugar
+citric acid
+quality
+alcohol
