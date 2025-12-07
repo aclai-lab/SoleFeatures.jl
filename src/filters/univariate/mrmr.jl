@@ -30,9 +30,30 @@ is_supervised(::AbstractMrMrFilter) = true
 is_unsupervised(::AbstractMrMrFilter) = false
 
 
-# this filter was tested against python implementation, see notes above
+function _correlation(X::AbstractMatrix{T}, target_idx::Int, feature_indices::Vector{Int}) where {T<:Real}
+    target = @view X[:, target_idx]
+    result = Dict{String,T}()
+    
+    for feat_idx in feature_indices
+        feature = @view X[:, feat_idx]
+        corr_val = Statistics.cor(feature, target)
+        result[string(feat_idx)] = isnan(corr_val) ? zero(T) : corr_val
+    end
+    
+    return result
+end
 
-function correlation end
+function correlation(;
+    target_column,
+    features,
+    X::AbstractMatrix{T}
+) where {T<:Real}
+    target_idx = parse(Int, target_column)
+    feature_indices = [parse(Int, f) for f in features]
+    
+    return _correlation(X, target_idx, feature_indices)
+
+end
 
 # ---------------------------------------------------------------------------- #
 #                                 f_statistic                                  #
@@ -139,18 +160,39 @@ function _estimate_mrmr(
     redundancy  :: Base.Callable,
     denominator :: Base.Callable
 ) where {T<:Real}
-    relevance_result = relevance(X, y)
-    relevance_dict = Dict(i => v for (i, v) in enumerate(relevance_result))
+    function select_feature!(
+        scores::Vector{T},
+        rel_result::Vector{T},
+        rel_select::BitVector,
+        score_denominator::Vector{T},
+    ) where T
+        score = rel_result[rel_select] ./ score_denominator[rel_select]
+        idx = argmax(rel_result)
+        rel_result[idx] = zero(T)
+        rel_select[idx] = 0
+        scores[idx] = maximum(score)
+    end
 
-    return sort(collect(relevance_dict), by=x->x[2], rev=true)
+    rel_result = relevance(X, y)
+    nfeats = length(rel_result)
+    scores = zeros(T, nfeats)
+    rel_select = BitVector(ones(Bool, nfeats))
+    score_denominator = ones(T, nfeats)
+
+    for _ in 1:nfeats
+        select_feature!(scores, rel_result, rel_select, score_denominator)
+        score_denominator[rel_select] = denominator(abs.(redundancy(X[:,rel_select], X[:,.!rel_select])), dims=2)
+    end
+
+    return scores
 end
 
 function mrmr_classif(
     X           :: AbstractArray{T}, 
     y           :: AbstractVector;
-    relevance   :: Base.Callable=f_statistic, # f_statistic, kolmogorov_smirnov, random_forest
-    redundancy  :: Base.Callable=correlation, # correlation
-    denominator :: Base.Callable=mean         # mean, max
+    relevance   :: Base.Callable=f_statistic,   # f_statistic, kolmogorov_smirnov, random_forest
+    redundancy  :: Base.Callable=StatsBase.cor, # StatsBase.cor
+    denominator :: Base.Callable=mean           # mean, max
 # )::Vector{T} where {T<:Real}
 ) where {T<:Real}
     return _estimate_mrmr(X, y; relevance, redundancy, denominator)
@@ -165,9 +207,8 @@ function score(
     ::MrMrFilter,
     X     :: AbstractArray{T},
     y     :: AbstractVector;
-    w     :: Union{AbstractVector{T}, Nothing}=nothing,
-    prior :: Symbol
+    kwargs...
 )::Vector{T} where {T<:Real}
     y isa AbstractVector{<:Int} || (y=CategoricalArrays.levelcode.(y))
-    return mrmr(X, y)
+    return mrmr_classif(X, y; kwargs...)
 end
