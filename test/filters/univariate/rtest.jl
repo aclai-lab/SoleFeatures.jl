@@ -30,3 +30,10 @@ r_regress_score   = get_score(r_regress_result)
 
 @test isapprox(r_regress_score, sk_regress_result)
 
+# ---------------------------------------------------------------------------- #
+#                                  float32                                     #
+# ---------------------------------------------------------------------------- #
+X32 = rand(Float32, 100, 10)
+y32 = rand(Float32, 100)
+filter32 = RtestFilter(X32, y32)
+@test eltype(get_score(filter32)) == Float32

@@ -54,3 +54,16 @@ f_regress_score   = get_score(f_regress_result)
 
 @test isapprox(f_regress_score, sk_regress_result)
 
+# ---------------------------------------------------------------------------- #
+#                                  float32                                     #
+# ---------------------------------------------------------------------------- #
+X32 = rand(Float32, 100, 10)
+y = rand(1:3, 100)
+filter32 = FtestFilter(X32, y)
+@test eltype(get_score(filter32)) == Float32
+
+X32 = rand(Float32, 100, 10)
+y32 = rand(Float32, 100)
+filter32 = FtestFilter(X32, y32)
+@test eltype(get_score(filter32)) == Float32
+
