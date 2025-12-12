@@ -1,12 +1,49 @@
 # ---------------------------------------------------------------------------- #
 #                                filter struct                                 #
 # ---------------------------------------------------------------------------- #
+"""
+    RtestFilter{F,T,L,D} <: AbstractFilter{F,T,L,D}
+
+A univariate filter-based feature selection method using Pearson's R correlation coefficient.
+
+This filter computes the correlation between each feature and the target variable for regression
+tasks. The correlation coefficient measures the linear relationship between each feature and the
+target, with values ranging from -1 (perfect negative correlation) to 1 (perfect positive correlation).
+
+# Fields
+- `rank::Vector{Int64}`: Indices of features sorted by their absolute correlation scores in descending order
+- `score::Vector{F}`: Pearson's R correlation coefficients for each feature
+
+# Constructor
+- `RtestFilter(X::AbstractArray, y::AbstractVector{<:AbstractFloat})`: For regression tasks
+
+# Type Parameters
+- `F<:Real`: Type of the feature scores
+- `T<:AbstractTask`: Task type (RegressionTask)
+- `L<:AbstractLearning`: Learning paradigm (Supervised)
+- `D<:AbstractDimensionality`: Dimensionality type (Univariate)
+
+# Examples
+```julia
+# Regression task
+X = rand(100, 10)  # 100 samples, 10 features
+y = rand(100)      # continuous target
+filter = RtestFilter(X, y)
+```
+
+# Notes
+- Features with higher absolute correlation values are more predictive
+- Correlation values lie in the range [-1, 1]
+- NaN values (from constant features) are replaced with 0.0
+- This is equivalent to univariate linear regression without p-values
+- Recommended for identifying linear relationships between features and target
+"""
 struct RtestFilter{F<:Real,T<:AbstractTask,L<:AbstractLearning,D<:AbstractDimensionality} <: AbstractFilter{F,T,L,D}
     rank  :: Vector{Int64}
     score :: Vector{F}
 
     function RtestFilter(X::AbstractArray{T}, y::AbstractVector{<:AbstractFloat}) where {T<:Real}
-        rank, score = _f_statistic_regress(X, y)
+        rank, score = _r_statistic_regress(X, y)
         new{T,RegressionTask,Supervised,Univariate}(rank, score)
     end
 end
