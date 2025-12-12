@@ -1,6 +1,7 @@
 using Test
 using SoleFeatures
 
+using Statistics
 using DataTreatments
 using Random
 using SoleData: Artifacts
@@ -113,6 +114,38 @@ end
     end
 end
 
+@testset "IdentityFilter Tests" begin
+    @testset "IdentityFilter construction" begin
+        filter = IdentityFilter()
+        @test filter isa IdentityFilter
+        @test filter.limiter isa IdentityLimiter
+        
+        # test properties
+        @test SoleFeatures.is_supervised(filter)
+        @test SoleFeatures.is_unsupervised(filter)
+    end
+
+    @testset "IdentityFilter scoring" begin
+        filter = IdentityFilter()
+
+        # supervised scoring
+        scores = SoleFeatures.score(filter, Float64.(X), y)
+
+        @test length(scores) == size(X, 2)
+        @test scores isa Vector{Float64}
+        @test all(isfinite.(scores))
+        @test all(scores .== 1.0)
+
+        # unsupervised scoring
+        scores = SoleFeatures.score(filter, Float64.(X))
+
+        @test length(scores) == size(X, 2)
+        @test scores isa Vector{Float64}
+        @test all(isfinite.(scores))
+        @test all(scores .== 1.0)
+    end
+end
+
 @testset "MutualInformationClassif Tests" begin
     @testset "Mutual information classifier function" begin
         scores = SoleFeatures.mutual_info_classifier(X, y)
@@ -175,7 +208,7 @@ end
         @test filter6 isa PearsonCorFilter
         @test filter6.limiter isa SoleFeatures.PercentageLimiter
         
-        # test supervision properties
+        # test properties
         for filter in (filter1, filter2, filter3, filter4, filter5, filter6)
             @test  SoleFeatures.is_supervised(filter)
             @test !SoleFeatures.is_unsupervised(filter)
@@ -184,6 +217,118 @@ end
 
     @testset "PearsonCorFilter scoring" begin
         filter = PearsonCorFilter(IdentityLimiter())
-        scores = SoleFeatures.score(filter, X_grouped, y)
+        scores = SoleFeatures.score(filter, Float64.(X), y)
+
+        @test length(scores) == size(X, 2)
+        @test scores isa Vector{Float64}
+        @test all(isfinite.(scores))
+    end
+end
+
+@testset "RandomFilter Tests" begin
+    @testset "RandomFilter construction" begin
+        filter1 = get_random_identity()
+        @test filter1 isa RandomFilter
+        @test filter1.limiter isa IdentityLimiter
+
+        filter2 = get_random_identity(2)
+        @test filter2 isa RandomFilter
+        @test filter2.limiter isa IdentityLimiter
+
+        filter3 = get_random_threshold(0.5, >)
+        @test filter3 isa RandomFilter
+        @test filter3.limiter isa SoleFeatures.ThresholdLimiter
+
+        filter4 = get_random_threshold(0.5, >, 2)
+        @test filter4 isa RandomFilter
+        @test filter4.limiter isa SoleFeatures.ThresholdLimiter
+
+        filter5 = get_random_ranking(3)
+        @test filter5 isa RandomFilter
+        @test filter5.limiter isa SoleFeatures.RankingLimiter
+        
+        filter6 = get_random_ranking(3, false)
+        @test filter6 isa RandomFilter
+        @test filter6.limiter isa SoleFeatures.RankingLimiter
+
+        filter7 = get_random_ranking(3, false, 2)
+        @test filter7 isa RandomFilter
+        @test filter7.limiter isa SoleFeatures.RankingLimiter
+
+        filter8 = get_random_percentage(0.9)
+        @test filter8 isa RandomFilter
+        @test filter8.limiter isa SoleFeatures.PercentageLimiter
+
+        filter9 = get_random_percentage(0.9,false)
+        @test filter9 isa RandomFilter
+        @test filter9.limiter isa SoleFeatures.PercentageLimiter
+
+        filter10 = get_random_percentage(0.9, false, 2)
+        @test filter10 isa RandomFilter
+        @test filter10.limiter isa SoleFeatures.PercentageLimiter
+        
+        # test properties
+        for filter in (filter1, filter2, filter3, filter4, filter5, filter6, 
+            filter7, filter8, filter9, filter10
+        )
+            @test !SoleFeatures.is_supervised(filter)
+            @test SoleFeatures.is_unsupervised(filter)
+        end
+    end
+
+    @testset "RandomFilter scoring" begin
+        filter = RandomFilter(IdentityLimiter(), nothing)
+        scores = SoleFeatures.score(filter, Float64.(X))
+
+        @test length(scores) == size(X, 2)
+        @test scores isa Vector{Float64}
+        @test all(isfinite.(scores))
+    end
+end
+
+@testset "VarianceFilter Tests" begin
+    @testset "VarianceFilter construction" begin
+        filter1 = get_variance_identity()
+        @test filter1 isa VarianceFilter
+        @test filter1.limiter isa IdentityLimiter
+
+        filter2 = get_variance_threshold(0.5)
+        @test filter2 isa VarianceFilter
+        @test filter2.limiter isa SoleFeatures.ThresholdLimiter
+
+        filter3 = get_variance_threshold(0.5, >)
+        @test filter3 isa VarianceFilter
+        @test filter3.limiter isa SoleFeatures.ThresholdLimiter
+
+        filter4 = get_variance_ranking(3)
+        @test filter4 isa VarianceFilter
+        @test filter4.limiter isa SoleFeatures.RankingLimiter
+        
+        filter5 = get_variance_ranking(3, false)
+        @test filter5 isa VarianceFilter
+        @test filter5.limiter isa SoleFeatures.RankingLimiter
+
+        filter6 = get_variance_percentage(0.9)
+        @test filter6 isa VarianceFilter
+        @test filter6.limiter isa SoleFeatures.PercentageLimiter
+
+        filter7 = get_variance_percentage(0.9,false)
+        @test filter7 isa VarianceFilter
+        @test filter7.limiter isa SoleFeatures.PercentageLimiter
+        
+        # test properties
+        for filter in (filter1, filter2, filter3, filter4, filter5, filter6, filter7)
+            @test !SoleFeatures.is_supervised(filter)
+            @test SoleFeatures.is_unsupervised(filter)
+        end
+    end
+
+    @testset "VarianceFilter scoring" begin
+        filter = VarianceFilter(IdentityLimiter())
+        scores = SoleFeatures.score(filter, Float64.(X))
+
+        @test length(scores) == size(X, 2)
+        @test scores isa Vector{Float64}
+        @test all(isfinite.(scores))
     end
 end

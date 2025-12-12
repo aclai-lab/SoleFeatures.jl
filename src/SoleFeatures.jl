@@ -9,6 +9,7 @@ using HypothesisTests
 using IterTools
 using MLBase
 using Distributions
+using Statistics
 
 using DataTreatments
 using SparseArrays
@@ -54,7 +55,8 @@ include("selection/interface.jl")
 # ---------------------------------------------------------------------------- #
 #                                   filters                                    #
 # ---------------------------------------------------------------------------- #
-export PercentageLimiter
+export IdentityLimiter, ThresholdLimiter, RankingLimiter
+export MajorityLimiter, AtLeastLimiter, PercentageLimiter
 include("filters/limiter.jl")
 # include("filters/interface.jl")
 
@@ -69,8 +71,8 @@ include("filters/limiter.jl")
 # export FisherScoreRanking, FisherScoreThreshold
 # include("filters/univariate/fisherscore.jl")
 
-# export IdentityFilter, IdentityLimiter
-# include("filters/univariate/identityfilter.jl")
+export IdentityFilter
+include("filters/univariate/identityfilter.jl")
 
 # export KSTestFilter
 # include("filters/univariate/ks-test.jl")
@@ -89,23 +91,27 @@ include("filters/limiter.jl")
 # export CorrelationFilter
 # include("filters/multivariate/correlationfilter.jl")
 
-# export PearsonCorFilter
-# export get_pearson_cor_identity
-# export get_pearson_cor_threshold
-# export get_pearson_cor_ranking
-# export get_pearson_cor_percentage
-# include("filters/univariate/pearsoncorfilter.jl")
+include("filters/mutual_info.jl")
 
-# export RandomRanking
-# include("filters/univariate/randomfilter.jl")
+export PearsonCorFilter
+export get_pearson_cor_identity, get_pearson_cor_threshold
+export get_pearson_cor_ranking, get_pearson_cor_percentage
+include("filters/univariate/pearsoncorfilter.jl")
+
+export RandomFilter
+export get_random_identity, get_random_threshold
+export get_random_ranking, get_random_percentage
+include("filters/univariate/randomfilter.jl")
 
 # export StatisticalFilter, StatisticalLimiter
 # include("filters/univariate/statisticalfilter.jl")
 
 # include("filters/univariate/suplapscorefiler.jl")
 
-# export VarianceFilter, VarianceRanking, VarianceThreshold
-# include("filters/univariate/variancefilter.jl")
+export VarianceFilter
+export get_variance_identity, get_variance_threshold
+export get_variance_ranking, get_variance_percentage
+include("filters/univariate/variancefilter.jl")
 
 # ---------------------------------------------------------------------------- #
 #                             feature selection                                #

@@ -11,10 +11,6 @@ score ranges from -1 (negative correlation) to 1 (positive correlation).
 
 # Fields
 - `limiter::T`: A limiter that defines the selection criterion to be applied to scores.
-
-# Implementation Details
-This implementation follows the scikit-learn estimator and uses the Ross et al. 
-estimator for mutual information between continuous and discrete variables.
 """
 struct PearsonCorFilter{T <: AbstractLimiter} <: AbstractPearsonCorFilter{T}
     limiter::T
@@ -28,14 +24,14 @@ is_unsupervised(::AbstractPearsonCorFilter) = false
 #                               pearson filter                                 #
 # ---------------------------------------------------------------------------- #
 """
-    score(X, y, selector)
+    score(selector, X, y)
 
 Compute Pearson correlation between each feature in `X` and the discrete target `y`.
 
 # Arguments
+- `selector::PearsonCorFilter`: Instance of PearsonCorFilter
 - `X::AbstractArray{<:Real}`: Feature matrix (n_samples × n_features)
 - `y::AbstractVector`: Discrete target labels
-- `selector::PearsonCorFilter`: 
 
 # Algorithm
 1. Check that all columns in `X` are of type `Real`
@@ -45,7 +41,7 @@ Compute Pearson correlation between each feature in `X` and the discrete target 
 ```julia
 X = [1 1 3; 0 1 5; 5 4 1; 6 6 2; 1 4 0; 0 0 0]
 y = [1, 1, 0, 0, 2, 2]
-scores = SoleFeatures.score(X, y, PearsonCorFilter(RankingLimiter(3, false)))
+scores = SoleFeatures.score(PearsonCorFilter(RankingLimiter(3, false)), X, y)
 ```
 """
 function score(
@@ -59,7 +55,7 @@ function score(
         throw(DomainError("Columns must be subtype of Real.\n
         The following column indices are not handable: $(uncalcidxes)"))
     end
-    scores = cor.(eachcol(X), [y])
+    scores = Statistics.cor.(eachcol(X), [y])
     return scores
 end
 
