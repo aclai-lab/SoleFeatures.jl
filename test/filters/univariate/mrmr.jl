@@ -4,7 +4,7 @@ using MLJ
 using CSV
 using DataFrames
 
-ds_dir()    = joinpath(dirname(@__FILE__), "data/csv")
+ds_dir()    = joinpath(dirname(@__FILE__), "../../data/csv")
 ds(filename) = joinpath(ds_dir(), filename)
 ds_file = ds("winequality_complete.csv")
 dataframe = DataFrame(CSV.File(ds_file))
