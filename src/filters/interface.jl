@@ -1,7 +1,7 @@
 # ---------------------------------------------------------------------------- #
 #                           filters abstract types                             #
 # ---------------------------------------------------------------------------- #
-abstract type AbstractFilterBased{F,T,L,D} end
+abstract type AbstractFilter{F,T,L,D} end
 
 abstract type AbstractTask           end
 abstract type AbstractLearning       end
@@ -16,15 +16,15 @@ abstract type Unsupervised <: AbstractLearning end
 abstract type Univariate   <: AbstractDimensionality end
 abstract type Multivariate <: AbstractDimensionality end
 
-Base.eltype(::AbstractFilterBased{F,T,L,D})        where {F,T,L,D} = F
-get_task(::AbstractFilterBased{F,T,L,D})           where {F,T,L,D} = T
-get_learning(::AbstractFilterBased{F,T,L,D})       where {F,T,L,D} = L
-get_dimensionality(::AbstractFilterBased{F,T,L,D}) where {F,T,L,D} = D
+Base.eltype(::AbstractFilter{F,T,L,D})        where {F,T,L,D} = F
+get_task(::AbstractFilter{F,T,L,D})           where {F,T,L,D} = T
+get_learning(::AbstractFilter{F,T,L,D})       where {F,T,L,D} = L
+get_dimensionality(::AbstractFilter{F,T,L,D}) where {F,T,L,D} = D
 
-get_rank(f::AbstractFilterBased{F,T,L,D})          where {F,T,L,D<:Univariate} = f.rank
-get_score(f::AbstractFilterBased{F,T,L,D})         where {F,T,L,D<:Univariate} = f.score
+get_rank(f::AbstractFilter{F,T,L,D})          where {F,T,L,D<:Univariate} = f.rank
+get_score(f::AbstractFilter{F,T,L,D})         where {F,T,L,D<:Univariate} = f.score
 
-function Base.show(io::IO, filter::AbstractFilterBased{F,T,L,D}) where {F,T,L,D}    
+function Base.show(io::IO, filter::AbstractFilter{F,T,L,D}) where {F,T,L,D}    
     n_features = length(filter.rank)
     top_n      = min(5, n_features)
     max_idx    = maximum(filter.rank[1:top_n])

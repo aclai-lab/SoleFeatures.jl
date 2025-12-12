@@ -19,17 +19,19 @@ using NearestNeighbors  # used by mutual information classifier filter
 using DecisionTree      # used by mrmr filter
 
 # ---------------------------------------------------------------------------- #
-#                                filter types                                  #
+#                                   filter                                     #
 # ---------------------------------------------------------------------------- #
-export AbstractFilterBased
+export AbstractFilter
 export AbstractTask, AbstractLearning, AbstractDimensionality
 export ClassificationTask, RegressionTask
 export Supervised, Unsupervised
 export Univariate, Multivariate
+export get_task, get_learning, get_dimensionality
+export get_rank, get_score
 include("filters/interface.jl")
 
 export FtestFilter
-include("filters/univariate/f-test.jl")
+include("filters/univariate/ftest.jl")
 
 # export AbstractFeaturesSelector
 # export AbstractFilterBased
@@ -91,27 +93,27 @@ include("filters/univariate/identityfilter.jl")
 # export CorrelationFilter
 # include("filters/multivariate/correlationfilter.jl")
 
-include("filters/mutual_info.jl")
+# include("filters/mutualinfo.jl")
 
-export PearsonCorFilter
-export get_pearson_cor_identity, get_pearson_cor_threshold
-export get_pearson_cor_ranking, get_pearson_cor_percentage
-include("filters/univariate/pearsoncorfilter.jl")
+# export PearsonCorFilter
+# export get_pearson_cor_identity, get_pearson_cor_threshold
+# export get_pearson_cor_ranking, get_pearson_cor_percentage
+# include("filters/univariate/pearsoncorfilter.jl")
 
-export RandomFilter
-export get_random_identity, get_random_threshold
-export get_random_ranking, get_random_percentage
-include("filters/univariate/randomfilter.jl")
+# export RandomFilter
+# export get_random_identity, get_random_threshold
+# export get_random_ranking, get_random_percentage
+# include("filters/univariate/randomfilter.jl")
 
 # export StatisticalFilter, StatisticalLimiter
 # include("filters/univariate/statisticalfilter.jl")
 
 # include("filters/univariate/suplapscorefiler.jl")
 
-export VarianceFilter
-export get_variance_identity, get_variance_threshold
-export get_variance_ranking, get_variance_percentage
-include("filters/univariate/variancefilter.jl")
+# export VarianceFilter
+# export get_variance_identity, get_variance_threshold
+# export get_variance_ranking, get_variance_percentage
+# include("filters/univariate/variancefilter.jl")
 
 # ---------------------------------------------------------------------------- #
 #                             feature selection                                #
