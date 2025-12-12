@@ -30,6 +30,9 @@ export get_task, get_learning, get_dimensionality
 export get_rank, get_score
 include("filters/interface.jl")
 
+export RtestFilter
+include("filters/univariate/rtest.jl")
+
 export FtestFilter
 include("filters/univariate/ftest.jl")
 
