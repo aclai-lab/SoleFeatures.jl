@@ -11,7 +11,7 @@ python_dir()  = joinpath(dirname(@__FILE__), "data")
 pyt(filename) = joinpath(python_dir(), filename)
 
 # ---------------------------------------------------------------------------- #
-#                           f-test classification                              #
+#                            chi2 classification                               #
 # ---------------------------------------------------------------------------- #
 # from sklearn.feature_selection import chi2
 # from sklearn import datasets

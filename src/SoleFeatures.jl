@@ -39,6 +39,9 @@ include("filters/univariate/ftest.jl")
 export Chi2Filter
 include("filters/univariate/chi2.jl")
 
+export FisherScoreFilter
+include("filters/univariate/fisherscore.jl")
+
 # export AbstractFeaturesSelector
 # export AbstractFilterBased
 # export AbstractWrapperBased
