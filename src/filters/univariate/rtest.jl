@@ -44,7 +44,7 @@ struct RtestFilter{F<:Real,T<:AbstractTask,L<:AbstractLearning,D<:AbstractDimens
 
     function RtestFilter(X::AbstractArray{T}, y::AbstractVector{<:AbstractFloat}) where {T<:Real}
         rank, score = _r_statistic_regress(X, y)
-        new{T,RegressionTask,Supervised,Univariate}(rank, score)
+        new{eltype(score),RegressionTask,Supervised,Univariate}(rank, score)
     end
 end
 

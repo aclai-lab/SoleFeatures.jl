@@ -30,6 +30,13 @@ r_regress_score   = get_score(r_regress_result)
 
 @test isapprox(r_regress_score, sk_regress_result)
 
+@test eltype(r_regress_result)             == Float64
+@test get_task(r_regress_result)           == RegressionTask
+@test get_learning(r_regress_result)       == Supervised
+@test get_dimensionality(r_regress_result) == Univariate
+@test_nowarn get_rank(r_regress_result)
+@test_nowarn get_score(r_regress_result)
+
 # ---------------------------------------------------------------------------- #
 #                                  float32                                     #
 # ---------------------------------------------------------------------------- #

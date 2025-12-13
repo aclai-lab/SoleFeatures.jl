@@ -34,6 +34,13 @@ f_classif_score   = get_score(f_classif_result)
 
 @test isapprox(f_classif_score, sk_classif_result)
 
+@test eltype(f_classif_result)             == Float64
+@test get_task(f_classif_result)           == ClassificationTask
+@test get_learning(f_classif_result)       == Supervised
+@test get_dimensionality(f_classif_result) == Univariate
+@test_nowarn get_rank(f_classif_result)
+@test_nowarn get_score(f_classif_result)
+
 # ---------------------------------------------------------------------------- #
 #                              f-test regression                               #
 # ---------------------------------------------------------------------------- #
@@ -53,6 +60,13 @@ f_regress_result  = FtestFilter(Xr, yr)
 f_regress_score   = get_score(f_regress_result)
 
 @test isapprox(f_regress_score, sk_regress_result)
+
+@test eltype(f_regress_result)             == Float64
+@test get_task(f_regress_result)           == RegressionTask
+@test get_learning(f_regress_result)       == Supervised
+@test get_dimensionality(f_regress_result) == Univariate
+@test_nowarn get_rank(f_regress_result)
+@test_nowarn get_score(f_regress_result)
 
 # ---------------------------------------------------------------------------- #
 #                                  float32                                     #

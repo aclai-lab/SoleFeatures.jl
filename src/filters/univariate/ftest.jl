@@ -52,12 +52,12 @@ struct FtestFilter{F<:Real,T<:AbstractTask,L<:AbstractLearning,D<:AbstractDimens
     function FtestFilter(X::AbstractArray{T}, y::AbstractVector) where {T<:Real}
         y isa AbstractVector{<:Integer} || (y=CategoricalArrays.levelcode.(y))
         rank, score = _f_statistic_classif(X, y)
-        new{T,ClassificationTask,Supervised,Univariate}(rank, score)
+        new{eltype(score),ClassificationTask,Supervised,Univariate}(rank, score)
     end
 
     function FtestFilter(X::AbstractArray{T}, y::AbstractVector{<:AbstractFloat}) where {T<:Real}
         rank, score = _f_statistic_regress(X, y)
-        new{T,RegressionTask,Supervised,Univariate}(rank, score)
+        new{eltype(score),RegressionTask,Supervised,Univariate}(rank, score)
     end
 end
 
@@ -67,6 +67,7 @@ end
 function _f_statistic_classif(X::AbstractArray{T}, y::AbstractVector) where {T<:Real}
     nclasses = size(X,2)
     f_statistic = Vector{T}(undef, nclasses)
+
     if nclasses > 10
         Threads.@threads for i in axes(X, 2)
             f_statistic[i] = _f_statistic_classif(X[:,i], y)
@@ -76,6 +77,7 @@ function _f_statistic_classif(X::AbstractArray{T}, y::AbstractVector) where {T<:
             f_statistic[i] = _f_statistic_classif(X[:,i], y)
         end
     end
+
     return sortperm(f_statistic, rev=true), f_statistic
 end
 

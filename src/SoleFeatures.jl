@@ -36,6 +36,9 @@ include("filters/univariate/rtest.jl")
 export FtestFilter
 include("filters/univariate/ftest.jl")
 
+export Chi2Filter
+include("filters/univariate/chi2.jl")
+
 # export AbstractFeaturesSelector
 # export AbstractFilterBased
 # export AbstractWrapperBased
@@ -67,10 +70,6 @@ include("filters/limiter.jl")
 
 # export CompoundStatisticalAtLeastOnce, CompoundStatisticalMajority
 # include("filters/univariate/utils.jl")
-
-# export Chi2Filter, chi2
-# export Chi2Ranking, Chi2Threshold
-# include("filters/univariate/chi2.jl")
 
 # export FisherScoreFilter, fisher_score
 # export FisherScoreRanking, FisherScoreThreshold
