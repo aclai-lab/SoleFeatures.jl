@@ -34,11 +34,6 @@ struct FisherScoreFilter{F<:Real,T<:AbstractTask,L<:AbstractLearning,D<:Abstract
         rank, score = _fisher_score(X, y)
         new{eltype(score),ClassificationTask,Supervised,Univariate}(rank, score)
     end
-
-    # function FisherScoreFilter(X::AbstractArray{T}, y::AbstractVector{<:AbstractFloat}) where {T<:Real}
-    #     rank, score = _f_statistic_regress(X, y)
-    #     new{eltype(score),RegressionTask,Supervised,Univariate}(rank, score)
-    # end
 end
 
 # ---------------------------------------------------------------------------- #

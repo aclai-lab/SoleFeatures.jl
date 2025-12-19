@@ -1,49 +1,58 @@
-# # ---------------------------------------------------------------------------- #
-# #                                 identity filter                              #
-# # ---------------------------------------------------------------------------- #
-# """
-#     IdentityFilter{T <: AbstractLimiter} <: AbstractIdentityFilter{T}
+# ---------------------------------------------------------------------------- #
+#                                 identity filter                              #
+# ---------------------------------------------------------------------------- #
+"""
+    IdentityFilter(X::AbstractArray{T}, [y::AbstractVector]) where {T<:Real}
 
-# A unsupervised and supervised univariate feature selection filter that always
-# return the same score (1.0) for each feature.
+An identity filter that assigns equal scores (1.0) to all features, effectively
+performing no feature selection. This filter serves as a baseline or placeholder
+when no actual feature selection is desired.
 
-# # Fields
-# - `limiter::T`: A limiter that defines the selection criterion to be applied to scores.
-# """
-# struct IdentityFilter{T <: AbstractLimiter} <: AbstractIdentityFilter{T}
-#     limiter::T
-#     # TODO parameters
+The filter supports both supervised and unsupervised modes:
+- Supervised (classification): Requires `X` and integer class labels `y`
+- Supervised (regression): Requires `X` and continuous target values `y`
+- Unsupervised: Requires only `X`
 
-#     function IdentityFilter()
-#         new{IdentityLimiter}(IdentityLimiter())
-#     end
-# end
+# Arguments
+- `X::AbstractArray{T}`: Input data matrix of shape `(n_samples, n_features)`
+- `y::AbstractVector`: (Optional) Target vector for supervised tasks
+  - Integer vector for classification tasks
+  - Float vector for regression tasks
+  - Omit for unsupervised tasks
 
-# is_supervised(::AbstractIdentityFilter) = true
-# is_unsupervised(::AbstractIdentityFilter) = true
+# Fields
+- `rank::Vector{Int64}`: Feature indices in original order (no reordering)
+- `score::Vector{Float64}`: Uniform scores of 1.0 for all features
 
-# """
-#     score(selector, X, y)
-#     score(selector, X)
+# Examples
+```julia
+# Supervised classification
+X = [1 2 3; 4 5 6; 7 8 9]
+y = [1, 0, 1]
+filter = IdentityFilter(X, y)
 
-# Return a vector of scores (1.0) for each feature in `X`.
+# Unsupervised
+filter_unsup = IdentityFilter(X)
+```
+"""
+struct IdentityFilter{F<:Real,T<:AbstractTask,L<:AbstractLearning,D<:AbstractDimensionality} <: AbstractFilter{F,T,L,D}
+    rank  :: Vector{Int64}
+    score :: Vector{F}
 
-# # Arguments
-# - `selector::IdentityFilter`: Instance of IdentityFilter
-# - `X::AbstractArray{<:Real}`: Feature matrix (n_samples × n_features)
-# - `y::AbstractVector` (optional): Target labels (not used)
+    function IdentityFilter(X::AbstractArray{T}, y::AbstractVector) where {T<:Real}
+        y isa AbstractVector{<:Integer} || (y=CategoricalArrays.levelcode.(y))
+        rank, score = y, ones(T, length(y))
+        new{eltype(score),ClassificationTask,Supervised,Univariate}(rank, score)
+    end
 
-# # Example
-# ```julia
-# X = [1 1 3; 0 1 5; 5 4 1; 6 6 2; 1 4 0; 0 0 0]
-# y = [1, 1, 0, 0, 2, 2]
-# scores = SoleFeatures.score(IdentityFilter(), X, y)
-# ```
-# """
-# function score(selector::IdentityFilter, X::AbstractMatrix, y::Vector{Int64})
-#     return score(selector, X)
-# end
+    function IdentityFilter(X::AbstractArray{T}, y::AbstractVector{<:AbstractFloat}) where {T<:Real}
+        rank, score = y, ones(T, length(y))
+        new{eltype(score),RegressionTask,Supervised,Univariate}(rank, score)
+    end
 
-# function score(selector::IdentityFilter, X::AbstractArray)
-#     return fill(1.0, size(X, 2))
-# end
+    function IdentityFilter(X::AbstractArray{T}) where {T<:Real}
+        y isa AbstractVector{<:Integer} || (y=CategoricalArrays.levelcode.(y))
+        rank, score = y, ones(T, length(y))
+        new{eltype(score),nothing,Unsupervised,Univariate}(rank, score)
+    end
+end
