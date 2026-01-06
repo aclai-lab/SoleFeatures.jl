@@ -39,7 +39,7 @@ end
 # ---------------------------------------------------------------------------- #
 #                                fisher score                                  #
 # ---------------------------------------------------------------------------- #
-function _fisher_score(X::AbstractMatrix{T}, y::AbstractVector) where {T<:Real}
+function _fisher_score(X::AbstractArray{T}, y::AbstractVector) where {T<:Real}
     weigths    = _construct_w_fisher(T, y, size(X, 1))
     degrees    = sum(weigths, dims=2)
     tot_degree = sum(degrees)

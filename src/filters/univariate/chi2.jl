@@ -2,14 +2,16 @@
 #                                filter struct                                 #
 # ---------------------------------------------------------------------------- #
 """
-    Chi2Filter(X::AbstractArray{T}, y::AbstractVector) where {T<:Float64}
+    Chi2Filter(X::AbstractArray{T}, y::AbstractVector) where {T<:Real}
 
-Compute chi-squared stats between each non-negative feature and class.
+Compute the chi-squared statistic between each non-negative feature column of `X`
+and the class labels `y`.
 
-This score can be used to select the `n_features` features with the
-highest values for the test chi-squared statistic from X, which must
-contain only **non-negative integer feature values** such as booleans or frequencies
-(e.g., term counts in document classification), relative to the classes.
+This score can be used to select the `n_features` with the highest chi-squared
+statistic from `X`, which must contain only **non-negative feature values**
+(e.g. booleans, counts, or binned continuous features). Labels `y` are expected
+to be integers or will be level-encoded if categorical.
+
 
 If some of your features are continuous, you need to bin them, for
 example by using a discretization method.
@@ -54,6 +56,8 @@ end
 function _chi2(X::AbstractArray{T}, y::AbstractVector) where {T<:Real}
     classes  = unique(y)
     y_mask   = y .== permutedims(classes)
+    @show y_mask'
+    @show X
     observed = y_mask' * X
 
     # handle binary classification case
@@ -63,12 +67,12 @@ function _chi2(X::AbstractArray{T}, y::AbstractVector) where {T<:Real}
     fcount     = sum(X, dims=1)
     expected   = class_prob' * fcount
 
-    chi2stats, _ = _chi2(observed, expected)
+    chi2stats, _ = _chi2stats(observed, expected)
 
     return sortperm(chi2stats, rev=true), chi2stats
 end
 
-function _chi2(observed::AbstractMatrix,expected::AbstractMatrix)
+function _chi2stats(observed::AbstractArray, expected::AbstractArray)
     # compute chi-squared statistic for each feature using vectorized operations
     chi2stats = [sum(let e = expected[i, j]; e > 0 ? (observed[i, j] - e)^2 / e : 0.0 end 
         for i in axes(observed, 1)) 

@@ -26,7 +26,7 @@ get_score(f::AbstractFilter{F,T,L,D})         where {F,T,L,D<:Univariate} = f.sc
 
 function Base.show(io::IO, filter::AbstractFilter{F,T,L,D}) where {F,T,L,D}    
     n_features = length(filter.rank)
-    top_n      = min(5, n_features)
+    top_n      = min(3, n_features)
     max_idx    = maximum(filter.rank[1:top_n])
     pad_width  = length(string(max_idx))
     
@@ -44,23 +44,6 @@ end
 # # ---------------------------------------------------------------------------- #
 # #                            functions definitions                             #
 # # ---------------------------------------------------------------------------- #
-# function score(
-#     X::AbstractDataFrame,
-#     selector::AbstractUnivariateFilterBased{<:AbstractLimiter}
-# )
-#     return error("`score` for unsupervised selectors not implemented " *
-#         "for type: $(typeof(selector))")
-# end
-
-# function score(
-#     X::AbstractDataFrame,
-#     y::AbstractVector{<:SoleData.SoleBase.CLabel},
-#     selector::AbstractUnivariateFilterBased{<:AbstractLimiter}
-# )
-#     return error("`score` for supervised selectors not implemented " *
-#         "for type: $(typeof(selector))")
-# end
-
 # function limiter(selector::AbstractUnivariateFilterBased)
 #     !hasproperty(selector, :limiter) &&
 #         throw(ErrorException("`selector` struct not contain `limiter` field"))

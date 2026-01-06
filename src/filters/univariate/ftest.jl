@@ -2,48 +2,44 @@
 #                                filter struct                                 #
 # ---------------------------------------------------------------------------- #
 """
-    FtestFilter{F,T,L,D} <: AbstractFilterBased{F,T,L,D}
+    FtestFilter(X::AbstractArray{T}, y::AbstractVector) where {T<:Real}
+    FtestFilter(X::AbstractArray{T}, y::AbstractVector{<:AbstractFloat}) where {T<:Real}
 
-# Classification
-A univariate filter-based feature selection method using One Way ANOVA test.
-ANOVA means Analysis of Variance, the main purpose of ANOVA is to test if two or more groups differ
-from each other significantly in one or more characteristics. F-test is another name for ANOVA that
-only compares the statistical means in groups.
+Univariate filter-based feature selection using F-tests.
 
-# Regression
-Univariate linear regression tests returning F-statistic and p-values.
-Quick linear model for testing the effect of a single regressor, sequentially for many regressors.
+# Classification (categorical or integer `y`)
+Per-feature one-way ANOVA (F-test) to assess mean differences across classes.
+Labels that are not integers are level-encoded internally.
+
+# Regression (continuous `y`)
+Per-feature simple linear regression; returns F-statistics derived from the
+squared correlation with the target.
+
+# Arguments
+- `X::AbstractArray{T}`: Matrix of shape (n_samples, n_features)
+- `y`:  
+  - `AbstractVector` (classification): integer or categorical labels  
+  - `AbstractVector{<:AbstractFloat}` (regression): continuous targets
 
 # Fields
-- `rank::Vector{Int64}`: Indices of features sorted by their F-statistic scores in descending order
-- `score::Vector{F}`: F-statistic scores for each feature
+- `rank::Vector{Int64}`: Feature indices sorted by descending F-statistic
+- `score::Vector{F}`: F-statistic for each feature
 
-# Constructors
-- `FtestFilter(X::AbstractArray, y::AbstractVector{<:Int})`: For classification tasks
-- `FtestFilter(X::AbstractArray, y::AbstractVector{<:AbstractFloat})`: For regression tasks
-
-# Type Parameters
-- `F<:Real`: Type of the feature scores
-- `T<:AbstractTask`: Task type (ClassificationTask or RegressionTask)
-- `L<:AbstractLearning`: Learning paradigm (Supervised)
-- `D<:AbstractDimensionality`: Dimensionality type (Univariate)
+# Notes
+- Higher F-statistics indicate more discriminative (classification) or more
+  explanatory (regression) features.
 
 # Examples
 ```julia
 # Classification
-X = rand(100, 10)  # 100 samples, 10 features
-y = rand(1:3, 100) # 3 classes
+X = [1 1 3; 0 1 5; 5 4 1; 6 6 2; 1 4 0; 0 0 0]
+y = [1, 1, 0, 0, 2, 2]
 filter = FtestFilter(X, y)
 
 # Regression
-y_reg = rand(100)
+y_reg = [6.8, 7.7, 3.7, 1.5, 9.2, 9.0]
 filter_reg = FtestFilter(X, y_reg)
 ```
-
-# Notes
-- For classification, the F-statistic is computed using one-way ANOVA
-- Features with higher F-statistics are more discriminative
-- For regression, y must be a float vector values
 """
 struct FtestFilter{F<:Real,T<:AbstractTask,L<:AbstractLearning,D<:AbstractDimensionality} <: AbstractFilter{F,T,L,D}
     rank  :: Vector{Int64}
@@ -51,11 +47,13 @@ struct FtestFilter{F<:Real,T<:AbstractTask,L<:AbstractLearning,D<:AbstractDimens
 
     function FtestFilter(X::AbstractArray{T}, y::AbstractVector) where {T<:Real}
         y isa AbstractVector{<:Integer} || (y=CategoricalArrays.levelcode.(y))
+        T isa AbstractFloat             || (X=float.(X))
         rank, score = _f_statistic_classif(X, y)
         new{eltype(score),ClassificationTask,Supervised,Univariate}(rank, score)
     end
 
     function FtestFilter(X::AbstractArray{T}, y::AbstractVector{<:AbstractFloat}) where {T<:Real}
+        T isa AbstractFloat             || (X=float.(X))
         rank, score = _f_statistic_regress(X, y)
         new{eltype(score),RegressionTask,Supervised,Univariate}(rank, score)
     end
@@ -65,23 +63,17 @@ end
 #                            f_statistic classifier                            #
 # ---------------------------------------------------------------------------- #
 function _f_statistic_classif(X::AbstractArray{T}, y::AbstractVector) where {T<:Real}
-    nclasses = size(X,2)
-    f_statistic = Vector{T}(undef, nclasses)
+    nfeatures = size(X,2)
+    f_statistic = Vector{T}(undef, nfeatures)
 
-    if nclasses > 10
-        Threads.@threads for i in axes(X, 2)
-            f_statistic[i] = _f_statistic_classif(X[:,i], y)
-        end
-    else
-        for i in axes(X, 2)
-            f_statistic[i] = _f_statistic_classif(X[:,i], y)
-        end
+    Threads.@threads for i in axes(X, 2)
+        f_statistic[i] = _f_vec(X[:,i], y)
     end
 
     return sortperm(f_statistic, rev=true), f_statistic
 end
 
-function _f_statistic_classif(x::AbstractVector{T}, y::AbstractVector) where {T<:Real}
+function _f_vec(x::AbstractVector{T}, y::AbstractVector) where {T<:Real}
     classes     = unique(y)
     nclasses, n = length(classes), length(x)
     class_sqr   = Vector{T}(undef, nclasses)
