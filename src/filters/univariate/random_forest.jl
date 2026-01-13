@@ -1,6 +1,17 @@
 # ---------------------------------------------------------------------------- #
 #                                filter struct                                 #
 # ---------------------------------------------------------------------------- #
+struct RandomForestInfo <: AbstractFilterInfo
+    n_subfeatures       :: Int64
+    n_trees             :: Int64
+    partial_sampling    :: Float64
+    max_depth           :: Int64
+    min_samples_leaf    :: Int64
+    min_samples_split   :: Int64
+    min_purity_increase :: Float64
+    rng                 :: AbstractRNG
+end
+
 """
     RandomForestFilter(X::AbstractArray{T}, y::AbstractVector; kwargs...) where {T<:Real}
     RandomForestFilter(X::AbstractArray{T}, y::AbstractVector{<:AbstractFloat}; kwargs...) where {T<:Real}
@@ -50,23 +61,24 @@ filter_reg = RandomForestFilter(X, y_reg; n_trees=15)
 struct RandomForestFilter{F<:Real,T<:AbstractTask,L<:AbstractLearning,D<:AbstractDimensionality} <: AbstractFilter{F,T,L,D}
     rank  :: Vector{Int64}
     score :: Vector{F}
+    info  :: RandomForestInfo
 
     function RandomForestFilter(X::AbstractArray{T}, y::AbstractVector; kwargs...) where {T<:Real}
         y isa AbstractVector{<:Integer} || (y=CategoricalArrays.levelcode.(y))
-        rank, score = _random_forest(X, y; kwargs...)
-        new{eltype(score),ClassificationTask,Supervised,Univariate}(rank, score)
+        rank, score, info = _random_forest_classifier(X, y; kwargs...)
+        new{eltype(score),ClassificationTask,Supervised,Univariate}(rank, score, info)
     end
 
     function RandomForestFilter(X::AbstractArray{T}, y::AbstractVector{<:AbstractFloat}; kwargs...) where {T<:Real}
-        rank, score = _random_forest(X, y; kwargs...)
-        new{eltype(score),RegressionTask,Supervised,Univariate}(rank, score)
+        rank, score, info = _random_forest_regression(X, y; kwargs...)
+        new{eltype(score),RegressionTask,Supervised,Univariate}(rank, score, info)
     end
 end
 
 # ---------------------------------------------------------------------------- #
 #                           random_forest classifier                           #
 # ---------------------------------------------------------------------------- #
-function _random_forest(
+function _random_forest_classifier(
     X                   :: AbstractArray{T},
     y                   :: AbstractVector;
     n_subfeatures       :: Int64       = -1,
@@ -89,13 +101,23 @@ function _random_forest(
         min_purity_increase;
         rng)
     rf_result = DecisionTree.impurity_importance(forest)
-    return sortperm(rf_result, rev=true), rf_result
+    info      = RandomForestInfo(
+        n_subfeatures,
+        n_trees,
+        partial_sampling,
+        max_depth,
+        min_samples_leaf,
+        min_samples_split,
+        min_purity_increase,
+        rng       
+    )
+    return sortperm(rf_result, rev=true), rf_result, info
 end
 
 # ---------------------------------------------------------------------------- #
 #                           random_forest regression                           #
 # ---------------------------------------------------------------------------- #
-function _random_forest(
+function _random_forest_regression(
     X                   :: AbstractArray{T},
     y                   :: AbstractVector{<:AbstractFloat};
     n_subfeatures       :: Int64       = -1,
@@ -118,6 +140,16 @@ function _random_forest(
         min_purity_increase;
         rng)
     rf_result = DecisionTree.impurity_importance(forest)
-    return sortperm(rf_result, rev=true), rf_result
+    info      = RandomForestInfo(
+        n_subfeatures,
+        n_trees,
+        partial_sampling,
+        max_depth,
+        min_samples_leaf,
+        min_samples_split,
+        min_purity_increase,
+        rng       
+    )
+    return sortperm(rf_result, rev=true), rf_result, info
 end
 

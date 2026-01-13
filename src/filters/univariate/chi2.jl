@@ -56,8 +56,6 @@ end
 function _chi2(X::AbstractArray{T}, y::AbstractVector) where {T<:Real}
     classes  = unique(y)
     y_mask   = y .== permutedims(classes)
-    @show y_mask'
-    @show X
     observed = y_mask' * X
 
     # handle binary classification case

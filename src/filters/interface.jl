@@ -2,6 +2,7 @@
 #                           filters abstract types                             #
 # ---------------------------------------------------------------------------- #
 abstract type AbstractFilter{F,T,L,D} end
+abstract type AbstractFilterInfo end
 
 abstract type AbstractTask           end
 abstract type AbstractLearning       end
