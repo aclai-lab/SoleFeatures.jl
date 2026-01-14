@@ -1,0 +1,83 @@
+using Test
+using SoleFeatures
+
+using RDatasets
+
+iris = dataset("datasets", "iris")
+Xc   = Matrix(iris[:,1:end-1])
+yc   = iris[:,end]
+
+boston = dataset("MASS", "Boston")
+Xr     = Matrix(boston[:, 1:end-1])
+yr     = boston[:, end]
+
+python_dir()  = joinpath(dirname(@__FILE__), "data")
+pyt(filename) = joinpath(python_dir(), filename)
+
+# ---------------------------------------------------------------------------- #
+#                           f-test classification                              #
+# ---------------------------------------------------------------------------- #
+# from sklearn.feature_selection import f_classif
+# from sklearn import datasets
+
+# iris = datasets.load_iris()
+# X = iris.data
+# y = iris.target
+# f_statistic, p_values = f_classif(X, y)
+
+pyt_file          = pyt("f_classif.txt")
+sk_classif_result = readlines(pyt_file)
+sk_classif_result = parse.(Float64, sk_classif_result)
+
+f_classif_result  = FtestFilter(Xc, yc)
+f_classif_score   = get_score(f_classif_result)
+
+@test isapprox(f_classif_score, sk_classif_result)
+
+@test eltype(f_classif_result)             == Float64
+@test get_task(f_classif_result)           == ClassificationTask
+@test get_learning(f_classif_result)       == Supervised
+@test get_dimensionality(f_classif_result) == Univariate
+@test_nowarn get_rank(f_classif_result)
+@test_nowarn get_score(f_classif_result)
+
+# ---------------------------------------------------------------------------- #
+#                              f-test regression                               #
+# ---------------------------------------------------------------------------- #
+# from sklearn.datasets import fetch_openml
+# from sklearn.feature_selection import f_regression
+
+# boston = fetch_openml(name="boston", version=1)
+# X = boston.data
+# y = boston.target
+# f_regress, p_values = f_regression(X, y)
+
+pyt_file          = pyt("f_regress.txt")
+sk_regress_result = readlines(pyt_file)
+sk_regress_result = parse.(Float64, sk_regress_result)
+    
+f_regress_result  = FtestFilter(Xr, yr)
+f_regress_score   = get_score(f_regress_result)
+
+@test isapprox(f_regress_score, sk_regress_result)
+
+@test eltype(f_regress_result)             == Float64
+@test get_task(f_regress_result)           == RegressionTask
+@test get_learning(f_regress_result)       == Supervised
+@test get_dimensionality(f_regress_result) == Univariate
+@test_nowarn get_rank(f_regress_result)
+@test_nowarn get_score(f_regress_result)
+
+# ---------------------------------------------------------------------------- #
+#                                  float32                                     #
+# ---------------------------------------------------------------------------- #
+X32 = rand(Float32, 100, 10)
+y = rand(1:3, 100)
+filter32 = FtestFilter(X32, y)
+@test eltype(get_score(filter32)) == Float32
+
+X32 = rand(Float32, 100, 10)
+y32 = rand(Float32, 100)
+filter32 = FtestFilter(X32, y32)
+@test eltype(get_score(filter32)) == Float32
+

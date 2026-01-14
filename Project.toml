@@ -8,6 +8,7 @@ Catch22 = "acdeb78f-3d39-4310-8fdf-6d75c17c6d5a"
 CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DataTreatments = "1b3ff5f2-9b56-42a2-b38a-76a033f741ca"
+DecisionTree = "7806a523-6efd-50cb-b5f6-3fa6f1930dbb"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 HypothesisTests = "09f84164-cd44-5f33-b23f-e6b0d136a0d5"
 IterTools = "c8e1da08-722c-5040-9ed9-7db0dc04731e"
@@ -21,28 +22,27 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
-[sources]
-DataTreatments = {rev = "main", url = "https://github.com/PasoStudio73/DataTreatments.jl.git"}
-
 [compat]
 Catch22 = "0.7"
 CategoricalArrays = "0.10, 1"
 DataFrames = "1"
-Distributions = "0.25.122"
-HypothesisTests = "0.10 - 0.11"
+DataTreatments = "0.1"
+DecisionTree = "0.12"
+Distributions = "0.25"
+HypothesisTests = "0.11"
 IterTools = "1"
 MultiData = "0 - 0.1"
-NearestNeighbors = "0.4.22"
+NearestNeighbors = "0.4"
 Random = "1"
 SoleData = "0.16"
-SparseArrays = "1.12.0"
-Statistics = "1.11.1"
+SparseArrays = "1.12"
 StatsBase = "0.30 - 0.34"
 julia = "1"
 
 [extras]
-DataTreatments = "1b3ff5f2-9b56-42a2-b38a-76a033f741ca"
+MLJ = "add582a8-e3ab-11e8-2d5e-e98b27df1bc7"
+RDatasets = "ce6b1742-4840-55fa-b093-852dadbb1d8b"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["DataTreatments", "Test"]
+test = ["MLJ", "RDatasets", "Test"]

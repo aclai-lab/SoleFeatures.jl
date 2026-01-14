@@ -5,31 +5,23 @@ using MultiData
 using SoleData
 using Random
 using LinearAlgebra
-using HypothesisTests
 using IterTools
 using MLBase
-using Distributions
-using Statistics
 
 using DataTreatments
 using SparseArrays
 using CategoricalArrays
 
-using NearestNeighbors  # used by mutual information classifier filter
-
-# ---------------------------------------------------------------------------- #
-#                                  abstracts                                   #
-# ---------------------------------------------------------------------------- #
-export AbstractFeaturesSelector
-export AbstractFilterBased
-export AbstractWrapperBased
-export AbstractEmbeddedBased
-export AbstractLimiter
+using Distributions     # used by Chi2Filter
+using NearestNeighbors  # used by MutualInfoFilter
+using DecisionTree      # used by RandomForestFilter
+using HypothesisTests
+using Statistics        # used by 
 
 # ---------------------------------------------------------------------------- #
 #                                    main                                      #
 # ---------------------------------------------------------------------------- #
-export AbstractFilterBased
+# export AbstractFilterBased
 include("interface.jl")
 
 export apply, buildbitmask, transform, transform!
@@ -44,53 +36,54 @@ include("selection/interface.jl")
 # ---------------------------------------------------------------------------- #
 #                                   filters                                    #
 # ---------------------------------------------------------------------------- #
+export AbstractFilter
+export AbstractTask, AbstractLearning, AbstractDimensionality
+
+export ClassificationTask, RegressionTask
+export Supervised, Unsupervised
+export Univariate, Multivariate
+
+export get_task, get_learning, get_dimensionality
+export get_rank, get_score
+include("filters/interface.jl")
+
+export Chi2Filter
+include("filters/univariate/chi2.jl")
+
+export FisherScoreFilter
+include("filters/univariate/fisherscore.jl")
+
+export FtestFilter
+include("filters/univariate/ftest.jl")
+
+export KSTestFilter
+include("filters/univariate/kstest.jl")
+
+export MutualInfoFilter
+include("filters/univariate/mutualinfo.jl")
+
+export RandomForestFilter
+include("filters/univariate/random_forest.jl")
+
+export RtestFilter
+include("filters/univariate/rtest.jl")
+
+export VarianceFilter
+include("filters/univariate/variance.jl")
+
+
+# export AbstractFeaturesSelector
+# export AbstractFilterBased
+# export AbstractWrapperBased
+# export AbstractEmbeddedBased
+# export AbstractLimiter
+
+# ---------------------------------------------------------------------------- #
+#                                   filters                                    #
+# ---------------------------------------------------------------------------- #
 export IdentityLimiter, ThresholdLimiter, RankingLimiter
 export MajorityLimiter, AtLeastLimiter, PercentageLimiter
 include("filters/limiter.jl")
-include("filters/interface.jl")
-
-export CompoundStatisticalAtLeastOnce, CompoundStatisticalMajority
-include("filters/univariate/utils.jl")
-
-export Chi2Filter, chi2
-export Chi2Ranking, Chi2Threshold
-include("filters/univariate/chi2.jl")
-
-export FisherScoreFilter, fisher_score
-export FisherScoreRanking, FisherScoreThreshold
-include("filters/univariate/fisherscore.jl")
-
-export IdentityFilter
-include("filters/univariate/identityfilter.jl")
-
-export MutualInformationClassif, mutual_info_classifier
-export MutualInformationClassifRanking, MutualInformationClassifThreshold
-include("filters/univariate/mutualinformationclassif.jl")
-
-export CorrelationFilter
-include("filters/multivariate/correlationfilter.jl")
-
-include("filters/mutual_info.jl")
-
-export PearsonCorFilter
-export get_pearson_cor_identity, get_pearson_cor_threshold
-export get_pearson_cor_ranking, get_pearson_cor_percentage
-include("filters/univariate/pearsoncorfilter.jl")
-
-export RandomFilter
-export get_random_identity, get_random_threshold
-export get_random_ranking, get_random_percentage
-include("filters/univariate/randomfilter.jl")
-
-export StatisticalFilter, StatisticalLimiter
-include("filters/univariate/statisticalfilter.jl")
-
-include("filters/univariate/suplapscorefiler.jl")
-
-export VarianceFilter
-export get_variance_identity, get_variance_threshold
-export get_variance_ranking, get_variance_percentage
-include("filters/univariate/variancefilter.jl")
 
 # ---------------------------------------------------------------------------- #
 #                             feature selection                                #

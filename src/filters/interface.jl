@@ -1,65 +1,67 @@
 # ---------------------------------------------------------------------------- #
-#                             univariate filters                               #
+#                           filters abstract types                             #
 # ---------------------------------------------------------------------------- #
-abstract type AbstractUnivariateFilterBased{T<:AbstractLimiter} <: AbstractFilterBased end
+abstract type AbstractFilter{F,T,L,D} end
+abstract type AbstractFilterInfo end
 
-abstract type AbstractVarianceFilter{T<:AbstractLimiter} <: AbstractUnivariateFilterBased{T} end
-abstract type AbstractRandomFilter{T<:AbstractLimiter} <: AbstractUnivariateFilterBased{T} end
-abstract type AbstractStatisticalFilter{T<:AbstractLimiter} <: AbstractUnivariateFilterBased{T} end
-abstract type AbstractChi2Filter{T<:AbstractLimiter} <: AbstractUnivariateFilterBased{T} end
-abstract type AbstractPearsonCorFilter{T<:AbstractLimiter} <: AbstractUnivariateFilterBased{T} end
-abstract type AbstractMutualInformationClassif{T<:AbstractLimiter} <: AbstractUnivariateFilterBased{T} end
-abstract type AbstractSupLaplacianScore{T<:AbstractLimiter} <: AbstractUnivariateFilterBased{T} end
-abstract type AbstractFisherScore{T<:AbstractLimiter} <: AbstractUnivariateFilterBased{T} end
-abstract type AbstractIdentityFilter{T<:AbstractLimiter} <: AbstractUnivariateFilterBased{T} end
+abstract type AbstractTask           end
+abstract type AbstractLearning       end
+abstract type AbstractDimensionality end
 
-is_univariate(::AbstractUnivariateFilterBased) = true
+abstract type ClassificationTask <: AbstractTask end
+abstract type RegressionTask     <: AbstractTask end
 
-# ---------------------------------------------------------------------------- #
-#                            multivariate filters                              #
-# ---------------------------------------------------------------------------- #
-abstract type AbstractMultivariateFilterBased <: AbstractFilterBased end
-abstract type AbstractCorrelationFilter <: AbstractMultivariateFilterBased end
+abstract type Supervised   <: AbstractLearning end
+abstract type Unsupervised <: AbstractLearning end
 
-is_multivariate(::AbstractMultivariateFilterBased) = true
+abstract type Univariate   <: AbstractDimensionality end
+abstract type Multivariate <: AbstractDimensionality end
 
-# ---------------------------------------------------------------------------- #
-#                            functions definitions                             #
-# ---------------------------------------------------------------------------- #
-function score(
-    X::AbstractDataFrame,
-    selector::AbstractUnivariateFilterBased{<:AbstractLimiter}
-)
-    return error("`score` for unsupervised selectors not implemented " *
-        "for type: $(typeof(selector))")
+Base.eltype(::AbstractFilter{F,T,L,D})        where {F,T,L,D} = F
+get_task(::AbstractFilter{F,T,L,D})           where {F,T,L,D} = T
+get_learning(::AbstractFilter{F,T,L,D})       where {F,T,L,D} = L
+get_dimensionality(::AbstractFilter{F,T,L,D}) where {F,T,L,D} = D
+
+get_rank(f::AbstractFilter{F,T,L,D})          where {F,T,L,D<:Univariate} = f.rank
+get_score(f::AbstractFilter{F,T,L,D})         where {F,T,L,D<:Univariate} = f.score
+
+function Base.show(io::IO, filter::AbstractFilter{F,T,L,D}) where {F,T,L,D}    
+    n_features = length(filter.rank)
+    top_n      = min(3, n_features)
+    max_idx    = maximum(filter.rank[1:top_n])
+    pad_width  = length(string(max_idx))
+    
+    println(io, typeof(filter))
+    println(io, "  Features: $n_features")
+    println(io, "  Top $top_n features (rank → score):")
+    for i in 1:top_n
+        feat_idx   = filter.rank[i]
+        score_val  = filter.score[feat_idx]
+        padded_idx = lpad(feat_idx, pad_width)
+        println(io, "    $i. Feature $padded_idx → $(round(score_val, digits=4))")
+    end
 end
 
-function score(
-    X::AbstractDataFrame,
-    y::AbstractVector{<:SoleData.SoleBase.CLabel},
-    selector::AbstractUnivariateFilterBased{<:AbstractLimiter}
-)
-    return error("`score` for supervised selectors not implemented " *
-        "for type: $(typeof(selector))")
-end
+# # ---------------------------------------------------------------------------- #
+# #                            functions definitions                             #
+# # ---------------------------------------------------------------------------- #
+# function limiter(selector::AbstractUnivariateFilterBased)
+#     !hasproperty(selector, :limiter) &&
+#         throw(ErrorException("`selector` struct not contain `limiter` field"))
+#     return selector.limiter
+# end
 
-function limiter(selector::AbstractUnivariateFilterBased)
-    !hasproperty(selector, :limiter) &&
-        throw(ErrorException("`selector` struct not contain `limiter` field"))
-    return selector.limiter
-end
+# function apply(
+#     X::AbstractDataFrame,
+#     selector::AbstractUnivariateFilterBased
+# )
+#     return limit(score(X, selector), limiter(selector))
+# end
 
-function apply(
-    X::AbstractDataFrame,
-    selector::AbstractUnivariateFilterBased
-)
-    return limit(score(X, selector), limiter(selector))
-end
-
-function apply(
-    X::AbstractDataFrame,
-    y::AbstractVector{<:SoleData.SoleBase.CLabel},
-    selector::AbstractUnivariateFilterBased
-)
-    return limit(score(X, y, selector), limiter(selector))
-end
+# function apply(
+#     X::AbstractDataFrame,
+#     y::AbstractVector{<:SoleData.SoleBase.CLabel},
+#     selector::AbstractUnivariateFilterBased
+# )
+#     return limit(score(X, y, selector), limiter(selector))
+# end

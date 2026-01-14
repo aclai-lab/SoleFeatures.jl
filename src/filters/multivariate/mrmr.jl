@@ -1,26 +1,3 @@
-using SoleFeatures
-
-using MLJ
-using CSV
-using DataFrames
-using StatsBase
-
-ds_dir()    = joinpath(dirname(@__FILE__), "data/csv")
-ds(filename) = joinpath(ds_dir(), filename)
-ds_file = ds("winequality_complete.csv")
-dataframe = DataFrame(CSV.File(ds_file))
-
-X = dataframe[:, 2:end]
-Xm = Matrix{Float64}(X)
-y = dataframe[:, 1]
-y = MLJ.levelcode.(categorical(y))
-
-ftest = FtestFilter(Xm, y)
-
-Xc, yc = @load_iris
-Xc = DataFrame(Xc)
-Xc = Matrix(Xc)
-
 # ---------------------------------------------------------------------------- #
 #                                filter struct                                 #
 # ---------------------------------------------------------------------------- #
@@ -48,7 +25,7 @@ struct PearsonCorrFilter
 end
 
 # ---------------------------------------------------------------------------- #
-#              minimum redundancy maximum relevance classifier                 #
+#                             pearson correlation                              #
 # ---------------------------------------------------------------------------- #
 function _pearson_corr(
     X           :: AbstractArray,
@@ -82,50 +59,4 @@ function _pearson_corr(
     end
 
     return result
-end
-
-X = Xm
-uniscore = Float64.(ftest.score)
-redundancy = StatsBase.cor
-denominator = mean
-T = Float64
-
-ftest = FtestFilter(Xc, yc)
-a= _pearson_corr(Xc, ftest.score, StatsBase.cor, mean)
-
-
-# 0.3636    0.2878    1.0025    0.6634
-
-###################################################################################################
-
-using Statistics
-using LinearAlgebra
-
-
-function r_regression(X::Matrix{Float64}, y::Vector{Float64})
-    n_samples = size(X, 1)
-    
-    y_centered = y .- mean(y)
-    X_means = mean(X, dims=1)
-    X_squared_sum = sum(X.^2, dims=1)
-    X_norms = sqrt.(X_squared_sum .- n_samples .* X_means.^2)
-    
-    # Compute means for each feature
-    # X_means = vec(mean(X, dims=1))
-    
-    # Compute norms using moments approach
-    # X_norms = sqrt(sum(X^2) - n_samples * mean(X)^2)
-    # X_squared_sum = vec(sum(X.^2, dims=1))
-    # X_norms = sqrt.(X_squared_sum .- n_samples .* X_means.^2)
-
-    # Compute correlation coefficient
-    # correlation = (y' * X) / (||X|| * ||y||)
-    correlation_coefficient = (y_centered' * X) ./ X_norms ./ LinearAlgebra.norm(y_centered)
-    # correlation_coefficient = vec(correlation_coefficient)
-    
-    # Replace NaN values with 0.0
-    nan_mask = isnan.(correlation_coefficient)
-    correlation_coefficient[nan_mask] .= 0.0
-    
-    return correlation_coefficient
 end

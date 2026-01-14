@@ -2,79 +2,78 @@
 #                                filter struct                                 #
 # ---------------------------------------------------------------------------- #
 """
-    MutualInformationClassif{T <: AbstractLimiter} <: AbstractMutualInformationClassif{T}
+    MutualInfoFilter(
+        X::AbstractArray{T},
+        y::AbstractVector;
+        n_neighbors::Int64 = 3,
+        rng::AbstractRNG   = Random.TaskLocalRNG()
+    ) where {T<:Real}
 
-A supervised univariate feature selection filter that computes mutual information 
-between each continuous feature and a discrete target variable using the 
-k-nearest neighbors approach.
-
-# Fields
-- `limiter::T`: A limiter to select top-k features (ranking) or threshold-based selection
-
-# Implementation Details
-This implementation follows the scikit-learn estimator and uses the Ross et al. 
-estimator for mutual information between continuous and discrete variables.
-"""
-struct MutualInformationClassif{T <: AbstractLimiter} <: AbstractMutualInformationClassif{T}
-    limiter::T
-    # TODO parameters
-end
-
-is_supervised(::AbstractMutualInformationClassif) = true
-is_unsupervised(::AbstractMutualInformationClassif) = false
-
-MutualInformationClassifRanking(nbest) = MutualInformationClassif(RankingLimiter(nbest, true))
-MutualInformationClassifThreshold(; alpha=0.05) = MutualInformationClassif(ThresholdLimiter(alpha, ≤))
-
-# ---------------------------------------------------------------------------- #
-#                           mutual info classifier                             #
-# ---------------------------------------------------------------------------- #
-# this filter was tested against scikit learn implementation
-
-"""
-    mutual_info_classifier(X, y; [n_neighbors=3, rng=Random.GLOBAL_RNG])
-
-Compute mutual information between each feature in `X` and the discrete target `y`.
+Univariate mutual information filter for classification using the k-NN
+(Ross et al.) estimator between each continuous feature and a discrete target.
 
 # Arguments
-- `X::AbstractArray{<:Real}`: Feature matrix (n_samples × n_features)
-- `y::AbstractVector`: Discrete target labels
+- `X::AbstractArray{T}`: Matrix of shape (n_samples, n_features). Cast to
+  floating point internally if needed.
+- `y::AbstractVector`: Discrete class labels of length `n_samples`. Non-integer
+  labels are level-encoded.
+- `n_neighbors::Int64=3`: Number of nearest neighbors for the MI estimator.
+- `rng::AbstractRNG=Random.TaskLocalRNG()`: RNG used for the small jitter noise.
 
-# Keyword Arguments
-- `n_neighbors::Int=3`: Number of nearest neighbors for MI estimation
-- `rng::AbstractRNG=Random.GLOBAL_RNG`: Random number generator for tie-breaking noise
+# Fields
+- `rank::Vector{Int64}`: Feature indices sorted by descending MI.
+- `score::Vector{<:Real}`: Mutual information per feature.
 
-# Algorithm
-1. Standardize features (zero mean, unit variance)
-2. Add small random noise to break ties in distance calculations
-3. For each feature, estimate MI using k-NN approach within each class
-4. Apply Ross formula to compute final MI estimate
+# Notes
+- Features are standardized and a tiny jitter is added to reduce ties in k-NN
+  distances.
+- Higher MI indicates stronger dependency between the feature and the class
+  label.
 
 # Example
 ```julia
 X = [1 1 3; 0 1 5; 5 4 1; 6 6 2; 1 4 0; 0 0 0]
 y = [1, 1, 0, 0, 2, 2]
-score = mutual_info_classifier(X, y; n_neighbors=3)
+mi_classif_score = MutualInfoFilter(X, y)
 ```
 """
-function mutual_info_classifier(
+struct MutualInfoFilter{F<:Real,T<:AbstractTask,L<:AbstractLearning,D<:AbstractDimensionality} <: AbstractFilter{F,T,L,D}
+    rank  :: Vector{Int64}
+    score :: Vector{F}
+
+    function MutualInfoFilter(
+        X           :: AbstractArray{T},
+        y           :: AbstractVector;
+        n_neighbors :: Int64=3,
+        rng         :: AbstractRNG=Random.TaskLocalRNG()
+    ) where {T<:Real}
+        y isa AbstractVector{<:Integer} || (y=CategoricalArrays.levelcode.(y))
+        T isa AbstractFloat             || (X=float.(X))
+        rank, score = _mutual_info_classifier(X, y; n_neighbors, rng)
+        new{eltype(score),ClassificationTask,Supervised,Univariate}(rank, score)
+    end
+end
+
+# ---------------------------------------------------------------------------- #
+#                           mutual info classifier                             #
+# ---------------------------------------------------------------------------- #
+function _mutual_info_classifier(
     X           :: AbstractArray{T}, 
     y           :: AbstractVector; 
-    n_neighbors :: Int64=3, 
-    rng         :: AbstractRNG=Random.GLOBAL_RNG,
-)::Vector{Float64} where {T<:Float64}
-    return _estimate_mi_classifier(X, y; n_neighbors, rng)
+    n_neighbors :: Int64, 
+    rng         :: AbstractRNG
+) where {T<:Real}
+    mi_result = _estimate_mi_classifier(X, y; n_neighbors, rng)
+    return sortperm(mi_result, rev=true), mi_result
 end
-mutual_info_classifier(X::AbstractArray{<:Real}, args...; kwargs...) = 
-    mutual_info_classifier(Float64.(X), args...; kwargs...)
 
 function _estimate_mi_classifier(
     X           :: AbstractArray{T},
     y           :: AbstractVector;
     n_neighbors :: Int64,
     rng         :: AbstractRNG
-)::Vector{Float64} where {T<:Float64}
-    scale!(X)
+) where {T<:Real}
+    _scale!(X)
     # X .+= 1e-10 .* max.(1, mean(abs.(X), dims=1))
     X .+= 1e-10 .* max.(1, mean(abs.(X), dims=1)) .* randn(rng, size(X, 1))
 
@@ -94,7 +93,7 @@ function _compute_mi_cd(
     x::AbstractVector{T}, 
     y::AbstractVector{Int64},
     n_neighbors::Int64
-) where {T<:Float64}
+) where {T<:Real}
     n_samples    = length(x)
     radius       = Vector{T}(undef, n_samples)
     label_counts = Vector{T}(undef, n_samples)
@@ -140,20 +139,20 @@ function _compute_mi_cd(
     m_all = [length(NearestNeighbors.inrange(tree_c, [x_valid[i]], radius_valid[i])) - 1 for i in 1:n_valid_samples]
 
     # compute MI using Ross formula
-    mi = digamma(n_valid_samples) + mean(digamma.(k_all)) - 
-         mean(digamma.(label_counts)) - mean(digamma.(m_all))
+    mi = _digamma(n_valid_samples) + mean(_digamma.(k_all)) - 
+         mean(_digamma.(label_counts)) - mean(_digamma.(m_all))
     
     return max(0.0, mi)
 end
 
 # standardize a dataset along any axis
 # center to the mean and component wise scale to unit variance
-function scale!(
+function _scale!(
     X::AbstractArray{T};
     dims::Int64  = 1,
     center::Bool = true,
     scale::Bool  = true
-) where {T<:Float64}
+) where {T<:Real}
     if center
         mean_vals = StatsBase.mean(X, dims=dims)
         X .-= mean_vals
@@ -167,10 +166,9 @@ function scale!(
 
     return X
 end
-scale!(X::AbstractArray{<:Real}; kwargs...) = scale!(Float64.(X); kwargs...)
 
 # compute the digamma function of `x` (the logarithmic derivative of `gamma(x)`).
-function digamma(x::Float64)
+function _digamma(x::T) where {T<:Real}
     # Taken from SpecialFunctions.jl package
     # The MIT License (MIT)
     # Copyright (c) 2017 Jeff Bezanson, Stefan Karpinski, Viral B. Shah, and others:
@@ -197,19 +195,5 @@ function digamma(x::Float64)
     # the coefficients here are Float64(bernoulli[2:9] .// (2*(1:8)))
     ψ -= t * @evalpoly(t,0.08333333333333333,-0.008333333333333333,0.003968253968253968,-0.004166666666666667,0.007575757575757576,-0.021092796092796094,0.08333333333333333,-0.4432598039215686)
 end
-digamma(x::Real) = digamma(Float64(x))
 
-# ---------------------------------------------------------------------------- #
-#                                    score                                     #
-# ---------------------------------------------------------------------------- #
-function score(
-    ::MutualInformationClassif,
-    X           :: AbstractArray{T},
-    y           :: AbstractVector;
-    n_neighbors :: Int64=3, 
-    rng         :: AbstractRNG=Random.GLOBAL_RNG,
-)::Vector{Float64} where {T<:Real}
-    y isa AbstractVector{<:Int} || (y=CategoricalArrays.levelcode.(y))
-    return mutual_info_classif(X, y; n_neighbors, rng)
-end
 

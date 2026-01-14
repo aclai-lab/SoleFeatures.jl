@@ -10,7 +10,7 @@ abstract type AbstractFeaturesSelector end
 """
 Abstract supertype filter based selector.
 """
-abstract type AbstractFilterBased <: AbstractFeaturesSelector end
+# abstract type AbstractFilterBased <: AbstractFeaturesSelector end
 
 """
 Abstract supertype filter based selector.
