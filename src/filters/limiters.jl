@@ -62,7 +62,7 @@ struct ThresholdLimiter{F<:Real,T<:AbstractTask,L<:AbstractLearning,D<:AbstractD
         sorted_indices = sortperm(scores; rev=revflag)
         rank = sorted_indices[findall(ordf.(scores[sorted_indices], threshold))]
 
-        return new{F,T,L,D}(filter, rank, info)
+        new{F,T,L,D}(filter, rank, info)
     end
 end
 
@@ -75,6 +75,7 @@ struct RankingLimiterInfo <: AbstractLimiterInfo
 
     function RankingLimiterInfo(nbest::Int64, rev::Bool)
         nbest > 0 || throw(DomainError(nbest, "`nbest` must be > 0"))
+
         new(nbest, rev)
     end
 end
@@ -122,52 +123,67 @@ struct RankingLimiter{F<:Real,T<:AbstractTask,L<:AbstractLearning,D<:AbstractDim
 
         scores = get_score(filter)
         rank = sortperm(scores; rev)[1:nbest]
+
         new{F,T,L,D}(filter, rank, info)
     end
 end
 
-# # ---------------------------------------------------------------------------- #
-# #                             percentange limiter                              #
-# # ---------------------------------------------------------------------------- #
-# """
-# `PercentageLimiter` is an implementation of an `AbstractLimiter` which
-# limits the selection to a fraction of the available variables.
-# """
-# struct PercentageLimiter{F<:Real,T<:AbstractTask,L<:AbstractLearning,D<:AbstractDimensionality} <: AbstractLimiter{F,T,L,D}
-#     perc::Float64
-#     rev::Bool
+# ---------------------------------------------------------------------------- #
+#                             percentange limiter                              #
+# ---------------------------------------------------------------------------- #
+struct PercentageLimiterInfo <: AbstractLimiterInfo
+    perc :: Real
+    rev  :: Bool
 
-#     function PercentageLimiter(perc::AbstractFloat, rev::Bool)
-#         (0 ≤ perc ≤ 1.0) || throw(DomainError(perc, "`perc` must be ≥ 0 and ≤ 1"))
-#         new(perc, rev)
-#     end
-#     PercentageLimiter(perc::AbstractFloat) = PercentageLimiter(perc, true)
-# end
+    function PercentageLimiterInfo(perc::Real, rev::Bool)
+        (0 ≤ perc ≤ 1.0) || throw(DomainError(perc, "`perc` must be ≥ 0 and ≤ 1"))
+        new(perc, rev)
+    end
+end
 
-# """
-#     perc(pl)
+"""
+    PercentageLimiter(filter::AbstractFilter; perc::Real, rev::Bool=true)
 
-# Retrieve the fraction (percentage / 100) of variables that will be
-# selected with `pl` limiter.
-# """
-# perc(pl::PercentageLimiter) = pl.perc
+Selects the top fraction of features according to their scores lenght.
 
-# """
-#     rev(pl)
+# Arguments
+- `filter::AbstractFilter`: The filter whose scores will be evaluated
+- `perc::Real`: Fraction of features to keep (0 ≤ perc ≤ 1)
+- `rev::Bool`: If `true` (default), sorts descending; if `false`, ascending
 
-# Return whether the selection is reverse or not. It follows the same
-# semantic of `rev` parameter of the function [`sort`](@ref).
-# """
-# rev(pl::PercentageLimiter) = pl.rev
+# Examples
+```julia
+X = [1 1 3; 0 1 5; 5 4 1; 6 6 2; 1 4 0; 0 0 0]
+y = [1, 1, 0, 0, 2, 2]
+chi2stats = Chi2Filter(X, y)
 
-# function limit(scores::AbstractVector{<:Real}, l::PercentageLimiter)
-#     len = Int(ceil(length(scores) * perc(l)))
-#     return sortperm(scores; rev = rev(l))[1:len]
-# end
+# keep top 50% highest-scoring features
+PercentageLimiter(chi2stats; perc=0.5)
 
-# function limit(scores::AbstractVector{GroupScore}, l::PercentageLimiter)
-#     return limit([s.score for s in scores], l)
-# end
+# keep top 30% lowest-scoring features
+PercentageLimiter(chi2stats; perc=0.3, rev=false)
+```
+"""
+struct PercentageLimiter{F<:Real,T<:AbstractTask,L<:AbstractLearning,D<:AbstractDimensionality} <: AbstractLimiter{F,T,L,D}
+    filter :: AbstractFilter{F,T,L,D}
+    rank   :: Vector{Int64}
+    info   :: PercentageLimiterInfo
+
+    function PercentageLimiter(
+        filter :: AbstractFilter{F,T,L,D};
+        perc   :: Float64,
+        rev    :: Bool=true
+    ) where {F<:Real,T<:AbstractTask,L<:AbstractLearning,D<:AbstractDimensionality}
+        info = PercentageLimiterInfo(perc, rev)
+
+        scores = get_score(filter)
+        sorted_indices = sortperm(scores; rev=rev)
+        k = Int64(ceil(length(scores) * perc))
+        rank = k == 0 ? Int64[] : sorted_indices[1:k]
+
+        new{F,T,L,D}(filter, rank, info)
+    end
+end
 
 # # ---------------------------------------------------------------------------- #
 # #                              majority limiter                                #
