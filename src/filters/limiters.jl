@@ -1,34 +1,12 @@
 # ---------------------------------------------------------------------------- #
-#                            functions definitions                             #
-# ---------------------------------------------------------------------------- #
-"""
-    limit(scores, l)
-
-return indices of suitable `scores` based on provided `limiter`
-"""
-# function limit(scores::Any, l::AbstractLimiter)
-#     return error("`limit` not implemented for type: $(typeof(l))")
-# end
-
-# (l::AbstractLimiter)(scores::Any) = limit(scores, l)
-
-# struct FilterLimiter{F<:Real,T<:AbstractTask,L<:AbstractLearning,D<:AbstractDimensionality} <: AbstractLimiter{F,T,L,D}
-#     filter :: AbstractFilter{F,T,L,D}
-#     rank   :: Int64
-# end
-
-# ---------------------------------------------------------------------------- #
 #                             threshold limiter                                #
 # ---------------------------------------------------------------------------- #
-"""
-Scores are evaluated by a specified threshold and sorting.
-"""
 struct ThresholdLimiterInfo <: AbstractLimiterInfo
     threshold :: Real
     ordf      :: Function
 
     function ThresholdLimiterInfo(threshold::Real, ordf::Function)
-        valid_ops = (>, <, ≥, ≤, ≡)
+        valid_ops = (>, <, ≥, ≤)
         ordf ∈ valid_ops || throw(DomainError("`ordf`"))
         new(threshold, ordf)
     end
@@ -39,6 +17,34 @@ function Base.show(io::IO, info::ThresholdLimiterInfo)
     println(io, "  threshold = '$(info.ordf) $(info.threshold)'")
 end
 
+"""
+    ThresholdLimiter(filter::AbstractFilter; ordf::Function, threshold::Real)
+
+A limiter that selects features based on a threshold comparison of their scores.
+
+This limiter evaluates the scores from a filter and returns the indices of features
+whose scores satisfy the threshold condition defined by the comparison operator `ordf`.
+
+# Arguments
+- `filter::AbstractFilter`: The filter whose scores will be evaluated
+- `ordf::Function`: Comparison operator for threshold evaluation. Valid operators are:
+  - `(>, <, ≥, ≤)`
+- `threshold::Real`: The threshold value to compare against
+
+# Sorting Behavior
+- For `>` and `≥`: Sorts in **descending order** (`rev=true`), placing highest scores first
+- For `<` and `≤`: Sorts in **ascending order** (`rev=false`), placing lowest scores first
+
+# Examples
+```julia
+X = [1 1 3; 0 1 5; 5 4 1; 6 6 2; 1 4 0; 0 0 0]
+y = [1, 1, 0, 0, 2, 2]
+chi2stats = Chi2Filter(X, y)
+
+# apply threshold filter
+ThresholdLimiter(chi2stats; ordf=(>), threshold=7)
+```
+"""
 struct ThresholdLimiter{F<:Real,T<:AbstractTask,L<:AbstractLearning,D<:AbstractDimensionality} <: AbstractLimiter{F,T,L,D}
     filter :: AbstractFilter{F,T,L,D}
     rank   :: Vector{Int64}
@@ -49,54 +55,118 @@ struct ThresholdLimiter{F<:Real,T<:AbstractTask,L<:AbstractLearning,D<:AbstractD
         ordf      :: Function=(≥),
         threshold :: Real
     ) where {F<:Real,T<:AbstractTask,L<:AbstractLearning,D<:AbstractDimensionality}
+        info = ThresholdLimiterInfo(threshold, ordf)
+
         scores = get_score(filter)
         revflag = ordf ∈ (>, ≥)
         sorted_indices = sortperm(scores; rev=revflag)
         rank = sorted_indices[findall(ordf.(scores[sorted_indices], threshold))]
 
-        info = ThresholdLimiterInfo(threshold, ordf)
-
         return new{F,T,L,D}(filter, rank, info)
     end
 end
 
-# threshold(tl::ThresholdLimiter) = tl.threshold
-# ordf(tl::ThresholdLimiter) = tl.ordf
+# ---------------------------------------------------------------------------- #
+#                              ranking limiter                                 #
+# ---------------------------------------------------------------------------- #
+struct RankingLimiterInfo <: AbstractLimiterInfo
+    nbest :: Int64
+    rev   :: Bool
 
-# function limit(scores::AbstractVector{<:Real}, tl::ThresholdLimiter)
-#     return findall(ordf(tl)(threshold(tl)), scores)
-# end
+    function RankingLimiterInfo(nbest::Int64, rev::Bool)
+        nbest > 0 || throw(DomainError(nbest, "`nbest` must be > 0"))
+        new(nbest, rev)
+    end
+end
 
-# function limit(scores::AbstractVector{GroupScore}, tl::ThresholdLimiter)
-#     return limit([s.score for s in scores], tl)
-# end
+"""
+    RankingLimiter(filter::AbstractFilter; nbest::Int64, rev::Bool=true)
+
+A limiter that selects the top `nbest` features according to their scores, 
+using either descending or ascending order.
+
+This limiter evaluates the scores from a filter and returns the indices of the 
+`nbest` features with the highest (or lowest, if `rev=false`) scores.
+
+# Arguments
+- `filter::AbstractFilter`: The filter whose scores will be evaluated
+- `nbest::Int64`: Number of top features to select (must be > 0)
+- `rev::Bool`:
+  If `true` (default), selects the highest scores (descending order). 
+  If `false`, selects the lowest scores (ascending order).
+
+# Examples
+```julia
+X = [1 1 3; 0 1 5; 5 4 1; 6 6 2; 1 4 0; 0 0 0]
+y = [1, 1, 0, 0, 2, 2]
+chi2stats = Chi2Filter(X, y)
+
+# select top 2 features with highest scores
+RankingLimiter(chi2stats; nbest=2)
+
+# select top 2 features with lowest scores
+RankingLimiter(chi2stats; nbest=2, rev=false)
+```
+"""
+struct RankingLimiter{F<:Real,T<:AbstractTask,L<:AbstractLearning,D<:AbstractDimensionality} <: AbstractLimiter{F,T,L,D}
+    filter :: AbstractFilter{F,T,L,D}
+    rank   :: Vector{Int64}
+    info   :: RankingLimiterInfo
+
+    function RankingLimiter(
+        filter :: AbstractFilter{F,T,L,D};
+        nbest  :: Int64,
+        rev    :: Bool=true
+    ) where {F<:Real,T<:AbstractTask,L<:AbstractLearning,D<:AbstractDimensionality}
+        info = RankingLimiterInfo(nbest, rev)
+
+        scores = get_score(filter)
+        rank = sortperm(scores; rev)[1:nbest]
+        new{F,T,L,D}(filter, rank, info)
+    end
+end
 
 # # ---------------------------------------------------------------------------- #
-# #                              ranking limiter                                 #
+# #                             percentange limiter                              #
 # # ---------------------------------------------------------------------------- #
 # """
-# Scores are evaluated by selecting the best first in ascending or descending order
+# `PercentageLimiter` is an implementation of an `AbstractLimiter` which
+# limits the selection to a fraction of the available variables.
 # """
-# struct RankingLimiter{F<:Real,T<:AbstractTask,L<:AbstractLearning,D<:AbstractDimensionality} <: AbstractLimiter{F,T,L,D}
-#     nbest::Int
+# struct PercentageLimiter{F<:Real,T<:AbstractTask,L<:AbstractLearning,D<:AbstractDimensionality} <: AbstractLimiter{F,T,L,D}
+#     perc::Float64
 #     rev::Bool
 
-#     function RankingLimiter(nbest::Integer, rev::Bool)
-#         nbest > 0 || throw(DomainError(nbest, "`nbest` must be > 0"))
-#         new(nbest, rev)
+#     function PercentageLimiter(perc::AbstractFloat, rev::Bool)
+#         (0 ≤ perc ≤ 1.0) || throw(DomainError(perc, "`perc` must be ≥ 0 and ≤ 1"))
+#         new(perc, rev)
 #     end
-#     RankingLimiter(nbest::Integer) = RankingLimiter(nbest, false)
+#     PercentageLimiter(perc::AbstractFloat) = PercentageLimiter(perc, true)
 # end
 
-# nbest(rl::RankingLimiter) = rl.nbest
-# rev(rl::RankingLimiter) = rl.rev
+# """
+#     perc(pl)
 
-# function limit(scores::AbstractVector{<:Real}, rl::RankingLimiter)
-#     return sortperm(scores; rev=rev(rl))[1:nbest(rl)]
+# Retrieve the fraction (percentage / 100) of variables that will be
+# selected with `pl` limiter.
+# """
+# perc(pl::PercentageLimiter) = pl.perc
+
+# """
+#     rev(pl)
+
+# Return whether the selection is reverse or not. It follows the same
+# semantic of `rev` parameter of the function [`sort`](@ref).
+# """
+# rev(pl::PercentageLimiter) = pl.rev
+
+# function limit(scores::AbstractVector{<:Real}, l::PercentageLimiter)
+#     len = Int(ceil(length(scores) * perc(l)))
+#     return sortperm(scores; rev = rev(l))[1:len]
 # end
 
-# function limit(scores::AbstractVector{GroupScore}, rl::RankingLimiter)
-#     return limit([s.score for s in scores], rl)
+# function limit(scores::AbstractVector{GroupScore}, l::PercentageLimiter)
+#     return limit([s.score for s in scores], l)
 # end
 
 # # ---------------------------------------------------------------------------- #
@@ -173,47 +243,4 @@ end
 
 # function limit(scores::AbstractVector{GroupScore}, al::AtLeastLimiter)
 #     return limit([s.score for s in scores], al)
-# end
-
-# # ---------------------------------------------------------------------------- #
-# #                             percentange limiter                              #
-# # ---------------------------------------------------------------------------- #
-# """
-# `PercentageLimiter` is an implementation of an `AbstractLimiter` which
-# limits the selection to a fraction of the available variables.
-# """
-# struct PercentageLimiter{F<:Real,T<:AbstractTask,L<:AbstractLearning,D<:AbstractDimensionality} <: AbstractLimiter{F,T,L,D}
-#     perc::Float64
-#     rev::Bool
-
-#     function PercentageLimiter(perc::AbstractFloat, rev::Bool)
-#         (0 ≤ perc ≤ 1.0) || throw(DomainError(perc, "`perc` must be ≥ 0 and ≤ 1"))
-#         new(perc, rev)
-#     end
-#     PercentageLimiter(perc::AbstractFloat) = PercentageLimiter(perc, true)
-# end
-
-# """
-#     perc(pl)
-
-# Retrieve the fraction (percentage / 100) of variables that will be
-# selected with `pl` limiter.
-# """
-# perc(pl::PercentageLimiter) = pl.perc
-
-# """
-#     rev(pl)
-
-# Return whether the selection is reverse or not. It follows the same
-# semantic of `rev` parameter of the function [`sort`](@ref).
-# """
-# rev(pl::PercentageLimiter) = pl.rev
-
-# function limit(scores::AbstractVector{<:Real}, l::PercentageLimiter)
-#     len = Int(ceil(length(scores) * perc(l)))
-#     return sortperm(scores; rev = rev(l))[1:len]
-# end
-
-# function limit(scores::AbstractVector{GroupScore}, l::PercentageLimiter)
-#     return limit([s.score for s in scores], l)
 # end

@@ -48,6 +48,15 @@ end
 abstract type AbstractLimiter{F,T,L,D} end
 abstract type AbstractLimiterInfo end
 
+Base.eltype(::AbstractLimiter{F,T,L,D})        where {F,T,L,D} = F
+get_task(::AbstractLimiter{F,T,L,D})           where {F,T,L,D} = T
+get_learning(::AbstractLimiter{F,T,L,D})       where {F,T,L,D} = L
+get_dimensionality(::AbstractLimiter{F,T,L,D}) where {F,T,L,D} = D
+
+get_filter(l::AbstractLimiter{F,T,L,D})        where {F,T,L,D} = l.filter
+get_rank(l::AbstractLimiter{F,T,L,D})          where {F,T,L,D} = l.rank
+get_info(l::AbstractLimiter{F,T,L,D})          where {F,T,L,D} = l.info
+
 function Base.show(io::IO, limiter::AbstractLimiter{F,T,L,D}) where {F,T,L,D}
     println(io, typeof(limiter))
     has_rank = hasproperty(limiter, :rank)

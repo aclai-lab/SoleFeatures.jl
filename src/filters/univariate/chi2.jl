@@ -29,7 +29,7 @@ classification.
 - `rank::Vector{Int64}`: Feature indices sorted by chi-squared statistic (descending)
 - `score::Vector{Float64}`: Chi-squared statistic for each feature
 
-# Examples
+# Example
 ```julia
 X = [1 1 3; 0 1 5; 5 4 1; 6 6 2; 1 4 0; 0 0 0]
 y = [1, 1, 0, 0, 2, 2]
