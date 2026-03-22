@@ -4,11 +4,17 @@ version = "0.3.0"
 authors = ["Patrik Cavina", "Federico Manzella", "Giovanni Pagliarini"]
 
 [deps]
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DataTreatments = "1b3ff5f2-9b56-42a2-b38a-76a033f741ca"
-
-[compat]
-DataTreatments = "0.3"
-julia = "1"
+Normalization = "be38d6a3-8366-4a42-ad57-222272b5bbe7"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 
 [sources]
 DataTreatments = {rev = "devMethods", url = "https://github.com/PasoStudio73/DataTreatments.jl.git"}
+
+[compat]
+DataFrames = "1.8"
+DataTreatments = "0.3"
+Normalization = "0.9"
+Reexport = "1.2"
+julia = "1"
