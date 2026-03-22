@@ -12,9 +12,19 @@ Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 [sources]
 DataTreatments = {rev = "devMethods", url = "https://github.com/PasoStudio73/DataTreatments.jl.git"}
 
+[extensions]
+NormalizationExt = "Normalization"
+
 [compat]
 DataFrames = "1.8"
 DataTreatments = "0.3"
 Normalization = "0.9"
 Reexport = "1.2"
 julia = "1"
+
+[extras]
+SoleData = "123f1ae1-6307-4526-ab5b-aab3a92a2b8c"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["SoleData", "Test"]

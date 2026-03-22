@@ -21,6 +21,7 @@ using Normalization
 # ---------------------------------------------------------------------------- #
 export load_dataset
 export tabular, multidim
+export get_data, get_treats
 include("dataset.jl")
 
 

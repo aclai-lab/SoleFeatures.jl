@@ -24,16 +24,16 @@ Xr = DataFrame(Xr)
 natopsloader = Artifacts.NatopsLoader()
 Xts, yts = Artifacts.load(natopsloader)
 
-a, b = load_dataset(Xc, yc)
+ds = load_dataset(Xc, yc)
 
-a, b =load_dataset(
+ds =load_dataset(
     Xc, yc,
     TreatmentGroup(name_expr=["petal_length", "petal_width"], grouped=true)
 )
 
-a, b =load_dataset(Xr, yr)
+ds =load_dataset(Xr, yr)
 
-a, b =load_dataset(
+ds =load_dataset(
     Xts, yts,
     TreatmentGroup(
         dims=1,
@@ -45,7 +45,7 @@ a, b =load_dataset(
     data_type=tabular
 )
 
-a, b =load_dataset(
+ds =load_dataset(
     Xts, yts,
     TreatmentGroup(
         dims=1,
@@ -57,7 +57,7 @@ a, b =load_dataset(
     data_type=multidim
 )
 
-a, b =load_dataset(
+ds =load_dataset(
     Xts, yts,
     TreatmentGroup(
         dims=1,
@@ -65,4 +65,4 @@ a, b =load_dataset(
     );
     data_type=tabular
 )
-@test isempty(a)
+@test isempty(SF.get_data(ds))

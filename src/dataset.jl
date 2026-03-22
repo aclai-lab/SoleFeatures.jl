@@ -1,4 +1,25 @@
 # ---------------------------------------------------------------------------- #
+#                               Dataset struct                                 #
+# ---------------------------------------------------------------------------- #
+mutable struct Dataset
+    data::Vector{DT.AbstractDataset}
+    treats::Vector{DT.TreatmentGroup}
+end
+
+# ---------------------------------------------------------------------------- #
+#                                Base methods                                  #
+# ---------------------------------------------------------------------------- #
+Base.length(ds::Dataset) = size(ds.data, 2)
+# Base.iterate(ds::Dataset, state=1) =
+#     state > length(ds) ? nothing : (ds.data[:, state], state + 1)
+
+# ---------------------------------------------------------------------------- #
+#                               getter methods                                 #
+# ---------------------------------------------------------------------------- #
+get_data(ds::Dataset) = ds.data
+get_treats(ds::Dataset) = ds.treats
+
+# ---------------------------------------------------------------------------- #
 #                             data_type callings                               #
 # ---------------------------------------------------------------------------- #
 tabular = (dt, args...; kwargs...) -> DT.get_tabular(dt, args...; kwargs...)
@@ -13,7 +34,7 @@ function load_dataset(
     data_type::Base.Callable=tabular,
     kwargs...
 )
-    data_type(dt, args...; kwargs...)
+    Dataset(data_type(dt, args...; kwargs...)...)
 end
 
 load_dataset(
