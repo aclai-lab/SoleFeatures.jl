@@ -11,7 +11,7 @@ Group indices of `DataTreatments.FeatureId` objects based on specified fields.
 - `aggrby::Tuple{Vararg{Symbol}}`: Tuple of field names (as symbols) to group by
 
 # Returns
-- `Vector{Vector{Int}}`: A vector where each inner vector contains the indices of elements 
+- `Vector{Vector{Int}}`: A vector where each inner vector contains the indices of elements
   that share the same values for the specified fields
 
 # Description
@@ -29,7 +29,7 @@ function group_id_by_aggrby(
     field_tuples = [Tuple(getfield(f, field) for field in aggrby) for f in featid]
     value_combinations = unique(field_tuples)
     ixs = Vector{Vector{Int64}}(undef, length(value_combinations))
-    
+
     Threads.@threads for idx in eachindex(value_combinations)
         combination = value_combinations[idx]
         ixs[idx] = findall(==(combination), field_tuples)
@@ -59,7 +59,7 @@ function _fs(
     selector::AbstractFeaturesSelector,
     limiter::AbstractLimiter
 )::Tuple{Vector{Int},Vector{Score}}
-    scores = isnothing(y) || is_unsupervised(selector) ? score(X, selector) : score(X, y, selector)
+    scores = SoleFeatures.get_score(selector)
     idxes = SoleFeatures.limit(scores, limiter)
 
     return idxes, map(SoleFeatures.Score, featid, scores)
@@ -123,7 +123,7 @@ function _fsgroup(
         # group and then evaluate score internally to each group
         for g in g_indices
 
-            s = isnothing(y) || is_unsupervised(selector) ? score(X[:,g], selector) : score(X[:,g], y, selector)
+            s = isnothing(y) || SoleFeatures.get_learning(selector) isa Unsupervised ? score(X[:,g], selector) : score(X[:,g], y, selector)
 
             push!(scores, s) # save scores of variables of current group
             grp = Tuple(Symbol.(collect(getfield(first(featid[g]), a) for a in aggrby)))
@@ -131,7 +131,7 @@ function _fsgroup(
         end
     else
         # calculate scores for all variables and then group
-        allscores = isnothing(y) || is_unsupervised(selector) ? score(X, selector) : score(X, y, selector)
+        allscores = isnothing(y) || SoleFeatures.get_learning(selector) isa Unsupervised ? score(X, selector) : score(X, y, selector)
 
         for (i, cur_g_indices) in enumerate(g_indices)
             push!(scores, allscores[cur_g_indices]) # save scores of variables of current group
@@ -174,13 +174,13 @@ is applied during the multi-step feature selection process.
 ## Aggregation Parameter (`aggrby`)
 The `aggrby` parameter can be provided in two ways:
 
-1. **Single NamedTuple**: When provided as a single NamedTuple (not a vector), 
+1. **Single NamedTuple**: When provided as a single NamedTuple (not a vector),
    aggregation is only applied during the final step of feature selection.
    The function automatically creates a vector where:
    - All positions except the last contain `nothing`
    - The last position contains the provided aggregation parameters
 
-2. **Vector of NamedTuples**: When provided as a vector, each element specifies 
+2. **Vector of NamedTuples**: When provided as a vector, each element specifies
    the aggregation behavior for the corresponding step in `fs_methods`.
 """
 function feature_selection(
@@ -196,15 +196,15 @@ function feature_selection(
 
     fs_methods::AbstractVector{<:NamedTuple{(:selector, :limiter)}} = [
         ( # step 1: unsupervised variance-based filter
-            selector = VarianceFilter(SoleFeatures.IdentityLimiter()),
+            selector = VarianceFilter(X),
             limiter = PercentageLimiter(0.1),
         ),
         ( # step 2: supervised Mutual Information filter
-            selector = MutualInformationClassif(SoleFeatures.IdentityLimiter()),
+            selector = MutualInfoFilter(X,y),
             limiter = PercentageLimiter(0.1),
         ),
         ( # step 3: group results by variable
-            selector = IdentityFilter(),
+            selector = KSTestFilter(X,y),
             limiter = IdentityLimiter(),
         ),
     ],
@@ -212,11 +212,16 @@ function feature_selection(
     norm::Bool = false,
     normalize_kwargs::NamedTuple = NamedTuple()
 ) where {T<:Number}
-    # prepare aggregation parameters
+    # If aggrby (aggregation parameters) is a single NamedTuple or Nothing, convert it to a
+    # vector that has the same length of feature selection methods, with all elements set to
+    # `nothing` except the last one which is set to the provided aggrby.
     if !(aggrby isa AbstractVector)
-        # when aggrby is not a Vector assume that the user want to perform aggregation
-        #    only during the last step of feature selection TODO: document this properly!!!
-        aggrby = push!(Union{Nothing,NamedTuple}[fill(nothing, max(length(fs_methods)-1, 0))...], aggrby)
+        # When aggrby is not a Vector assume that the user want to perform aggregation
+        # only during the last step of feature selection TODO: document this properly!!!
+        aggrby = push!(
+            Union{Nothing,NamedTuple}[fill(nothing, max(length(fs_methods)-1, 0))...],
+            aggrby
+        )
     end
 
     # prepare labels
@@ -233,14 +238,16 @@ function feature_selection(
 
         # pick survived columns only
         for f in fs_mid_results
+            @show f
+            @show current_dataset_col_slice
             current_dataset_col_slice = current_dataset_col_slice[f.indices]
         end
 
         currX = X[:,current_dataset_col_slice]
         currfeatid = featid[current_dataset_col_slice]
 
-        dataset_param = isnothing(y_coded) || SoleFeatures.is_unsupervised(fsm.selector) ? 
-            (currX, currfeatid) : 
+        dataset_param = isnothing(y_coded) || SoleFeatures.get_learning(fsm.selector) isa SoleFeatures.Unsupervised ?
+            (currX, currfeatid) :
             (currX, y_coded, currfeatid)
 
         idxes, score, g_indices =
@@ -272,7 +279,7 @@ function feature_selection(
             aggrby = isnothing(gfs_params) ? nothing : gfs_params.aggrby
         ))
     end
-    
+
     dataset_col_slice = 1:size(X, 2)
 
     for f in fs_mid_results
@@ -285,7 +292,7 @@ function feature_selection(
 end
 
 feature_selection(
-    X::DataTreatments.DataTreatment, 
-    args...; 
+    X::DataTreatments.DataTreatment,
+    args...;
     kwargs...
 ) = feature_selection(get_dataset(X), get_featureid(X), args...; kwargs...)

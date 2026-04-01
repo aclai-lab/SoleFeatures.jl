@@ -1,7 +1,7 @@
 # ---------------------------------------------------------------------------- #
 #                           filters abstract types                             #
 # ---------------------------------------------------------------------------- #
-abstract type AbstractFilter{F,T,L,D} end
+abstract type AbstractFilter{F,T,L,D} <: AbstractFeaturesSelector end
 abstract type AbstractFilterInfo end
 
 abstract type AbstractTask           end
