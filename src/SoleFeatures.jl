@@ -79,11 +79,13 @@ include("filters/univariate/variance.jl")
 # export AbstractLimiter
 
 # ---------------------------------------------------------------------------- #
-#                                   filters                                    #
+#                                   limiters                                   #
 # ---------------------------------------------------------------------------- #
-export IdentityLimiter, ThresholdLimiter, RankingLimiter
+export AbstractLimiter
+
+export ThresholdLimiter, RankingLimiter
 export MajorityLimiter, AtLeastLimiter, PercentageLimiter
-include("filters/limiter.jl")
+include("filters/limiters.jl")
 
 # ---------------------------------------------------------------------------- #
 #                             feature selection                                #
