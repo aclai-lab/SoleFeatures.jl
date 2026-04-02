@@ -2,12 +2,12 @@
 #                                   group id                                   #
 # ---------------------------------------------------------------------------- #
 """
-    group_id_by_aggrby(Xinfo::AbstractVector{<:DataTreatments.FeatureId}, aggrby::Tuple{Vararg{Symbol}})::Vector{Vector{Int}}
+    group_id_by_aggrby(Xinfo::AbstractVector{<:DataTreatments.AbstractDataFeature}, aggrby::Tuple{Vararg{Symbol}})::Vector{Vector{Int}}
 
-Group indices of `DataTreatments.FeatureId` objects based on specified fields.
+Group indices of `DataTreatments.AbstractDataFeature` objects based on specified fields.
 
 # Arguments
-- `Xinfo::AbstractVector{<:DataTreatments.FeatureId}`: Vector of `DataTreatments.FeatureId` objects to be grouped
+- `Xinfo::AbstractVector{<:DataTreatments.AbstractDataFeature}`: Vector of `DataTreatments.AbstractDataFeature` objects to be grouped
 - `aggrby::Tuple{Vararg{Symbol}}`: Tuple of field names (as symbols) to group by
 
 # Returns
@@ -23,7 +23,7 @@ groups by finding all elements that match each unique combination.
 - `ErrorException`: If any resulting group is empty
 """
 function group_id_by_aggrby(
-    featid :: Vector{DataTreatments.FeatureId},
+    featid :: Vector{DataTreatments.AbstractDataFeature},
     aggrby :: Tuple{Vararg{Symbol}}
 )::Vector{Vector{Int64}}
     field_tuples = [Tuple(getfield(f, field) for field in aggrby) for f in featid]
@@ -55,7 +55,7 @@ of labels.
 function _fs(
     X::AbstractMatrix,
     y::Union{AbstractVector,Nothing},
-    featid::AbstractVector{<:DataTreatments.FeatureId},
+    featid::AbstractVector{<:DataTreatments.AbstractDataFeature},
     selector::AbstractFeaturesSelector,
     limiter::AbstractLimiter
 )::Tuple{Vector{Int},Vector{Score}}
@@ -67,7 +67,7 @@ end
 
 function _fs(
     X::AbstractMatrix,
-    featid::AbstractVector{<:DataTreatments.FeatureId},
+    featid::AbstractVector{<:DataTreatments.AbstractDataFeature},
     selector::AbstractFeaturesSelector,
     limiter::AbstractLimiter
 )::Tuple{Vector{Int},Vector{Score}}
@@ -107,7 +107,7 @@ return sel_idxes, g_indices, groups_score, scores
 function _fsgroup(
     X::AbstractMatrix,
     y::Union{SoleData.SoleBase.CLabel,Nothing},
-    featid::AbstractVector{<:DataTreatments.FeatureId},
+    featid::AbstractVector{<:DataTreatments.AbstractDataFeature},
     selector::AbstractFeaturesSelector,
     limiter::AbstractLimiter,
     aggrby::Tuple{Vararg{Symbol}};
@@ -148,7 +148,7 @@ end
 
 function _fsgroup(
     X::AbstractMatrix,
-    featid::AbstractVector{<:DataTreatments.FeatureId},
+    featid::AbstractVector{<:DataTreatments.AbstractDataFeature},
     selector::AbstractFeaturesSelector,
     limiter::AbstractLimiter,
     aggrby::Tuple{Vararg{Symbol}};
@@ -185,7 +185,7 @@ The `aggrby` parameter can be provided in two ways:
 """
 function feature_selection(
     X      :: AbstractArray{T},
-    featid :: Vector{DataTreatments.FeatureId},
+    featid :: Vector{DataTreatments.AbstractDataFeature},
     y      :: Union{AbstractVector{<:SoleData.SoleBase.CLabel}, Nothing};
 
     aggrby::Union{ABT,AbstractVector{<:ABT}} = (

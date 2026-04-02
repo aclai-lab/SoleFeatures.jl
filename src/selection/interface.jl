@@ -25,15 +25,15 @@ const ABT = Union{NamedTuple{(:aggrby,:aggregatef,:group_before_score)}, Nothing
 A struct representing the score of an individual feature in feature selection.
 
 # Fields
-- `id :: DataTreatments.FeatureId` : The feature that this score belongs to
+- `id :: DataTreatments.AbstractDataFeature` : The feature that this score belongs to
 - `score :: Float64` : The numerical score value indicating feature importance/relevance
 
 # Constructors
 ```julia
-Score(id::DataTreatments.FeatureId, score::Float64)
+Score(id::DataTreatments.AbstractDataFeature, score::Float64)
 """
 struct Score <: AbstractScore
-    id    :: DataTreatments.FeatureId
+    id    :: DataTreatments.AbstractDataFeature
     score :: Float64
 end
 

@@ -7,6 +7,8 @@ using Random
 using LinearAlgebra
 using IterTools
 using MLBase
+using Plots
+using StatsPlots
 
 using DataTreatments
 using SparseArrays
@@ -16,7 +18,7 @@ using Distributions     # used by Chi2Filter
 using NearestNeighbors  # used by MutualInfoFilter
 using DecisionTree      # used by RandomForestFilter
 using HypothesisTests
-using Statistics        # used by 
+using Statistics        # used by
 
 # ---------------------------------------------------------------------------- #
 #                                    main                                      #
@@ -92,5 +94,19 @@ include("filters/limiters.jl")
 # ---------------------------------------------------------------------------- #
 export feature_selection
 include("selection/fselection.jl")
+
+# ---------------------------------------------------------------------------- #
+#                                 preprocessing                                #
+# ---------------------------------------------------------------------------- #
+export zscore_outliers
+include("preprocessing/outliers.jl")
+
+# ---------------------------------------------------------------------------- #
+#                                 visualization                                #
+# ---------------------------------------------------------------------------- #
+export AbstractPlotTask, HistogramTask, BarTask, DensityTask, BoxplotTask, ViolinTask
+export QQplotTask, MultiTask
+export labels, vals, params, run_task
+include("visualization/plot_task.jl")
 
 end

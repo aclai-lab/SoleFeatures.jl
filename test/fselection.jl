@@ -5,7 +5,7 @@ using DataTreatments
 
 function feature_selection(
     X      :: AbstractArray{T},
-    featid :: Vector{DataTreatments.FeatureId},
+    featid :: Vector{DataTreatments.AbstractDataFeature},
     y      :: Union{AbstractVector{<:SoleData.SoleBase.CLabel}, Nothing};
 
     aggrby::Union{ABT,AbstractVector{<:ABT}} = (
@@ -59,8 +59,8 @@ function feature_selection(
         currX = X[:,current_dataset_col_slice]
         currfeatid = featid[current_dataset_col_slice]
 
-        dataset_param = isnothing(y_coded) || SoleFeatures.is_unsupervised(fsm.selector) ? 
-            (currX, currfeatid) : 
+        dataset_param = isnothing(y_coded) || SoleFeatures.is_unsupervised(fsm.selector) ?
+            (currX, currfeatid) :
             (currX, y_coded, currfeatid)
 
         idxes, score, g_indices =
@@ -92,7 +92,7 @@ function feature_selection(
             aggrby = isnothing(gfs_params) ? nothing : gfs_params.aggrby
         ))
     end
-    
+
     dataset_col_slice = 1:size(X, 2)
 
     for f in fs_mid_results
@@ -105,7 +105,7 @@ function feature_selection(
 end
 
 feature_selection(
-    X::DataTreatments.DataTreatment, 
-    args...; 
+    X::DataTreatments.DataTreatment,
+    args...;
     kwargs...
 ) = feature_selection(get_dataset(X), get_featureid(X), args...; kwargs...)
