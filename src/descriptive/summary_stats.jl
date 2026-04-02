@@ -1,5 +1,8 @@
 """
-    Summary Statistics for discrete values
+    _summary_stats(vals::AbstractVector{<:Union{AbstractString, Symbol}})
+
+Summary of main statistics for categorical values, including absolute and relative
+frequencies, mode, and entropy.
 """
 function _summary_stats(vals::AbstractVector{<:Union{AbstractString, Symbol}})
     freq = StatsBase.countmap(vals)
@@ -15,7 +18,10 @@ function _summary_stats(vals::AbstractVector{<:Union{AbstractString, Symbol}})
 end
 
 """
-    Summary statistics for continuous values
+    _summary_stats(vals::AbstractVector{<:Real})
+
+Summary of main statistics for numerical values, including mean, median, mode, variance,
+standard deviation, skewness, kurtosis, minimum, and maximum.
 """
 function _summary_stats(vals::AbstractVector{<:Real})
     return Dict(
@@ -32,7 +38,10 @@ function _summary_stats(vals::AbstractVector{<:Real})
 end
 
 """
-    Summary statistics to clean data from missing values
+    summary_stats(vals::AbstractVector)
+
+Summary of main statistics for a vector of values, automatically handling both categorical
+and numerical data. Missing values are ignored in the computation.
 """
 function summary_stats(vals::AbstractVector)
     cleaned_vals = collect(skipmissing(vals))
@@ -41,11 +50,19 @@ function summary_stats(vals::AbstractVector)
     return _summary_stats(cleaned_vals)
 end
 
-
 # ---------------------------------------------------------------------------------------- #
 #                                 Summary statistics table                                 #
 # ---------------------------------------------------------------------------------------- #
 
+"""
+    summary_table(vals::AbstractMatrix,col_names::Vector{String},args...;kwargs...)
+
+Convenience function to create a summary statistics table from a matrix of values and
+corresponding column names. This function will convert the matrix into a DataFrame and then
+call the appropriate `summary_table` method to generate the summary statistics table. The
+`args...` and `kwargs...` are passed to the underlying `summary_table` function that
+handles DataFrames, allowing for flexible customization of the summary table output.
+"""
 function summary_table(
     vals::AbstractMatrix,
     col_names::Vector{String},
@@ -55,6 +72,16 @@ function summary_table(
     return summary_table(DataFrame(vals, Symbol.(col_names)), args...; kwargs...)
 end
 
+"""
+    summary_table(df::DataFrames.DataFrame; kwargs...)
+
+Convenience function to create a summary statistics table from a DataFrame. This function
+calls the `TableOne.tableone` function from the TableOne package, which provides a
+comprehensive summary of the dataset, including counts, percentages, means, medians,
+and more. The `kwargs...` are passed directly to the `tableone` function, allowing for
+flexible customization of the summary table output, such as adding missing value counts,
+specifying variable names, and controlling the number of digits displayed.
+"""
 function summary_table(
     df::DataFrames.DataFrame;
     addnmissing::Bool = true,
@@ -70,6 +97,17 @@ function summary_table(
     )
 end
 
+"""
+    summary_table(df::DataFrames.DataFrame, strata::Symbol, args...; kwargs...)
+
+Convenience function to create a stratified summary statistics table from a DataFrame. This
+function calls the `TableOne.tableone` function from the TableOne package, which provides a
+comprehensive summary of the dataset stratified by a specified variable (strata). The
+`args...` and `kwargs...` are passed directly to the `tableone` function, allowing for
+flexible customization of the summary table output, such as adding missing value counts,
+specifying variable names, and controlling the number of digits displayed. This function is
+particularly useful for comparing groups within the dataset based on the strata variable.
+"""
 function summary_table(
     df::DataFrames.DataFrame,
     strata::Symbol,
@@ -110,4 +148,20 @@ function summary_table(
         varnames = varnames,
         kwargs...
     )
+end
+
+# ---------------------------------------------------------------------------------------- #
+#                                  DataTreatments Interface                                #
+# ---------------------------------------------------------------------------------------- #
+
+function summary_stats(dt::DataTreatments.DataTreatment)
+    dataset, column_names = DataTreatments.get_tabular(dt)
+    return Dict(
+        col => summary_stats(dataset[:, i]) for (i, col) in enumerate(column_names)
+    )
+end
+
+function summary_table(dt::DataTreatments.DataTreatment, args...; kwargs...)
+    dataset, column_names = DataTreatments.get_tabular(dt)
+    return summary_table(dataset, column_names, args...; kwargs...)
 end
