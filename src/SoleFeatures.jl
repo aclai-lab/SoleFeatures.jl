@@ -10,6 +10,8 @@ using MLBase
 using Plots
 using StatsPlots
 using BoxCox
+using TableOne
+using DataFrames
 
 using DataTreatments
 using SparseArrays
@@ -104,6 +106,12 @@ include("preprocessing/outliers.jl")
 
 export log_transform, boxcox_transform, yeojohnson_transform
 include("preprocessing/transformations.jl")
+
+# ---------------------------------------------------------------------------- #
+#                                 descriptive                                  #
+# ---------------------------------------------------------------------------- #
+export summary_stats, summary_table
+include("descriptive/summary_stats.jl")
 
 # ---------------------------------------------------------------------------- #
 #                                 visualization                                #
