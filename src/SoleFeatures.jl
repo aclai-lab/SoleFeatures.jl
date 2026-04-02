@@ -9,6 +9,7 @@ using IterTools
 using MLBase
 using Plots
 using StatsPlots
+using BoxCox
 
 using DataTreatments
 using SparseArrays
@@ -98,8 +99,11 @@ include("selection/fselection.jl")
 # ---------------------------------------------------------------------------- #
 #                                 preprocessing                                #
 # ---------------------------------------------------------------------------- #
-export zscore_outliers
+export zscore_outliers, iqr_outliers
 include("preprocessing/outliers.jl")
+
+export log_transform, boxcox_transform, yeojohnson_transform
+include("preprocessing/transformations.jl")
 
 # ---------------------------------------------------------------------------- #
 #                                 visualization                                #
