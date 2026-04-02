@@ -11,8 +11,22 @@ In the following, we want to introduce some of these methods, in particular:
  - Isolation Forest
 """
 
-struct OutlierResult{S<:AbstractVector}
-    scores::S
+"""
+    OutlierResult
+
+A struct to hold the results of outlier detection methods, including the outlier scores and
+the indices of detected outliers.
+
+# Fields
+- `id::Int`: Unique identifier for the feature (column index in the source data).
+- `vname::String`: Original column name.
+- `levels::CategoricalArrays.CategoricalVector`: Categorical vector of levels.
+- `valididxs::Vector{Int}`: Indices of valid (non-missing) entries.
+- `missingidxs::Vector{Int}`: Indices of missing entries.
+- `datatype`: Original column datatype
+"""
+struct OutlierResult
+    scores::AbstractVector
     indices::Vector{Int}
 end
 
@@ -66,4 +80,24 @@ function iqr_outliers(
     idxs = findall(v -> !ismissing(v) && (v < lower || v > upper), values)
 
     return OutlierResult(fill(missing, length(values)), idxs)
+end
+
+# ---------------------------------------------------------------------------------------- #
+#                                  DataTreatments Interface                                #
+# ---------------------------------------------------------------------------------------- #
+
+function zscore_outliers(dt::DataTreatments.DataTreatment; kwargs...)
+    dataset, column_names = DataTreatments.get_continuous(dt)
+    return Dict(
+        col => zscore_outliers(dataset[:, i]; kwargs)
+        for (i, col) in enumerate(column_names)
+    )
+end
+
+function iqr_outliers(dt::DataTreatments.DataTreatment; kwargs...)
+    dataset, column_names = DataTreatments.get_continuous(dt)
+    return Dict(
+        col => iqr_outliers(dataset[:, i]; kwargs)
+        for (i, col) in enumerate(column_names)
+    )
 end

@@ -59,3 +59,52 @@ end
 function yeojohnson_transform(vals::AbstractVector{<:Union{Missing,<:Real}}, λ::Real)
     return [ismissing(v) ? missing : yeojohnson(λ, v) for v in vals]
 end
+
+# ---------------------------------------------------------------------------------------- #
+#                                  DataTreatments Interface                                #
+# ---------------------------------------------------------------------------------------- #
+
+function log_transform(dt::DataTreatments.DataTreatment; base=ℯ, offset=0)
+    dataset, column_names = DataTreatments.get_continuous(dt)
+
+    return Dict(
+        col => log_transform(dataset[:, i]; base=base, offset=offset)
+        for (i, col) in enumerate(column_names)
+    )
+end
+
+function boxcox_transform(dt::DataTreatments.DataTreatment)
+    dataset, column_names = DataTreatments.get_continuous(dt)
+
+    return Dict(
+        col => boxcox_transform(dataset[:, i])
+        for (i, col) in enumerate(column_names)
+    )
+end
+
+function boxcox_transform(dt::DataTreatments.DataTreatment, λ::Real)
+    dataset, column_names = DataTreatments.get_continuous(dt)
+
+    return Dict(
+        col => boxcox_transform(dataset[:, i], λ)
+        for (i, col) in enumerate(column_names)
+    )
+end
+
+function yeojohnson_transform(dt::DataTreatments.DataTreatment)
+    dataset, column_names = DataTreatments.get_continuous(dt)
+
+    return Dict(
+        col => yeojohnson_transform(dataset[:, i])
+        for (i, col) in enumerate(column_names)
+    )
+end
+
+function yeojohnson_transform(dt::DataTreatments.DataTreatment, λ::Real)
+    dataset, column_names = DataTreatments.get_continuous(dt)
+
+    return Dict(
+        col => yeojohnson_transform(dataset[:, i], λ)
+        for (i, col) in enumerate(column_names)
+    )
+end
