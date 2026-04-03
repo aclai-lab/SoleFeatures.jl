@@ -15,7 +15,7 @@ struct HistogramTask <: AbstractPlotTask
     end
 
     function HistogramTask(
-        vals::AbstractVector{Union{Missing, T}};
+        vals::AbstractVector{<:Union{Missing, T}};
         params::NamedTuple=(;)
     ) where {T<:Real}
         cleaned = skipmissing(vals) |> collect
@@ -102,7 +102,7 @@ struct BoxplotTask <: AbstractPlotTask
     end
 
     function BoxplotTask(
-        vals::AbstractVector{Union{Missing, T}};
+        vals::AbstractVector{<:Union{Missing, T}};
         params::NamedTuple=(;)
     ) where {T<:Real}
         cleaned = collect(skipmissing(vals))
@@ -127,7 +127,7 @@ struct ViolinTask <: AbstractPlotTask
     end
 
     function ViolinTask(
-        vals::AbstractVector{Union{Missing, T}};
+        vals::AbstractVector{<:Union{Missing, T}};
         params::NamedTuple=(;)
     ) where {T<:Real}
         cleaned = collect(skipmissing(vals))
@@ -157,8 +157,8 @@ struct QQplotTask <: AbstractPlotTask
     end
 
     function QQplotTask(
-        x::AbstractVector{Union{Missing, T}},
-        y::AbstractVector{Union{Missing, T}};
+        x::AbstractVector{<:Union{Missing, T}},
+        y::AbstractVector{<:Union{Missing, T}};
         params::NamedTuple=(;)
     ) where {T<:Real}
 
