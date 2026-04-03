@@ -117,7 +117,7 @@ include("descriptive/summary_stats.jl")
 #                                 visualization                                #
 # ---------------------------------------------------------------------------- #
 export AbstractPlotTask, HistogramTask, BarTask, DensityTask, BoxplotTask, ViolinTask
-export QQplotTask, MultiTask
+export QQplotTask, ScatterTask, MultiTask
 export labels, vals, params, run_task
 include("visualization/plot_task.jl")
 
