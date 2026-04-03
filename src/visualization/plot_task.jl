@@ -179,6 +179,49 @@ y(task::QQplotTask) = task.y
 run_task(task::QQplotTask) = StatsPlots.qqplot(x(task), y(task); params(task)...)
 
 # ---------------------------------------------------------------------------------------- #
+#                                     Scatter Plot                                         #
+# ---------------------------------------------------------------------------------------- #
+
+struct ScatterTask <: AbstractPlotTask
+    x::AbstractVector
+    y::Union{AbstractVector, Nothing}
+    params::NamedTuple
+
+    function ScatterTask(
+        x::AbstractVector;
+        params::NamedTuple=(;)
+    )
+        new(x, nothing, params)
+    end
+
+    function ScatterTask(
+        x::AbstractVector,
+        y::AbstractVector;
+        params::NamedTuple=(;)
+    )
+        @assert length(x) == length(y) "x and y must have the same length"
+
+        mask = .!ismissing.(x) .& .!ismissing.(y)
+
+        cleaned_x = x[mask]
+        cleaned_y = y[mask]
+
+        new(cleaned_x, cleaned_y, params)
+    end
+end
+
+x(task::ScatterTask) = task.x
+y(task::ScatterTask) = task.y
+
+function run_task(task::ScatterTask)
+    if isnothing(y(task))
+        return Plots.scatter(x(task); params(task)...)
+    end
+
+    return Plots.scatter(x(task), y(task); params(task)...)
+end
+
+# ---------------------------------------------------------------------------------------- #
 #                                         Density Plot                                     #
 # ---------------------------------------------------------------------------------------- #
 
