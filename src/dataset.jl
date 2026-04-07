@@ -32,9 +32,18 @@ function load_dataset(
     dt::DataTreatment,
     args...;
     data_type::Base.Callable=tabular,
+    norm::Union{Type{<:AbstractNormalization},Nothing}=nothing,
     kwargs...
 )
-    Dataset(data_type(dt, args...; kwargs...)...)
+    data, treats = data_type(dt, args...; kwargs...)
+
+    if !isnothing(norm)
+        for i in eachindex(data)
+            grouped = i ≤ length(treats) ? DT.get_grouped(treats[i]) : DT.DefaultGrouped
+        end
+    end
+
+    Dataset(data, treats)
 end
 
 load_dataset(
